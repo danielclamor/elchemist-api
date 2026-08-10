@@ -62,10 +62,10 @@ class NicProfile(Base):
 
     is_new_mix: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    target_nic_strength: Mapped[float] = mapped_column(Numeric(6, 3))
+    target_nic_str: Mapped[float] = mapped_column(Numeric(6, 3))
     target_vg: Mapped[float] = mapped_column(Numeric(6, 3))
     target_pg: Mapped[float] = mapped_column(Numeric(6, 3))
-    nic_base_nic_strength: Mapped[float] = mapped_column(Numeric(6, 3))
+    nic_base_nic_str: Mapped[float] = mapped_column(Numeric(6, 3))
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
     updated_at: Mapped[datetime] = mapped_column(
