@@ -46,3 +46,15 @@ def get_all_formulas(db: Session) -> list[models.Formula]:
         )
         .all()
     )
+    
+def nic_base_option_to_type(o: models.NicBaseOption) -> NicBaseOptionType:
+  return NicBaseOptionType(
+    code=o.code,
+    name=o.name,
+    is_vg=o.is_vg,
+  )
+
+def get_all_nic_base_options(db: Session) -> list[models.NicBaseOption]:
+  return (
+    db.query(models.NicBaseOption).all()
+  )
