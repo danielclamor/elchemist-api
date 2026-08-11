@@ -78,3 +78,11 @@ def create_nic_profile(
     db.commit()
     db.refresh(nic_profile)
     return nic_profile
+
+from fastapi import FastAPI
+from strawberry.fastapi import GraphQLRouter
+from api_graphql.graphql_schema import schema
+
+app = FastAPI()
+graphql_app = GraphQLRouter(schema)
+app.include_router(graphql_app, prefix="/graphql")
