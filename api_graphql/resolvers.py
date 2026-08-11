@@ -1,14 +1,16 @@
 from sqlalchemy.orm import Session, joinedload
 import models
-from api_graphql.graphql_types import FormulaType, NicProfileType, NicBaseType, NicBaseOptionType, FlavoringType
+from api_graphql.graphql_types import FormulaType, NicProfileType, NicBaseType, NicBaseOptionType, FlavoringType, ChillType, NicType
 
 def formula_to_type(f: models.Formula) -> FormulaType:
     return FormulaType(
         slug=f.slug,
         name=f.name,
         brand=f.brand,
-        chill_type=f.chill_type,
-        nic_type=f.nic_type,
+        
+        chill_type=ChillType[f.chill_type.name],
+        nic_type=NicType[f.nic_type.name],
+        
         nic_profiles=[nic_profile_to_type(p) for p in f.nic_profiles],
     )
 

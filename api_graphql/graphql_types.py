@@ -1,3 +1,5 @@
+import enum
+
 import strawberry
 from typing import List
 
@@ -31,11 +33,21 @@ class NicProfileType:
     nic_bases: List[NicBaseType]
     flavorings: List[FlavoringType]
 
+@strawberry.enum
+class ChillType(enum.Enum):
+    CHILLED = "CHILLED"
+    NON_CHILLED = "NON_CHILLED"
+
+@strawberry.enum
+class NicType(enum.Enum):
+    SALT = "salt"
+    FREEBASE = "freebase"
+
 @strawberry.type
 class FormulaType:
     slug: str
     name: str
     brand: str
-    chill_type: str
-    nic_type: str
+    chill_type: ChillType
+    nic_type: NicType
     nic_profiles: List[NicProfileType]
