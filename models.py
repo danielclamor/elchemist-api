@@ -163,7 +163,7 @@ class Flavoring(Base):
     return self.flavoring_option.name
   
   @property
-  def is_vg(self) -> Boolean:
+  def is_vg(self) -> bool:
     return self.flavoring_option.is_vg
 
   def __repr__(self) -> str:
