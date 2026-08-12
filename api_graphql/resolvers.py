@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 import models
-from api_graphql.graphql_types import FormulaType, NicProfileType, NicBaseType, NicBaseOptionType, FlavoringType, ChillType, NicType
+from api_graphql.graphql_types import FlavoringOptionType, FormulaType, NicProfileType, NicBaseType, NicBaseOptionType, FlavoringType, ChillType, NicType
 
 def formula_to_type(f: models.Formula) -> FormulaType:
     return FormulaType(
@@ -31,7 +31,7 @@ def nic_profile_to_type(p: models.NicProfile) -> NicProfileType:
             )
             for nb in p.nic_bases
         ],
-        flavorings=[FlavoringType(name=fl.name, ratio=fl.ratio, is_vg=fl.is_vg) for fl in p.flavorings],
+        flavorings=[FlavoringType(flavoring_option=FlavoringOptionType(slug=fl.flavoring_option.slug, name=fl.flavoring_option.name, is_vg=fl.flavoring_option.is_vg), ratio=fl.ratio) for fl in p.flavorings],
     )
     
 def get_all_formulas(db: Session) -> list[models.Formula]:
@@ -57,4 +57,16 @@ def nic_base_option_to_type(o: models.NicBaseOption) -> NicBaseOptionType:
 def get_all_nic_base_options(db: Session) -> list[models.NicBaseOption]:
   return (
     db.query(models.NicBaseOption).all()
+  )
+  
+def flavoring_option_to_type(o: models.FlavoringOption) -> FlavoringOptionType:
+  return FlavoringOptionType(
+    slug=o.slug,
+    name=o.name,
+    is_vg=o.is_vg,
+  )
+
+def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
+  return (
+    db.query(models.FlavoringOption).all()
   )
