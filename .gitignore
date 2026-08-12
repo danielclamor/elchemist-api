@@ -4,4 +4,6 @@ __pycache__/
 *.yml
 *.yaml
 
-formulas.json
+*.json
+
+seeders.py
