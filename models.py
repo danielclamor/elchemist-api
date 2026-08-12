@@ -138,16 +138,17 @@ class FlavoringOption(Base):
   is_vg: Mapped[bool] = mapped_column(Boolean)
   
   def __repr__(self) -> str:
-    return f"<FlavoringOption {self.code!r}>"
+    return f"<FlavoringOption {self.slug!r}>"
 
 class Flavoring(Base):
   __tablename__ = "flavorings"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id"))
-  name: Mapped[str] = mapped_column(String(255))
+  flavoring_option_id: Mapped[uuid.UUID] = mapped_column(
+    ForeignKey("flavoring_options.id")
+  )
   ratio: Mapped[float] = mapped_column(Numeric(6, 4))
-  is_vg: Mapped[bool] = mapped_column(Boolean)
   
   flavoring_option: Mapped["FlavoringOption"] = relationship()
 
@@ -157,5 +158,13 @@ class Flavoring(Base):
   def percentage(self) -> float:
     return float(self.ratio) * 100
 
+  @property
+  def name(self) -> str:
+    return self.flavoring_option.name
+  
+  @property
+  def is_vg(self) -> Boolean:
+    return self.flavoring_option.is_vg
+
   def __repr__(self) -> str:
-    return f"<Flavoring {self.name!r} ratio={self.ratio}>"
+    return f"<Flavoring {self.name!r} ratio={self.ratio} is_vg={self.is_vg}>"
