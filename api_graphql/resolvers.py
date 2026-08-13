@@ -1,7 +1,18 @@
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import select
 import models
-from api_graphql.graphql_types import FlavoringOptionType, FormulaType, NicProfileType, NicBaseType, NicBaseOptionType, FlavoringType, ChillType, NicType
+from api_graphql.graphql_types import *
+  
+  
+# Auxiliary functions  
+def make_slug(string: str) -> str:
+  import re
+  tokens = re.sub(r'[^a-zA-Z0-9]', ' ', string).strip().split(' ')
+  tokens = [token for token in tokens if token != ""]
+  return '-'.join(tokens).lower()
 
+
+# SQLAlchemy model -> GraphQL model resolvers
 def formula_to_type(f: models.Formula) -> FormulaType:
     return FormulaType(
         slug=f.slug,
@@ -34,6 +45,22 @@ def nic_profile_to_type(p: models.NicProfile) -> NicProfileType:
         flavorings=[FlavoringType(flavoring_option=FlavoringOptionType(slug=fl.flavoring_option.slug, name=fl.flavoring_option.name, is_vg=fl.flavoring_option.is_vg), ratio=fl.ratio) for fl in p.flavorings],
     )
     
+def nic_base_option_to_type(o: models.NicBaseOption) -> NicBaseOptionType:
+  return NicBaseOptionType(
+    code=o.code,
+    name=o.name,
+    is_vg=o.is_vg,
+  )
+  
+def flavoring_option_to_type(o: models.FlavoringOption) -> FlavoringOptionType:
+  return FlavoringOptionType(
+    slug=o.slug,
+    name=o.name,
+    is_vg=o.is_vg,
+  )
+  
+
+# Query resolvers
 def get_all_formulas(db: Session) -> list[models.Formula]:
     return (
         db.query(models.Formula)
@@ -46,27 +73,44 @@ def get_all_formulas(db: Session) -> list[models.Formula]:
         )
         .all()
     )
-    
-def nic_base_option_to_type(o: models.NicBaseOption) -> NicBaseOptionType:
-  return NicBaseOptionType(
-    code=o.code,
-    name=o.name,
-    is_vg=o.is_vg,
-  )
 
 def get_all_nic_base_options(db: Session) -> list[models.NicBaseOption]:
   return (
     db.query(models.NicBaseOption).all()
   )
-  
-def flavoring_option_to_type(o: models.FlavoringOption) -> FlavoringOptionType:
-  return FlavoringOptionType(
-    slug=o.slug,
-    name=o.name,
-    is_vg=o.is_vg,
-  )
 
 def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
   return (
     db.query(models.FlavoringOption).all()
+  )
+
+
+# Mutation resolvers
+def create_formula(db: Session, name: str, brand: str, chill_type: ChillType, nic_type: NicType) -> FormulaCreatePayload:
+  slug = make_slug(string=name)
+  
+  existing = db.scalar(select(models.Formula).where(models.Formula.slug == slug))
+  if existing:
+    print(f"Canceling — formula {slug!r} already exists")
+    return FormulaCreatePayload(
+      formula=formula_to_type(existing),
+      created=False, 
+      message=f"Formula {slug} already exists",
+    )
+    
+  formula = models.Formula(
+    slug=slug,
+    name=name,
+    brand=brand,
+    chill_type=models.ChillType[chill_type.name],
+    nic_type=models.NicType[nic_type.name],
+  )
+  
+  db.add(formula)
+  db.commit()
+  db.refresh(formula)
+  return FormulaCreatePayload(
+      formula=formula_to_type(formula),
+      created=True, 
+      message=None,
   )
