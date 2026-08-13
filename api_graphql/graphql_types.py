@@ -56,6 +56,22 @@ class FormulaType:
   chill_type: ChillType
   nic_type: NicType
   nic_profiles: List[NicProfileType]
+  
+@strawberry.enum
+class FeedbackStatus(enum.Enum):
+  SUCCESS = "success"
+  FAILED = "failed"
+  CANCELLED = "cancelled"
+  
+@strawberry.type
+class Feedback:
+  status: FeedbackStatus
+  message: str | None = None
+
+@strawberry.type
+class NicProfileAddFlavoringPayload:
+  nic_profile: NicProfileType | None
+  feedback: Feedback
 
 @strawberry.type
 class NicProfileCreatePayload:
