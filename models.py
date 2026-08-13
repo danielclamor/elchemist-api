@@ -60,7 +60,7 @@ class NicProfile(Base):
   name: Mapped[str] = mapped_column(String(255))
   full_name: Mapped[str | None] = mapped_column(String, nullable=True)
 
-  is_old_mix: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+  is_old_mix: Mapped[bool] = mapped_column(Boolean, default=False)
 
   target_nic_str: Mapped[float] = mapped_column(Numeric(6, 3))
   target_vg: Mapped[float] = mapped_column(Numeric(6, 3))
