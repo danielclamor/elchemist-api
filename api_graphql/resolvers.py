@@ -79,6 +79,11 @@ def get_all_nic_base_options(db: Session) -> list[models.NicBaseOption]:
     db.query(models.NicBaseOption).all()
   )
 
+def get_flavoring_option(db: Session, flavoring_option_slug: str) -> models.FlavoringOption:
+  return (
+    db.scalar(select(models.FlavoringOption).where(models.FlavoringOption.slug == flavoring_option_slug))
+  )
+
 def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
   return (
     db.query(models.FlavoringOption).all()
@@ -86,6 +91,79 @@ def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
 
 
 # Mutation resolvers
+def create_flavoring_option(db: Session, flavoring_option_slug: str, flavoring_option_name: str, is_vg: bool | None = None) -> models.FlavoringOption | Feedback:
+  if is_vg is None:
+    return Feedback(
+      status=FeedbackStatus.CANCELLED,
+      message=f"Can't create flavoring option {flavoring_option_slug} without isVg"
+    )
+    
+  flavoring_option = models.FlavoringOption(
+    slug=flavoring_option_slug,
+    name=flavoring_option_name,
+    is_vg=is_vg,
+  )
+  
+  db.add(flavoring_option)
+  db.commit()
+  db.refresh(flavoring_option)
+  return flavoring_option
+
+def add_nic_profile_flavoring(db: Session, nic_profile_slug: str, flavoring_option_name: str, ratio: float, is_vg: bool | None = None) -> NicProfileAddFlavoringPayload:
+  nic_profile = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_slug))
+  if not nic_profile:
+    return NicProfileAddFlavoringPayload(
+      nic_profile=None,
+      feedback=Feedback(
+        status=FeedbackStatus.FAILED,
+        message=f"Nic Profile {nic_profile_slug} not found",
+      )
+    )
+  
+  flavoring_option_slug = make_slug(flavoring_option_name)
+  existing_flavoring_option = get_flavoring_option(db=db, flavoring_option_slug=flavoring_option_slug)
+  if not existing_flavoring_option:
+    existing_flavoring_option = create_flavoring_option(
+      db=db,
+      flavoring_option_slug=flavoring_option_slug,
+      flavoring_option_name=flavoring_option_name,
+      is_vg=is_vg
+    )
+    
+    if isinstance(existing_flavoring_option, Feedback):
+      return NicProfileAddFlavoringPayload(
+        nic_profile=nic_profile_to_type(nic_profile),
+        feedback=existing_flavoring_option,
+      )
+    
+  existing_flavoring = db.scalar(select(models.Flavoring).where(models.Flavoring.flavoring_option_id == existing_flavoring_option.id, models.Flavoring.nic_profile_id == nic_profile.id))
+  if existing_flavoring:
+    return NicProfileAddFlavoringPayload(
+      nic_profile=nic_profile_to_type(nic_profile),
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Flavoring {existing_flavoring_option.name} is already connected"
+      )
+    )
+  
+  flavoring = models.Flavoring(
+    nic_profile_id=nic_profile.id,
+    flavoring_option_id=existing_flavoring_option.id,
+    ratio=ratio
+  )
+  
+  db.add(flavoring)
+  db.commit()
+  db.refresh(flavoring)
+  return NicProfileAddFlavoringPayload(
+    nic_profile=nic_profile_to_type(nic_profile),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=f"Flavoring {existing_flavoring_option.name} added to {nic_profile.full_name}"
+    )
+  ) 
+
+
 def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: float, is_old_mix: bool, target_nic_str: float, target_vg: float, target_pg: float) -> NicProfileCreatePayload:
   formula = db.scalar(select(models.Formula).where(models.Formula.slug == formula_slug))
   if not formula:
@@ -109,7 +187,7 @@ def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: 
     )
   
   nic_profile = models.NicProfile(
-    formula_id = formula.id,
+    formula_id=formula.id,
     slug=slug,
     full_name=full_name,
     name=name,
