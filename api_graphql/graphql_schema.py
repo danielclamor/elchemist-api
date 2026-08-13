@@ -1,9 +1,8 @@
 import strawberry
 from typing import List, Optional
 from database import SessionLocal
-from api_graphql.graphql_types import FlavoringOptionType, FormulaType, NicBaseOptionType
-from api_graphql.resolvers import flavoring_option_to_type, formula_to_type, get_all_flavoring_options, get_all_formulas, nic_base_option_to_type, get_all_nic_base_options
-import models
+from api_graphql.graphql_types import *
+from api_graphql.resolvers import *
 
 @strawberry.type
 class Query:
@@ -39,6 +38,24 @@ class Query:
       return [flavoring_option_to_type(o) for o in get_all_flavoring_options(db)]
     finally:
       db.close()
+     
+     
+@strawberry.input
+class FormulaCreateInput:
+  name: str
+  brand: str
+  chill_type: ChillType
+  nic_type: NicType
+        
       
-
-schema = strawberry.Schema(query=Query)
+@strawberry.type
+class Mutation:    
+  @strawberry.mutation
+  def formulaCreate(self, input: FormulaCreateInput) -> FormulaCreatePayload:
+    db = SessionLocal()
+    try:
+      return create_formula(db, input.name, input.brand, input.chill_type, input.nic_type)
+    finally:
+      db.close()     
+      
+schema = strawberry.Schema(query=Query, mutation=Mutation) 
