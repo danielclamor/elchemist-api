@@ -40,8 +40,8 @@ class NicProfileType:
 
 @strawberry.enum
 class ChillType(enum.Enum):
-    CHILLED = "CHILLED"
-    NON_CHILLED = "NON_CHILLED"
+    CHILLED = "chilled"
+    NON_CHILLED = "non-chilled"
 
 @strawberry.enum
 class NicType(enum.Enum):
@@ -56,3 +56,9 @@ class FormulaType:
     chill_type: ChillType
     nic_type: NicType
     nic_profiles: List[NicProfileType]
+    
+@strawberry.type
+class FormulaCreatePayload:
+  formula: FormulaType
+  created: bool
+  message: str | None = None
