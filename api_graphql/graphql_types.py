@@ -40,23 +40,29 @@ class NicProfileType:
 
 @strawberry.enum
 class ChillType(enum.Enum):
-    CHILLED = "chilled"
-    NON_CHILLED = "non-chilled"
+  CHILLED = "chilled"
+  NON_CHILLED = "non-chilled"
 
 @strawberry.enum
 class NicType(enum.Enum):
-    SALT = "salt"
-    FREEBASE = "freebase"
+  SALT = "salt"
+  FREEBASE = "freebase"
 
 @strawberry.type
 class FormulaType:
-    slug: str
-    name: str
-    brand: str
-    chill_type: ChillType
-    nic_type: NicType
-    nic_profiles: List[NicProfileType]
-    
+  slug: str
+  name: str
+  brand: str
+  chill_type: ChillType
+  nic_type: NicType
+  nic_profiles: List[NicProfileType]
+
+@strawberry.type
+class NicProfileCreatePayload:
+  nic_profile: NicProfileType | None
+  created: bool
+  message: str | None = None
+  
 @strawberry.type
 class FormulaCreatePayload:
   formula: FormulaType
