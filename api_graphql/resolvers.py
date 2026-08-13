@@ -163,7 +163,6 @@ def add_nic_profile_flavoring(db: Session, nic_profile_slug: str, flavoring_opti
     )
   ) 
 
-
 def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: float, is_old_mix: bool, target_nic_str: float, target_vg: float, target_pg: float) -> NicProfileCreatePayload:
   formula = db.scalar(select(models.Formula).where(models.Formula.slug == formula_slug))
   if not formula:
@@ -212,7 +211,6 @@ def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: 
       message=None,
     )
   )
-  
   
 def create_formula(db: Session, name: str, brand: str, chill_type: ChillType, nic_type: NicType) -> FormulaCreatePayload:
   slug = make_slug(string=name)
