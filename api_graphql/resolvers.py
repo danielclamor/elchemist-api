@@ -30,7 +30,7 @@ def nic_profile_to_type(p: models.NicProfile) -> NicProfileType:
         slug=p.slug,
         name=p.name,
         full_name=p.full_name,
-        is_new_mix=p.is_new_mix,
+        is_old_mix=p.is_old_mix,
         target_nic_str=p.target_nic_str,
         target_vg=p.target_vg,
         target_pg=p.target_pg,
@@ -86,7 +86,7 @@ def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
 
 
 # Mutation resolvers
-def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: float, is_new_mix: bool, target_nic_str: float, target_vg: float, target_pg: float) -> NicProfileCreatePayload:
+def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: float, is_old_mix: bool, target_nic_str: float, target_vg: float, target_pg: float) -> NicProfileCreatePayload:
   formula = db.scalar(select(models.Formula).where(models.Formula.slug == formula_slug))
   if not formula:
     return NicProfileCreatePayload(
@@ -95,7 +95,7 @@ def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: 
       message=f"Formula {formula_slug} not found",
     )
     
-  suffix = " - Old Mix" if not is_new_mix else ""
+  suffix = " - Old Mix" if is_old_mix else ""
   full_name = f"{formula.name} - {name}{suffix}"
   slug = make_slug(full_name)
   
@@ -113,7 +113,7 @@ def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: 
     slug=slug,
     full_name=full_name,
     name=name,
-    is_new_mix=is_new_mix,
+    is_old_mix=is_old_mix,
     nic_base_nic_str=nic_base_str,
     target_nic_str=target_nic_str,
     target_vg=target_vg,

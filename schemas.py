@@ -62,7 +62,7 @@ class NicProfileOut(BaseModel):
     slug: str
     name: str
     full_name: str | None
-    is_new_mix: bool
+    is_old_mix: bool
     target_nic_strength: float
     target_vg: float
     target_pg: float
@@ -75,7 +75,7 @@ class NicProfileCreate(BaseModel):
     slug: str
     name: str
     full_name: str | None = None
-    is_new_mix: bool = False
+    is_old_mix: bool = False
     target_nic_strength: float
     target_vg: float
     target_pg: float

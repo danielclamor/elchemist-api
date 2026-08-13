@@ -45,7 +45,7 @@ class NicProfileCreateInput:
   formula_slug: str
   name: str
   nic_base_nic_str: float
-  is_new_mix: bool
+  is_old_mix: bool
   target_nic_str: float
   target_vg: float
   target_pg: float     
@@ -69,7 +69,7 @@ class Mutation:
         formula_slug=input.formula_slug, 
         name=input.name,
         nic_base_str=input.nic_base_nic_str,
-        is_new_mix=input.is_new_mix,
+        is_old_mix=input.is_old_mix,
         target_nic_str=input.target_nic_str,
         target_vg=input.target_vg,
         target_pg=input.target_pg,
