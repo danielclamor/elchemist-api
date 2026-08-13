@@ -76,11 +76,9 @@ class NicProfileAddFlavoringPayload:
 @strawberry.type
 class NicProfileCreatePayload:
   nic_profile: NicProfileType | None
-  created: bool
-  message: str | None = None
+  feedback: Feedback
   
 @strawberry.type
 class FormulaCreatePayload:
   formula: FormulaType
-  created: bool
-  message: str | None = None
+  feedback: Feedback

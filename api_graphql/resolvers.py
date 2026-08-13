@@ -169,8 +169,10 @@ def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: 
   if not formula:
     return NicProfileCreatePayload(
       nic_profile=None,
-      created=False,
-      message=f"Formula {formula_slug} not found",
+      feedback=Feedback(
+        status=FeedbackStatus.FAILED,
+        message=f"Formula {formula_slug} not found",
+      )
     )
     
   suffix = " - Old Mix" if is_old_mix else ""
@@ -182,8 +184,10 @@ def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: 
   if existing:
     return NicProfileCreatePayload(
       nic_profile=nic_profile_to_type(existing),
-      created=False,
-      message=f"Nic Profile {slug} already exists",
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Nic Profile {slug} already exists",
+      )
     )
   
   nic_profile = models.NicProfile(
@@ -203,8 +207,10 @@ def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: 
   db.refresh(nic_profile)
   return NicProfileCreatePayload(
     nic_profile=nic_profile_to_type(nic_profile),
-    created=True,
-    message=None,
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=None,
+    )
   )
   
   
@@ -216,8 +222,10 @@ def create_formula(db: Session, name: str, brand: str, chill_type: ChillType, ni
     print(f"Canceling — formula {slug!r} already exists")
     return FormulaCreatePayload(
       formula=formula_to_type(existing),
-      created=False, 
-      message=f"Formula {slug} already exists",
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Formula {slug} already existss",
+      )
     )
     
   formula = models.Formula(
@@ -232,7 +240,9 @@ def create_formula(db: Session, name: str, brand: str, chill_type: ChillType, ni
   db.commit()
   db.refresh(formula)
   return FormulaCreatePayload(
-      formula=formula_to_type(formula),
-      created=True, 
+    formula=formula_to_type(formula),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
       message=None,
+    )
   )
