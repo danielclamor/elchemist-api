@@ -38,7 +38,17 @@ class Query:
       return [flavoring_option_to_type(o) for o in get_all_flavoring_options(db)]
     finally:
       db.close()
-     
+
+
+@strawberry.input
+class NicProfileCreateInput:
+  formula_slug: str
+  name: str
+  nic_base_nic_str: float
+  is_new_mix: bool
+  target_nic_str: float
+  target_vg: float
+  target_pg: float     
      
 @strawberry.input
 class FormulaCreateInput:
@@ -51,10 +61,33 @@ class FormulaCreateInput:
 @strawberry.type
 class Mutation:    
   @strawberry.mutation
+  def nicProfileCreate(self, input: NicProfileCreateInput) -> NicProfileCreatePayload:
+    db = SessionLocal()
+    try:
+      return create_nic_profile(
+        db=db, 
+        formula_slug=input.formula_slug, 
+        name=input.name,
+        nic_base_str=input.nic_base_nic_str,
+        is_new_mix=input.is_new_mix,
+        target_nic_str=input.target_nic_str,
+        target_vg=input.target_vg,
+        target_pg=input.target_pg,
+        )
+    finally:
+      db.close()
+    
+  @strawberry.mutation
   def formulaCreate(self, input: FormulaCreateInput) -> FormulaCreatePayload:
     db = SessionLocal()
     try:
-      return create_formula(db, input.name, input.brand, input.chill_type, input.nic_type)
+      return create_formula(
+        db=db, 
+        name=input.name, 
+        brand=input.brand, 
+        chill_type=input.chill_type, 
+        nic_type=input.nic_type,
+        )
     finally:
       db.close()     
       
