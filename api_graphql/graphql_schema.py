@@ -61,6 +61,20 @@ class FormulaCreateInput:
 @strawberry.type
 class Mutation:    
   @strawberry.mutation
+  def nicProfileAddFlavoring(self, nic_profile_slug: str, flavoring_option_name: str, ratio: float, is_vg: bool | None = None) -> NicProfileAddFlavoringPayload:
+    db = SessionLocal()
+    try:
+      return add_nic_profile_flavoring(
+        db=db,
+        nic_profile_slug=nic_profile_slug,
+        flavoring_option_name=flavoring_option_name,
+        is_vg=is_vg,
+        ratio=ratio,
+      )
+    finally:
+      db.close()
+  
+  @strawberry.mutation
   def nicProfileCreate(self, input: NicProfileCreateInput) -> NicProfileCreatePayload:
     db = SessionLocal()
     try:
