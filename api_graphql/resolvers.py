@@ -86,6 +86,50 @@ def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
 
 
 # Mutation resolvers
+def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: float, is_new_mix: bool, target_nic_str: float, target_vg: float, target_pg: float) -> NicProfileCreatePayload:
+  formula = db.scalar(select(models.Formula).where(models.Formula.slug == formula_slug))
+  if not formula:
+    return NicProfileCreatePayload(
+      nic_profile=None,
+      created=False,
+      message=f"Formula {formula_slug} not found",
+    )
+    
+  suffix = " - Old Mix" if not is_new_mix else ""
+  full_name = f"{formula.name} - {name}{suffix}"
+  slug = make_slug(full_name)
+  
+  existing = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == slug, 
+                                                       models.NicProfile.formula_id == formula.id))
+  if existing:
+    return NicProfileCreatePayload(
+      nic_profile=nic_profile_to_type(existing),
+      created=False,
+      message=f"Nic Profile {slug} already exists",
+    )
+  
+  nic_profile = models.NicProfile(
+    formula_id = formula.id,
+    slug=slug,
+    full_name=full_name,
+    name=name,
+    is_new_mix=is_new_mix,
+    nic_base_nic_str=nic_base_str,
+    target_nic_str=target_nic_str,
+    target_vg=target_vg,
+    target_pg=target_pg,
+  )
+  
+  db.add(nic_profile)
+  db.commit()
+  db.refresh(nic_profile)
+  return NicProfileCreatePayload(
+    nic_profile=nic_profile_to_type(nic_profile),
+    created=True,
+    message=None,
+  )
+  
+  
 def create_formula(db: Session, name: str, brand: str, chill_type: ChillType, nic_type: NicType) -> FormulaCreatePayload:
   slug = make_slug(string=name)
   
