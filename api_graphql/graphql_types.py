@@ -68,6 +68,23 @@ class Feedback:
   status: FeedbackStatus
   message: str | None = None
 
+@strawberry.input
+class NicProfileCreateInput:
+  formula_slug: str
+  name: str
+  nic_base_nic_str: float
+  is_old_mix: bool
+  target_nic_str: float
+  target_vg: float
+  target_pg: float
+     
+@strawberry.input
+class FormulaCreateInput:
+  name: str
+  brand: str
+  chill_type: ChillType
+  nic_type: NicType
+
 @strawberry.type
 class NicProfileAddNicBasePayload:
   nic_profile: NicProfileType | None

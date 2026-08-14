@@ -37,26 +37,7 @@ class Query:
     try:
       return [flavoring_option_to_type(o) for o in get_all_flavoring_options(db)]
     finally:
-      db.close()
-
-
-@strawberry.input
-class NicProfileCreateInput:
-  formula_slug: str
-  name: str
-  nic_base_nic_str: float
-  is_old_mix: bool
-  target_nic_str: float
-  target_vg: float
-  target_pg: float     
-     
-@strawberry.input
-class FormulaCreateInput:
-  name: str
-  brand: str
-  chill_type: ChillType
-  nic_type: NicType
-        
+      db.close()        
       
 @strawberry.type
 class Mutation:    
