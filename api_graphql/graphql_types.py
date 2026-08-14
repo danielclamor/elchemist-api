@@ -69,6 +69,11 @@ class Feedback:
   message: str | None = None
 
 @strawberry.type
+class NicProfileAddNicBasePayload:
+  nic_profile: NicProfileType | None
+  feedback: Feedback
+
+@strawberry.type
 class NicProfileAddFlavoringPayload:
   nic_profile: NicProfileType | None
   feedback: Feedback
