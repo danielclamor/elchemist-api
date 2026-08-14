@@ -63,20 +63,27 @@ def flavoring_option_to_type(o: models.FlavoringOption) -> FlavoringOptionType:
 # Query resolvers
 def get_all_formulas(db: Session) -> list[models.Formula]:
     return (
-        db.query(models.Formula)
-        .options(
+        db.scalars(
+          select(models.Formula).options(
             joinedload(models.Formula.nic_profiles)
             .joinedload(models.NicProfile.nic_bases)
             .joinedload(models.NicBase.nic_base_option),
             joinedload(models.Formula.nic_profiles)
             .joinedload(models.NicProfile.flavorings),
+          )
         )
+        .unique()
         .all()
     )
 
+def get_nic_base_option(db: Session, nic_base_code: str) -> models.NicBaseOption:
+  return (
+    db.scalar(select(models.NicBaseOption).where(models.NicBaseOption.code == nic_base_code))
+  )
+
 def get_all_nic_base_options(db: Session) -> list[models.NicBaseOption]:
   return (
-    db.query(models.NicBaseOption).all()
+    db.scalars(select(models.NicBaseOption)).all()
   )
 
 def get_flavoring_option(db: Session, flavoring_option_slug: str) -> models.FlavoringOption:
@@ -86,11 +93,102 @@ def get_flavoring_option(db: Session, flavoring_option_slug: str) -> models.Flav
 
 def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
   return (
-    db.query(models.FlavoringOption).all()
+    db.scalars(select(models.FlavoringOption)).all()
   )
 
 
 # Mutation resolvers
+def create_nic_base_option(db: Session, nic_base_option_code: str, nic_base_option_name: str | None = None, is_vg: bool | None = None) -> models.NicBaseOption | Feedback:
+  feedback_message_part = ""
+  if nic_base_option_name is None:
+    feedback_message_part = "nicBaseOptionName"
+  if is_vg is None:
+    if feedback_message_part:
+      feedback_message_part = f"{feedback_message_part} and "
+    feedback_message_part = f"{feedback_message_part}isVg"
+  
+  if feedback_message_part:
+    if nic_base_option_name:
+      nic_base_option_name = f"{nic_base_option_name} "
+    elif nic_base_option_name is None:
+      nic_base_option_name = ""
+      
+    return Feedback(
+      status=FeedbackStatus.CANCELLED,
+      message=f"Can't create nic base option {nic_base_option_name}({nic_base_option_code}) without {feedback_message_part}"
+    )
+  
+  nic_base_option = models.NicBaseOption(
+    code=nic_base_option_code,
+    name=nic_base_option_name,
+    is_vg=is_vg,
+  )
+  
+  db.add(nic_base_option)
+  db.commit()
+  db.refresh(nic_base_option)
+  return nic_base_option
+
+def add_nic_profile_nic_base(db: Session, nic_profile_slug: str, nic_base_option_code: str, ratio: float, nic_base_option_name: str | None = None, is_vg: bool | None = None) -> NicProfileAddNicBasePayload:
+  nic_profile = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_slug))
+  if not nic_profile:
+    return NicProfileAddFlavoringPayload(
+      nic_profile=None,
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Nic profile {nic_profile_slug} not found",
+      )
+    )
+  
+  existing_nic_base_option = get_nic_base_option(db=db, nic_base_code=nic_base_option_code)
+  if not existing_nic_base_option:
+    existing_nic_base_option = create_nic_base_option(
+      db=db,
+      nic_base_option_code=nic_base_option_code,
+      nic_base_option_name=nic_base_option_name,
+      is_vg=is_vg
+    )
+    
+    if isinstance(existing_nic_base_option, Feedback):
+      if nic_base_option_name:
+        nic_base_option_name = f"{nic_base_option_name} "
+      elif nic_base_option_name is None:
+        nic_base_option_name = ""
+              
+      existing_nic_base_option.message = f"No nic base option {nic_base_option_name}({nic_base_option_code}) found. {existing_nic_base_option.message}"
+      return NicProfileAddNicBasePayload(
+        nic_profile=nic_profile_to_type(nic_profile),
+        feedback=existing_nic_base_option,
+      )
+        
+  existing_nic_base = db.scalar(select(models.NicBase).where(models.NicBase.nic_base_option_id == existing_nic_base_option.id, models.NicBase.nic_profile_id == nic_profile.id))
+  if existing_nic_base:
+    return NicProfileAddNicBasePayload(
+      nic_profile=nic_profile_to_type(nic_profile),
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Nic base {existing_nic_base_option.name} ({existing_nic_base_option.code}) is already connected"
+      )
+    )
+    
+  nic_base = models.NicBase(
+    nic_profile_id=nic_profile.id,
+    nic_base_option_id=existing_nic_base_option.id,
+    ratio=ratio,
+  )
+  
+  db.add(nic_base)
+  db.commit()
+  db.refresh(nic_base)
+  return NicProfileAddNicBasePayload(
+    nic_profile=nic_profile_to_type(nic_profile),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=f"Nic base {existing_nic_base_option.name} ({existing_nic_base_option.code}) added to {nic_profile.full_name}"
+    )
+  ) 
+    
+
 def create_flavoring_option(db: Session, flavoring_option_slug: str, flavoring_option_name: str, is_vg: bool | None = None) -> models.FlavoringOption | Feedback:
   if is_vg is None:
     return Feedback(
@@ -115,7 +213,7 @@ def add_nic_profile_flavoring(db: Session, nic_profile_slug: str, flavoring_opti
     return NicProfileAddFlavoringPayload(
       nic_profile=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatus.CANCELLED,
         message=f"Nic Profile {nic_profile_slug} not found",
       )
     )
@@ -131,6 +229,7 @@ def add_nic_profile_flavoring(db: Session, nic_profile_slug: str, flavoring_opti
     )
     
     if isinstance(existing_flavoring_option, Feedback):
+      existing_flavoring_option.message = f"No flavoring option {flavoring_option_name} found. {existing_flavoring_option.message}"
       return NicProfileAddFlavoringPayload(
         nic_profile=nic_profile_to_type(nic_profile),
         feedback=existing_flavoring_option,
