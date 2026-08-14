@@ -67,16 +67,6 @@ class FeedbackStatus(enum.Enum):
 class Feedback:
   status: FeedbackStatus
   message: str | None = None
-
-@strawberry.input
-class NicProfileCreateInput:
-  formula_slug: str
-  name: str
-  nic_base_nic_str: float
-  is_old_mix: bool
-  target_nic_str: float
-  target_vg: float
-  target_pg: float
      
 @strawberry.input
 class FormulaCreateInput:
@@ -84,6 +74,11 @@ class FormulaCreateInput:
   brand: str
   chill_type: ChillType
   nic_type: NicType
+  
+@strawberry.type
+class FormulaCreatePayload:
+  formula: FormulaType
+  feedback: Feedback
 
 @strawberry.type
 class NicProfileAddNicBasePayload:
@@ -94,13 +89,18 @@ class NicProfileAddNicBasePayload:
 class NicProfileAddFlavoringPayload:
   nic_profile: NicProfileType | None
   feedback: Feedback
+  
+@strawberry.input
+class NicProfileCreateInput:
+  formula_slug: str
+  name: str
+  nic_base_nic_str: float
+  is_old_mix: bool
+  target_nic_str: float
+  target_vg: float
+  target_pg: float
 
 @strawberry.type
 class NicProfileCreatePayload:
   nic_profile: NicProfileType | None
-  feedback: Feedback
-  
-@strawberry.type
-class FormulaCreatePayload:
-  formula: FormulaType
   feedback: Feedback

@@ -7,12 +7,12 @@ from api_graphql.resolvers import *
 @strawberry.type
 class Query:
   @strawberry.field
-  def formulas(self) -> List[FormulaType]:
+  def flavoringOptions(self) -> List[FlavoringOptionType]:
     db = SessionLocal()
     try:
-      return [formula_to_type(f) for f in get_all_formulas(db)]
+      return [flavoring_option_to_type(o) for o in get_all_flavoring_options(db)]
     finally:
-      db.close()
+      db.close()    
 
   @strawberry.field
   def formula(self, slug: str) -> Optional[FormulaType]:
@@ -20,6 +20,14 @@ class Query:
     try:
       f = db.query(models.Formula).filter(models.Formula.slug == slug).first()
       return formula_to_type(f) if f else None
+    finally:
+      db.close()
+    
+  @strawberry.field
+  def formulas(self) -> List[FormulaType]:
+    db = SessionLocal()
+    try:
+      return [formula_to_type(f) for f in get_all_formulas(db)]
     finally:
       db.close()
   
@@ -30,17 +38,24 @@ class Query:
       return [nic_base_option_to_type(o) for o in get_all_nic_base_options(db)]
     finally:
       db.close()
-      
-  @strawberry.field
-  def flavoringOptions(self) -> List[FlavoringOptionType]:
-    db = SessionLocal()
-    try:
-      return [flavoring_option_to_type(o) for o in get_all_flavoring_options(db)]
-    finally:
-      db.close()        
+          
       
 @strawberry.type
 class Mutation:    
+  @strawberry.mutation
+  def formulaCreate(self, input: FormulaCreateInput) -> FormulaCreatePayload:
+    db = SessionLocal()
+    try:
+      return create_formula(
+        db=db, 
+        name=input.name, 
+        brand=input.brand, 
+        chill_type=input.chill_type, 
+        nic_type=input.nic_type,
+        )
+    finally:
+      db.close()     
+  
   @strawberry.mutation
   def nicProfileAddNicBase(
     self, 
@@ -99,19 +114,5 @@ class Mutation:
         )
     finally:
       db.close()
-    
-  @strawberry.mutation
-  def formulaCreate(self, input: FormulaCreateInput) -> FormulaCreatePayload:
-    db = SessionLocal()
-    try:
-      return create_formula(
-        db=db, 
-        name=input.name, 
-        brand=input.brand, 
-        chill_type=input.chill_type, 
-        nic_type=input.nic_type,
-        )
-    finally:
-      db.close()     
       
 schema = strawberry.Schema(query=Query, mutation=Mutation) 
