@@ -93,6 +93,7 @@ class FormulaCreatePayload:
 @strawberry.type
 class FormulaDeletePayload:
   deleted_formula_slug: str | None
+  deleted_formula_name: str | None
   feedback: Feedback
   
 @strawberry.input

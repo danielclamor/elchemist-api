@@ -375,6 +375,7 @@ def delete_formula(db: Session, formula_slug) -> FormulaDeletePayload:
   if not formula:
     return FormulaDeletePayload(
       deleted_formula_slug=None,
+      deleted_formula_name=None,
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
         message=f"Formula {formula_slug} not found."
@@ -386,6 +387,7 @@ def delete_formula(db: Session, formula_slug) -> FormulaDeletePayload:
   
   return FormulaDeletePayload(
     deleted_formula_slug=formula_slug,
+    deleted_formula_name=formula.name,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=None
