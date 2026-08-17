@@ -30,6 +30,14 @@ class Query:
       return [formula_to_type(f) for f in get_all_formulas(db)]
     finally:
       db.close()
+      
+  @strawberry.field
+  def nicProfiles(self) -> List[NicProfileType]:
+    db = SessionLocal()
+    try:
+      return [nic_profile_to_type(p) for p in get_all_nic_profiles(db)]
+    finally:
+      db.close()
   
   @strawberry.field
   def nicBaseOptions(self) -> List[NicBaseOptionType]:
