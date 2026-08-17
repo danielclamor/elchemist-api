@@ -38,6 +38,14 @@ class Query:
       return [formula_to_type(f) for f in get_all_formulas(db)]
     finally:
       db.close()
+
+  @strawberry.field
+  def nicBaseOptions(self) -> List[NicBaseOptionType]:
+    db = SessionLocal()
+    try:
+      return [nic_base_option_to_type(o) for o in get_all_nic_base_options(db)]
+    finally:
+      db.close()
       
   @strawberry.field
   def nicProfiles(self) -> List[NicProfileType]:
@@ -46,18 +54,49 @@ class Query:
       return [nic_profile_to_type(p) for p in get_all_nic_profiles(db)]
     finally:
       db.close()
-  
-  @strawberry.field
-  def nicBaseOptions(self) -> List[NicBaseOptionType]:
-    db = SessionLocal()
-    try:
-      return [nic_base_option_to_type(o) for o in get_all_nic_base_options(db)]
-    finally:
-      db.close()
 
 
 @strawberry.type
 class Mutation:
+  @strawberry.mutation
+  def flavoringOptionCreate(
+    self,
+    input: FlavoringOptionCreateInput
+  ) -> FlavoringOptionCreatePayload:
+    db = SessionLocal()
+    try:
+      flavoring_option_slug = make_slug(input.name)
+      
+      flavoring_option = get_flavoring_option(
+        db=db,
+        flavoring_option_slug=flavoring_option_slug
+      )
+      
+      if flavoring_option:
+        return FlavoringOptionCreatePayload(
+          flavoring_option=flavoring_option,
+          feedback=Feedback(
+            status=FeedbackStatus.CANCELLED,
+            message=f"Flavoring option {input.name} already exists"
+          )
+        )
+      
+      flavoring_option = create_flavoring_option(
+        db=db,
+        flavoring_option_name=input.name,
+        is_vg=input.is_vg
+      )
+      
+      return FlavoringOptionCreatePayload(
+        flavoring_option=flavoring_option,
+        feedback=Feedback(
+          status=FeedbackStatus.SUCCESS,
+          message=None
+        )
+      )
+    finally:
+      db.close()  
+  
   @strawberry.mutation
   def formulaCreate(
     self, 
@@ -102,45 +141,6 @@ class Mutation:
       )
     finally:
       db.close()
-
-  @strawberry.mutation
-  def flavoringOptionCreate(
-    self,
-    input: FlavoringOptionCreateInput
-  ) -> FlavoringOptionCreatePayload:
-    db = SessionLocal()
-    try:
-      flavoring_option_slug = make_slug(input.name)
-      
-      flavoring_option = get_flavoring_option(
-        db=db,
-        flavoring_option_slug=flavoring_option_slug
-      )
-      
-      if flavoring_option:
-        return FlavoringOptionCreatePayload(
-          flavoring_option=flavoring_option,
-          feedback=Feedback(
-            status=FeedbackStatus.CANCELLED,
-            message=f"Flavoring option {input.name} already exists"
-          )
-        )
-      
-      flavoring_option = create_flavoring_option(
-        db=db,
-        flavoring_option_name=input.name,
-        is_vg=input.is_vg
-      )
-      
-      return FlavoringOptionCreatePayload(
-        flavoring_option=flavoring_option,
-        feedback=Feedback(
-          status=FeedbackStatus.SUCCESS,
-          message=None
-        )
-      )
-    finally:
-      db.close()  
   
   @strawberry.mutation
   def nicBaseOptionCreate(
@@ -179,6 +179,26 @@ class Mutation:
       )
     finally:
       db.close()
+
+  @strawberry.mutation
+  def nicProfileAddFlavoring(
+    self, 
+    nic_profile_slug: str, 
+    flavoring_option_name: str, 
+    ratio: float, 
+    is_vg: bool | None = None
+  ) -> NicProfileAddFlavoringPayload:
+    db = SessionLocal()
+    try:
+      return add_nic_profile_flavoring(
+        db=db,
+        nic_profile_slug=nic_profile_slug,
+        flavoring_option_name=flavoring_option_name,
+        is_vg=is_vg,
+        ratio=ratio,
+      )
+    finally:
+      db.close()
   
   @strawberry.mutation
   def nicProfileAddNicBase(
@@ -198,26 +218,6 @@ class Mutation:
         ratio=ratio,
         nic_base_option_name=nic_base_option_name,
         is_vg=is_vg,
-      )
-    finally:
-      db.close()
-  
-  @strawberry.mutation
-  def nicProfileAddFlavoring(
-    self, 
-    nic_profile_slug: str, 
-    flavoring_option_name: str, 
-    ratio: float, 
-    is_vg: bool | None = None
-  ) -> NicProfileAddFlavoringPayload:
-    db = SessionLocal()
-    try:
-      return add_nic_profile_flavoring(
-        db=db,
-        nic_profile_slug=nic_profile_slug,
-        flavoring_option_name=flavoring_option_name,
-        is_vg=is_vg,
-        ratio=ratio,
       )
     finally:
       db.close()
