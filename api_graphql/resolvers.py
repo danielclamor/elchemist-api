@@ -91,9 +91,9 @@ def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
     db.scalars(select(models.FlavoringOption)).all()
   )
 
-def get_nic_base_option(db: Session, nic_base_code: str) -> models.NicBaseOption:
+def get_nic_base_option(db: Session, nic_base_option_code: str) -> models.NicBaseOption:
   return (
-    db.scalar(select(models.NicBaseOption).where(models.NicBaseOption.code == nic_base_code))
+    db.scalar(select(models.NicBaseOption).where(models.NicBaseOption.code == nic_base_option_code))
   )
 
 def get_all_nic_base_options(db: Session) -> list[models.NicBaseOption]:
@@ -155,7 +155,7 @@ def add_nic_profile_nic_base(db: Session, nic_profile_slug: str, nic_base_option
       )
     )
   
-  existing_nic_base_option = get_nic_base_option(db=db, nic_base_code=nic_base_option_code)
+  existing_nic_base_option = get_nic_base_option(db=db, nic_base_option_code=nic_base_option_code)
   if not existing_nic_base_option:
     existing_nic_base_option = create_nic_base_option(
       db=db,

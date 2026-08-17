@@ -81,7 +81,7 @@ class Mutation:
     try:
       nic_base_option = get_nic_base_option(
         db=db,
-        nic_base_code=input.code
+        nic_base_option_code=input.code
       )
       
       if nic_base_option:
