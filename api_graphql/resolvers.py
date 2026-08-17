@@ -86,9 +86,7 @@ def get_all_formulas(db: Session) -> list[models.Formula]:
     .all()
   )
 
-def get_flavoring_option(db: Session, flavoring_option_name: str) -> models.FlavoringOption:
-  flavoring_option_slug = make_slug(flavoring_option_name)
-  
+def get_flavoring_option(db: Session, flavoring_option_slug: str) -> models.FlavoringOption:
   return (
     db.scalar(select(models.FlavoringOption).where(models.FlavoringOption.slug == flavoring_option_slug))
   )
@@ -242,7 +240,8 @@ def add_nic_profile_flavoring(db: Session, nic_profile_slug: str, flavoring_opti
       )
     )
   
-  existing_flavoring_option = get_flavoring_option(db=db, flavoring_option_name=flavoring_option_name)
+  flavoring_option_slug = make_slug(flavoring_option_name)
+  existing_flavoring_option = get_flavoring_option(db=db, flavoring_option_slug=flavoring_option_slug)
   if not existing_flavoring_option:
     existing_flavoring_option = create_flavoring_option(
       db=db,

@@ -110,9 +110,11 @@ class Mutation:
   ) -> FlavoringOptionCreatePayload:
     db = SessionLocal()
     try:
+      flavoring_option_slug = make_slug(input.name)
+      
       flavoring_option = get_flavoring_option(
         db=db,
-        flavoring_option_name=input.name
+        flavoring_option_slug=flavoring_option_slug
       )
       
       if flavoring_option:
