@@ -394,6 +394,34 @@ def delete_formula(db: Session, formula_slug) -> FormulaDeletePayload:
     )
   )
 
+def delete_nic_profile(db: Session, nic_profile_slug) -> NicProfileDeletePayload:
+  nic_profile = get_nic_profile(
+    db=db,
+    nic_profile_slug=nic_profile_slug
+  )
+  
+  if not nic_profile:
+    return NicProfileDeletePayload(
+      deleted_nic_profile_slug=None,
+      deleted_nic_profile_full_name=None,
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Nic profile {nic_profile_slug} not found."
+      )
+    )
+
+  db.delete(nic_profile)
+  db.commit()
+  
+  return NicProfileDeletePayload(
+    deleted_nic_profile_slug=nic_profile_slug,
+    deleted_nic_profile_full_name=nic_profile.full_name,
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=None
+    )
+  )
+
 def update_formula(db: Session, input: FormulaUpdateInput) -> FormulaUpdatePayload:
   formula = get_formula(
     db=db,

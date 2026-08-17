@@ -199,7 +199,7 @@ class Mutation:
       )
     finally:
       db.close()
-  
+
   @strawberry.mutation
   def nicProfileAddNicBase(
     self, 
@@ -221,9 +221,12 @@ class Mutation:
       )
     finally:
       db.close()
-  
+
   @strawberry.mutation
-  def nicProfileCreate(self, input: NicProfileCreateInput) -> NicProfileCreatePayload:
+  def nicProfileCreate(
+    self, 
+    input: NicProfileCreateInput
+    ) -> NicProfileCreatePayload:
     db = SessionLocal()
     try:
       return create_nic_profile(
@@ -238,5 +241,19 @@ class Mutation:
         )
     finally:
       db.close()
-      
+
+  @strawberry.mutation
+  def nicProfileDelete(
+    self,
+    input: NicProfileDeleteInput
+  ) -> NicProfileDeletePayload:
+    db = SessionLocal()
+    try:
+      return delete_nic_profile(
+        db=db,
+        nic_profile_slug=input.nic_profile_slug
+      )
+    finally:
+      db.close()
+
 schema = strawberry.Schema(query=Query, mutation=Mutation) 

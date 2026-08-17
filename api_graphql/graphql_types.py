@@ -144,3 +144,13 @@ class NicProfileCreateInput:
 class NicProfileCreatePayload:
   nic_profile: NicProfileType | None
   feedback: Feedback
+  
+@strawberry.input
+class NicProfileDeleteInput:
+  nic_profile_slug: str
+  
+@strawberry.type
+class NicProfileDeletePayload:
+  deleted_nic_profile_slug: str | None
+  deleted_nic_profile_full_name: str | None
+  feedback: Feedback
