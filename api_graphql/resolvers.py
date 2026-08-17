@@ -61,6 +61,11 @@ def flavoring_option_to_type(o: models.FlavoringOption) -> FlavoringOptionType:
   
 
 # Query resolvers
+def get_all_brands(db: Session) -> list[str]:
+  return list(
+    db.scalars(select(models.Formula.brand)).unique().all()
+  )
+
 def get_all_formulas(db: Session) -> list[models.Formula]:
   return (
     db.scalars(

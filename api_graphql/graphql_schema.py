@@ -7,6 +7,14 @@ from api_graphql.resolvers import *
 @strawberry.type
 class Query:
   @strawberry.field
+  def brands(self) -> List[str]:
+    db = SessionLocal()
+    try:
+      return get_all_brands(db=db)
+    finally:
+      db.close()
+  
+  @strawberry.field
   def flavoringOptions(self) -> List[FlavoringOptionType]:
     db = SessionLocal()
     try:
