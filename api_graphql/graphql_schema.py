@@ -54,12 +54,15 @@ class Query:
       return [nic_base_option_to_type(o) for o in get_all_nic_base_options(db)]
     finally:
       db.close()
-          
-      
+
+
 @strawberry.type
-class Mutation:  
+class Mutation:
   @strawberry.mutation
-  def formulaCreate(self, input: FormulaCreateInput) -> FormulaCreatePayload:
+  def formulaCreate(
+    self, 
+    input: FormulaCreateInput
+  ) -> FormulaCreatePayload:
     db = SessionLocal()
     try:
       return create_formula(
@@ -69,6 +72,20 @@ class Mutation:
         chill_type=input.chill_type, 
         nic_type=input.nic_type,
         )
+    finally:
+      db.close()
+  
+  @strawberry.mutation
+  def formulaDelete(
+    self,
+    formula_slug: str
+  ) -> FormulaDeletePayload:
+    db = SessionLocal()
+    try:
+      return delete_formula(
+        db=db,
+        formula_slug=formula_slug
+      )
     finally:
       db.close()
       

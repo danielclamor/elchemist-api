@@ -365,6 +365,32 @@ def create_formula(db: Session, name: str, brand: str, chill_type: ChillType, ni
       message=None,
     )
   )
+  
+def delete_formula(db: Session, formula_slug) -> FormulaDeletePayload:
+  formula = get_formula(
+    db=db,
+    formula_slug=formula_slug
+  )
+  
+  if not formula:
+    return FormulaDeletePayload(
+      deleted_formula_slug=None,
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Formula {formula_slug} not found."
+      )
+    )
+
+  db.delete(formula)
+  db.commit()
+  
+  return FormulaDeletePayload(
+    deleted_formula_slug=formula_slug,
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=None
+    )
+  )
 
 def update_formula(db: Session, input: FormulaUpdateInput) -> FormulaUpdatePayload:
   formula = get_formula(
@@ -377,7 +403,7 @@ def update_formula(db: Session, input: FormulaUpdateInput) -> FormulaUpdatePaylo
       formula=None,
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
-        message=f"Flavoring {input.slug} not found."
+        message=f"Formula {input.slug} not found."
       )
     )
   

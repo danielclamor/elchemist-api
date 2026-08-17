@@ -89,6 +89,11 @@ class FormulaCreateInput:
 class FormulaCreatePayload:
   formula: FormulaType
   feedback: Feedback
+
+@strawberry.type
+class FormulaDeletePayload:
+  deleted_formula_slug: str | None
+  feedback: Feedback
   
 @strawberry.input
 class FormulaUpdateInput:
@@ -97,7 +102,7 @@ class FormulaUpdateInput:
   brand: str | None = None
   chill_type: ChillType | None = None
   nic_type: NicType | None = None
-  
+
 @strawberry.type
 class FormulaUpdatePayload:
   formula: FormulaType | None
