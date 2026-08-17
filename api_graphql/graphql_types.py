@@ -79,6 +79,17 @@ class FormulaCreateInput:
 class FormulaCreatePayload:
   formula: FormulaType
   feedback: Feedback
+  
+@strawberry.input
+class NicBaseOptionCreateInput:
+  code: str
+  name: str
+  is_vg: bool
+  
+@strawberry.type
+class NicBaseOptionCreatePayload:
+  nic_base_option: NicBaseOptionType | None
+  feedback: Feedback
 
 @strawberry.type
 class NicProfileAddNicBasePayload:

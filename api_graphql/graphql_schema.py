@@ -57,7 +57,7 @@ class Query:
           
       
 @strawberry.type
-class Mutation:    
+class Mutation:  
   @strawberry.mutation
   def formulaCreate(self, input: FormulaCreateInput) -> FormulaCreatePayload:
     db = SessionLocal()
@@ -71,6 +71,44 @@ class Mutation:
         )
     finally:
       db.close()     
+  
+  @strawberry.mutation
+  def nicBaseOptionCreate(
+    self,
+    input: NicBaseOptionCreateInput
+  ) -> NicBaseOptionCreatePayload:
+    db = SessionLocal()
+    try:
+      nic_base_option = get_nic_base_option(
+        db=db,
+        nic_base_code=input.code
+      )
+      
+      if nic_base_option:
+        return NicBaseOptionCreatePayload(
+          nic_base_option=nic_base_option,
+          feedback=Feedback(
+            status=FeedbackStatus.CANCELLED,
+            message=f"Nic base option {input.code} already exists"
+          )
+        )
+      
+      nic_base_option = create_nic_base_option(
+        db=db,
+        nic_base_option_code=input.code,
+        nic_base_option_name=input.name,
+        is_vg=input.is_vg
+      )
+      
+      return NicBaseOptionCreatePayload(
+        nic_base_option=nic_base_option,
+        feedback=Feedback(
+          status=FeedbackStatus.SUCCESS,
+          message=None,
+        )
+      )
+    finally:
+      db.close()
   
   @strawberry.mutation
   def nicProfileAddNicBase(
