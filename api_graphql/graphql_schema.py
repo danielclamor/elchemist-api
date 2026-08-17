@@ -70,7 +70,44 @@ class Mutation:
         nic_type=input.nic_type,
         )
     finally:
-      db.close()     
+      db.close()   
+
+  @strawberry.mutation
+  def flavoringOptionCreate(
+    self,
+    input: FlavoringOptionCreateInput
+  ) -> FlavoringOptionCreatePayload:
+    db = SessionLocal()
+    try:
+      flavoring_option = get_flavoring_option(
+        db=db,
+        flavoring_option_name=input.name
+      )
+      
+      if flavoring_option:
+        return FlavoringOptionCreatePayload(
+          flavoring_option=flavoring_option,
+          feedback=Feedback(
+            status=FeedbackStatus.CANCELLED,
+            message=f"Flavoring option {input.name} already exists"
+          )
+        )
+      
+      flavoring_option = create_flavoring_option(
+        db=db,
+        flavoring_option_name=input.name,
+        is_vg=input.is_vg
+      )
+      
+      return FlavoringOptionCreatePayload(
+        flavoring_option=flavoring_option,
+        feedback=Feedback(
+          status=FeedbackStatus.SUCCESS,
+          message=None
+        )
+      )
+    finally:
+      db.close()  
   
   @strawberry.mutation
   def nicBaseOptionCreate(

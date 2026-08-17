@@ -69,6 +69,16 @@ class Feedback:
   message: str | None = None
      
 @strawberry.input
+class FlavoringOptionCreateInput:
+  name: str
+  is_vg: bool
+  
+@strawberry.type
+class FlavoringOptionCreatePayload:
+  flavoring_option: FlavoringOptionType | None
+  feedback: Feedback
+     
+@strawberry.input
 class FormulaCreateInput:
   name: str
   brand: str

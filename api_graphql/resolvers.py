@@ -81,7 +81,9 @@ def get_all_formulas(db: Session) -> list[models.Formula]:
     .all()
   )
 
-def get_flavoring_option(db: Session, flavoring_option_slug: str) -> models.FlavoringOption:
+def get_flavoring_option(db: Session, flavoring_option_name: str) -> models.FlavoringOption:
+  flavoring_option_slug = make_slug(flavoring_option_name)
+  
   return (
     db.scalar(select(models.FlavoringOption).where(models.FlavoringOption.slug == flavoring_option_slug))
   )
@@ -204,12 +206,14 @@ def add_nic_profile_nic_base(db: Session, nic_profile_slug: str, nic_base_option
   ) 
     
 
-def create_flavoring_option(db: Session, flavoring_option_slug: str, flavoring_option_name: str, is_vg: bool | None = None) -> models.FlavoringOption | Feedback:
+def create_flavoring_option(db: Session, flavoring_option_name: str, is_vg: bool | None = None) -> models.FlavoringOption | Feedback:
   if is_vg is None:
     return Feedback(
       status=FeedbackStatus.CANCELLED,
       message=f"Can't create flavoring option {flavoring_option_slug} without isVg"
     )
+  
+  flavoring_option_slug = make_slug(flavoring_option_name)
     
   flavoring_option = models.FlavoringOption(
     slug=flavoring_option_slug,
@@ -233,12 +237,10 @@ def add_nic_profile_flavoring(db: Session, nic_profile_slug: str, flavoring_opti
       )
     )
   
-  flavoring_option_slug = make_slug(flavoring_option_name)
-  existing_flavoring_option = get_flavoring_option(db=db, flavoring_option_slug=flavoring_option_slug)
+  existing_flavoring_option = get_flavoring_option(db=db, flavoring_option_name=flavoring_option_name)
   if not existing_flavoring_option:
     existing_flavoring_option = create_flavoring_option(
       db=db,
-      flavoring_option_slug=flavoring_option_slug,
       flavoring_option_name=flavoring_option_name,
       is_vg=is_vg
     )
