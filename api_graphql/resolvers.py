@@ -66,6 +66,11 @@ def get_all_brands(db: Session) -> list[str]:
     db.scalars(select(models.Formula.brand)).unique().all()
   )
 
+def get_formula(db: Session, formula_slug: str) -> models.Formula:
+  return (
+    db.scalar(select(models.Formula).where(models.Formula.slug == formula_slug))
+  )
+
 def get_all_formulas(db: Session) -> list[models.Formula]:
   return (
     db.scalars(
@@ -358,5 +363,42 @@ def create_formula(db: Session, name: str, brand: str, chill_type: ChillType, ni
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=None,
+    )
+  )
+
+def update_formula(db: Session, input: FormulaUpdateInput) -> FormulaUpdatePayload:
+  formula = get_formula(
+    db=db,
+    formula_slug=input.slug
+  )
+  
+  if not formula:
+    return FormulaUpdatePayload(
+      formula=None,
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Flavoring {input.slug} not found."
+      )
+    )
+  
+  if input.name:
+    formula.name = input.name
+  
+  if input.brand:
+    formula.brand = input.brand
+  
+  if input.chill_type:
+    formula.chill_type = models.ChillType[input.chill_type.name]
+    
+  if input.nic_type:
+    formula.nic_type = models.NicType[input.nic_type.name]
+    
+  db.commit()
+  db.refresh(formula)
+  return FormulaUpdatePayload(
+    formula=formula_to_type(formula),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=None
     )
   )

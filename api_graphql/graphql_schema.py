@@ -70,7 +70,21 @@ class Mutation:
         nic_type=input.nic_type,
         )
     finally:
-      db.close()   
+      db.close()
+      
+  @strawberry.mutation
+  def formulaUpdate(
+    self,
+    input: FormulaUpdateInput
+  ) -> FormulaUpdatePayload:
+    db = SessionLocal()
+    try:
+      return update_formula(
+        db=db,
+        input=input
+      )
+    finally:
+      db.close()
 
   @strawberry.mutation
   def flavoringOptionCreate(
