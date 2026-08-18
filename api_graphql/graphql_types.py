@@ -1,4 +1,5 @@
 import enum
+import uuid
 
 import strawberry
 from typing import List
@@ -153,4 +154,23 @@ class NicProfileDeleteInput:
 class NicProfileDeletePayload:
   deleted_nic_profile_slug: str | None
   deleted_nic_profile_full_name: str | None
+  feedback: Feedback
+
+@strawberry.input
+class NicProfileUpdateIdentifier:
+  slug: str
+
+@strawberry.input
+class NicProfileUpdateInput:
+  slug: str | None = None
+  name: str | None = None
+  nic_base_nic_str: float | None = None
+  is_old_mix: bool | None = None
+  target_nic_str: float | None = None
+  target_vg: float | None = None
+  target_pg: float | None = None
+  
+@strawberry.type
+class NicProfileUpdatePayload:
+  nic_profile: NicProfileType | None
   feedback: Feedback
