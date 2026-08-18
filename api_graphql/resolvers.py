@@ -124,7 +124,7 @@ def add_nic_profile_flavoring(db: Session, nic_profile: models.NicProfile, flavo
   flavoring_option_slug = make_slug(flavoring.flavoring_option_name)
   existing_flavoring_option = get_flavoring_option(db=db, flavoring_option_slug=flavoring_option_slug)
   if not existing_flavoring_option:
-    if flavoring.is_vg is None:      
+    if flavoring.flavoring_option_is_vg is None:      
       feedback = Feedback(
         status=FeedbackStatus.CANCELLED,
         message=f"No flavoring option {flavoring_option_slug} found. Can't create flavoring option {flavoring_option_slug} without isVg"
@@ -138,7 +138,7 @@ def add_nic_profile_flavoring(db: Session, nic_profile: models.NicProfile, flavo
       db=db,
       flavoring_option=FlavoringOptionCreateInput(
         name=flavoring.flavoring_option_name,
-        is_vg=flavoring.is_vg
+        is_vg=flavoring.flavoring_option_is_vg
       )
     )
     
@@ -175,7 +175,7 @@ def add_nic_profile_nic_base(db: Session, nic_profile: models.NicProfile, nic_ba
     feedback_message_part = ""
     if nic_base.nic_base_option_name is None:
       feedback_message_part = "nicBaseOptionName"
-    if nic_base.is_vg is None:
+    if nic_base.nic_base_option_is_vg is None:
       if feedback_message_part:
         feedback_message_part = f"{feedback_message_part} and "
       feedback_message_part = f"{feedback_message_part}isVg"
@@ -201,7 +201,7 @@ def add_nic_profile_nic_base(db: Session, nic_profile: models.NicProfile, nic_ba
       nic_base_option=NicBaseOptionCreateInput(
         code=nic_base.nic_base_option_code,
         name=nic_base.nic_base_option_name,
-        is_vg=nic_base.is_vg
+        is_vg=nic_base.nic_base_option_is_vg
       )
     )
         
