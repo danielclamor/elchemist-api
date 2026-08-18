@@ -255,5 +255,21 @@ class Mutation:
       )
     finally:
       db.close()
+      
+  @strawberry.mutation
+  def nicProfileUpdate(
+    self,
+    identifier: NicProfileUpdateIdentifier,
+    input: NicProfileUpdateInput
+  ) -> NicProfileUpdatePayload:
+    db = SessionLocal()
+    try:
+      return update_nic_profile(
+        db=db,
+        identifier=identifier,
+        input=input
+      )
+    finally:
+      db.close()
 
 schema = strawberry.Schema(query=Query, mutation=Mutation) 
