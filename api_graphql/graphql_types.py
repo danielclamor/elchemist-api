@@ -31,6 +31,7 @@ class NicProfileType:
   slug: str
   name: str
   full_name: str
+  is_pre_mix: bool
   is_old_mix: bool
   target_nic_str: float
   target_vg: float
