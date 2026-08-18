@@ -49,7 +49,8 @@ class NicLevelOption(enum.Enum):
   MG_20 = "20mg"
   HIT_35 = "hit35"
   HIT_50 = "hit50"
-  
+
+
 size_option_enum = Enum(SizeOption, name="sizeoption", create_type=False)
 nic_level_option_enum = Enum(NicLevelOption, name="nicleveloption", create_type=False)
 
