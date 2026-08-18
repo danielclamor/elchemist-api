@@ -66,14 +66,14 @@ class Eliquid(Base):
   nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
   size: Mapped[SizeOption] = mapped_column(size_option_enum)
   nic_level: Mapped[NicLevelOption] = mapped_column(nic_level_option_enum)
-  formula_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("formulas.id"), nullable=True)
+  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id"), nullable=True)
 
   created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
   updated_at: Mapped[datetime] = mapped_column(
     DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)
   )
   
-  formula: Mapped["Formula"] = relationship()
+  nic_profile: Mapped["NicProfile"] = relationship()
 
   def __repr__(self) -> str:
     return f"<Eliquid {self.name!r}>"
@@ -102,42 +102,46 @@ class Formula(Base):
     return f"<Formula {self.slug!r}>"
 
 
-class NicProfile(Base):
-  __tablename__ = "nic_profiles"
-
+class FlavoringOption(Base):
+  __tablename__ = "flavoring_options"
+  
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  formula_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("formulas.id"))
-
   slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
   name: Mapped[str] = mapped_column(String(255))
-  full_name: Mapped[str | None] = mapped_column(String, nullable=True)
+  is_vg: Mapped[bool] = mapped_column(Boolean)
   
-  is_pre_mix: Mapped[bool] = mapped_column(Boolean, default=False)
+  def __repr__(self) -> str:
+    return f"<FlavoringOption {self.slug!r}>"
 
-  is_old_mix: Mapped[bool] = mapped_column(Boolean, default=False)
+class Flavoring(Base):
+  __tablename__ = "flavorings"
 
-  target_nic_str: Mapped[float] = mapped_column(Numeric(6, 3))
-  target_vg: Mapped[float] = mapped_column(Numeric(6, 3))
-  target_pg: Mapped[float] = mapped_column(Numeric(6, 3))
-  nic_base_nic_str: Mapped[float] = mapped_column(Numeric(6, 3))
-
-  created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
-  updated_at: Mapped[datetime] = mapped_column(
-    DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)
+  id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id"))
+  flavoring_option_id: Mapped[uuid.UUID] = mapped_column(
+    ForeignKey("flavoring_options.id")
   )
+  ratio: Mapped[float] = mapped_column(Numeric(6, 4))
+  
+  flavoring_option: Mapped["FlavoringOption"] = relationship()
 
-  formula: Mapped["Formula"] = relationship(back_populates="nic_profiles")
+  nic_profile: Mapped["NicProfile"] = relationship(back_populates="flavorings")
 
-  nic_bases: Mapped[list["NicBase"]] = relationship(
-    back_populates="nic_profile", cascade="all, delete-orphan"
-  )
-  flavorings: Mapped[list["Flavoring"]] = relationship(
-    back_populates="nic_profile", cascade="all, delete-orphan"
-  )
+  @property
+  def percentage(self) -> float:
+    return float(self.ratio) * 100
+
+  @property
+  def name(self) -> str:
+    return self.flavoring_option.name
+  
+  @property
+  def is_vg(self) -> bool:
+    return self.flavoring_option.is_vg
 
   def __repr__(self) -> str:
-    return f"<NicProfile {self.slug!r}>"
-
+    return f"<Flavoring {self.name!r} ratio={self.ratio} is_vg={self.is_vg}>"
+  
 
 class NicBaseOption(Base):
   __tablename__ = "nic_base_options"
@@ -182,43 +186,70 @@ class NicBase(Base):
 
   def __repr__(self) -> str:
     return f"<NicBase {self.code!r} ratio={self.ratio}>"
-
-class FlavoringOption(Base):
-  __tablename__ = "flavoring_options"
   
+
+class NicProfile(Base):
+  __tablename__ = "nic_profiles"
+
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+  formula_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("formulas.id"))
+
   slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
   name: Mapped[str] = mapped_column(String(255))
-  is_vg: Mapped[bool] = mapped_column(Boolean)
+  full_name: Mapped[str | None] = mapped_column(String, nullable=True)
   
-  def __repr__(self) -> str:
-    return f"<FlavoringOption {self.slug!r}>"
+  is_pre_mix: Mapped[bool] = mapped_column(Boolean, default=False)
 
-class Flavoring(Base):
-  __tablename__ = "flavorings"
+  is_old_mix: Mapped[bool] = mapped_column(Boolean, default=False)
+
+  target_nic_str: Mapped[float] = mapped_column(Numeric(6, 3))
+  target_vg: Mapped[float] = mapped_column(Numeric(6, 3))
+  target_pg: Mapped[float] = mapped_column(Numeric(6, 3))
+  nic_base_nic_str: Mapped[float] = mapped_column(Numeric(6, 3))
+
+  created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
+  updated_at: Mapped[datetime] = mapped_column(
+    DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)
+  )
+
+  formula: Mapped["Formula"] = relationship(back_populates="nic_profiles")
+
+  nic_bases: Mapped[list["NicBase"]] = relationship(
+    back_populates="nic_profile", cascade="all, delete-orphan"
+  )
+  flavorings: Mapped[list["Flavoring"]] = relationship(
+    back_populates="nic_profile", cascade="all, delete-orphan"
+  )
+
+  def __repr__(self) -> str:
+    return f"<NicProfile {self.slug!r}>"
+  
+  
+class ProductionOrderStatus(enum.Enum):
+  PENDING = "pending"
+  IN_PROGRESS = "in_progress"
+  COMPLETED = "completed"
+  CANCELLED = "cancelled"
+
+
+production_order_status_enum = Enum(ProductionOrderStatus, name="productionorderstatus", create_type=False)
+
+
+class ProductionOrder(Base):
+  __tablename__ = "production_orders"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id"))
-  flavoring_option_id: Mapped[uuid.UUID] = mapped_column(
-    ForeignKey("flavoring_options.id")
+  order_number: Mapped[str] = mapped_column(String(20), unique=True, index=True)
+  eliquid_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("eliquids.id"))
+  quantity: Mapped[int] = mapped_column()
+  status: Mapped[ProductionOrderStatus] = mapped_column(production_order_status_enum, default=ProductionOrderStatus.PENDING)
+  is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
+  created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
+  updated_at: Mapped[datetime] = mapped_column(
+    DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)
   )
-  ratio: Mapped[float] = mapped_column(Numeric(6, 4))
-  
-  flavoring_option: Mapped["FlavoringOption"] = relationship()
 
-  nic_profile: Mapped["NicProfile"] = relationship(back_populates="flavorings")
-
-  @property
-  def percentage(self) -> float:
-    return float(self.ratio) * 100
-
-  @property
-  def name(self) -> str:
-    return self.flavoring_option.name
-  
-  @property
-  def is_vg(self) -> bool:
-    return self.flavoring_option.is_vg
+  eliquid: Mapped["Eliquid"] = relationship()
 
   def __repr__(self) -> str:
-    return f"<Flavoring {self.name!r} ratio={self.ratio} is_vg={self.is_vg}>"
+    return f"<ProductionOrder {self.order_number!r} eliquid={self.eliquid.name!r} quantity={self.quantity} status={self.status.value}>"
