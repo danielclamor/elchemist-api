@@ -179,17 +179,7 @@ def add_nic_profile_flavoring(db: Session, nic_profile_slug: str, flavoring: Nic
     )
   )
 
-def add_nic_profile_nic_base(db: Session, nic_profile_slug: str, nic_base: NicProfileAddNicBaseInput) -> NicProfileAddNicBasePayload:
-  nic_profile = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_slug))
-  if not nic_profile:
-    return NicProfileAddNicBasePayload(
-      nic_profile=None,
-      feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
-        message=f"Nic profile {nic_profile_slug} not found",
-      )
-    )
-  
+def add_nic_profile_nic_base(db: Session, nic_profile: models.NicProfile, nic_base: NicProfileAddNicBaseInput) -> NicProfileAddNicBasePayload: 
   existing_nic_base_option = get_nic_base_option(db=db, nic_base_option_code=nic_base.nic_base_option_code)
   if not existing_nic_base_option:
     feedback_message_part = ""
@@ -249,6 +239,28 @@ def add_nic_profile_nic_base(db: Session, nic_profile_slug: str, nic_base: NicPr
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=f"Nic base {existing_nic_base_option.name} ({existing_nic_base_option.code}) added to {nic_profile.full_name}"
+    )
+  )
+
+def bulk_add_nic_profile_nic_bases(db: Session, nic_profile_slug: str, nic_bases: list[NicProfileAddNicBaseInput]) -> NicProfileAddNicBasePayload:
+  nic_profile = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_slug))
+  if not nic_profile:
+    return NicProfileAddNicBasePayload(
+      nic_profile=None,
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Nic profile {nic_profile_slug} not found",
+      )
+    )
+  
+  for nic_base in nic_bases:
+    add_nic_profile_nic_base(db=db, nic_profile=nic_profile, nic_base=nic_base)
+    
+  return NicProfileAddNicBasePayload(
+    nic_profile=nic_profile_to_type(nic_profile),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=f"Nic bases added to {nic_profile.full_name}"
     )
   )
 

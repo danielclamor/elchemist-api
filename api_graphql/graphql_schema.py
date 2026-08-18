@@ -192,19 +192,19 @@ class Mutation:
       )
     finally:
       db.close()
-
+  
   @strawberry.mutation
-  def nicProfileAddNicBase(
+  def nicProfileBulkAddNicBases(
     self, 
     nic_profile_slug: str, 
-    nic_base: NicProfileAddNicBaseInput
+    nic_bases: List[NicProfileAddNicBaseInput]
   ) -> NicProfileAddNicBasePayload:
     db = SessionLocal()
     try:
-      return add_nic_profile_nic_base(
+      return bulk_add_nic_profile_nic_bases(
         db=db,
         nic_profile_slug=nic_profile_slug,
-        nic_base=nic_base,
+        nic_bases=nic_bases,
       )
     finally:
       db.close()
