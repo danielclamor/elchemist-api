@@ -120,17 +120,7 @@ def get_all_nic_profiles(db: Session) -> list[models.NicProfile]:
 
 
 # Mutation resolvers
-def add_nic_profile_flavoring(db: Session, nic_profile_slug: str, flavoring: NicProfileAddFlavoringInput) -> NicProfileAddFlavoringPayload:
-  nic_profile = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_slug))
-  if not nic_profile:
-    return NicProfileAddFlavoringPayload(
-      nic_profile=None,
-      feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
-        message=f"Nic Profile {nic_profile_slug} not found",
-      )
-    )
-  
+def add_nic_profile_flavoring(db: Session, nic_profile: models.NicProfile, flavoring: NicProfileAddFlavoringInput) -> NicProfileAddFlavoringPayload:
   flavoring_option_slug = make_slug(flavoring.flavoring_option_name)
   existing_flavoring_option = get_flavoring_option(db=db, flavoring_option_slug=flavoring_option_slug)
   if not existing_flavoring_option:
@@ -239,6 +229,28 @@ def add_nic_profile_nic_base(db: Session, nic_profile: models.NicProfile, nic_ba
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=f"Nic base {existing_nic_base_option.name} ({existing_nic_base_option.code}) added to {nic_profile.full_name}"
+    )
+  )
+
+def bulk_add_nic_profile_flavorings(db: Session, nic_profile_slug: str, flavorings: list[NicProfileAddFlavoringInput]) -> NicProfileAddFlavoringPayload:
+  nic_profile = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_slug))
+  if not nic_profile:
+    return NicProfileAddFlavoringPayload(
+      nic_profile=None,
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Nic profile {nic_profile_slug} not found",
+      )
+    )
+  
+  for flavoring in flavorings:
+    add_nic_profile_flavoring(db=db, nic_profile=nic_profile, flavoring=flavoring)
+    
+  return NicProfileAddFlavoringPayload(
+    nic_profile=nic_profile_to_type(nic_profile),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=f"Flavorings added to {nic_profile.full_name}"
     )
   )
 

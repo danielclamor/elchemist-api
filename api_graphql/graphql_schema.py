@@ -178,17 +178,17 @@ class Mutation:
       db.close()
 
   @strawberry.mutation
-  def nicProfileAddFlavoring(
+  def nicProfileBulkAddFlavoring(
     self,
     nic_profile_slug: str, 
-    flavoring: NicProfileAddFlavoringInput
+    flavorings: List[NicProfileAddFlavoringInput]
   ) -> NicProfileAddFlavoringPayload:
     db = SessionLocal()
     try:
-      return add_nic_profile_flavoring(
+      return bulk_add_nic_profile_flavorings(
         db=db,
         nic_profile_slug=nic_profile_slug,
-        flavoring=flavoring
+        flavorings=flavorings
       )
     finally:
       db.close()
