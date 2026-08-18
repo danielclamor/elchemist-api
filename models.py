@@ -86,6 +86,7 @@ class Formula(Base):
   brand: Mapped[str] = mapped_column(String(255))
   chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
   nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
+  is_pre_mix: Mapped[bool] = mapped_column(Boolean, default=False)
 
   created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
   updated_at: Mapped[datetime] = mapped_column(
