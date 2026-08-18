@@ -54,6 +54,7 @@ class NicLevelOption(enum.Enum):
 size_option_enum = Enum(SizeOption, name="sizeoption", create_type=False)
 nic_level_option_enum = Enum(NicLevelOption, name="nicleveloption", create_type=False)
 
+
 class Eliquid(Base):
   __tablename__ = "eliquids"
 
