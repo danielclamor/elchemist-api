@@ -458,3 +458,49 @@ def update_formula(db: Session, input: FormulaUpdateInput) -> FormulaUpdatePaylo
       message=None
     )
   )
+
+def update_nic_profile(db: Session, identifier: NicProfileUpdateIdentifier, input: NicProfileUpdateInput) -> NicProfileUpdatePayload:
+  nic_profile = get_nic_profile(
+    db=db,
+    nic_profile_slug=identifier.slug
+  )
+  
+  if not nic_profile:
+    return NicProfileUpdatePayload(
+      nic_profile=None,
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Nic profile {identifier.slug} not found."
+      )
+    )
+
+  if input.slug:
+    nic_profile.slug = input.slug
+  
+  if input.name:
+    nic_profile.name = input.name
+  
+  if input.is_old_mix is not None:
+    nic_profile.is_old_mix = input.is_old_mix
+  
+  if input.nic_base_nic_str is not None:
+    nic_profile.nic_base_nic_str = input.nic_base_nic_str
+  
+  if input.target_nic_str is not None:
+    nic_profile.target_nic_str = input.target_nic_str
+  
+  if input.target_vg is not None:
+    nic_profile.target_vg = input.target_vg
+  
+  if input.target_pg is not None:
+    nic_profile.target_pg = input.target_pg
+    
+  db.commit()
+  db.refresh(nic_profile)
+  return NicProfileUpdatePayload(
+    nic_profile=nic_profile_to_type(nic_profile),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=None
+    )
+  )
