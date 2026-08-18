@@ -91,15 +91,23 @@ class FormulaCreatePayload:
   formula: FormulaType
   feedback: Feedback
 
+@strawberry.input
+class FormulaDeleteInput:
+  slug: str
+
 @strawberry.type
 class FormulaDeletePayload:
-  deleted_formula_slug: str | None
-  deleted_formula_name: str | None
+  deleted_slug: str | None
+  deleted_name: str | None
   feedback: Feedback
   
 @strawberry.input
-class FormulaUpdateInput:
+class FormulaUpdateIdentifier:
   slug: str
+
+@strawberry.input
+class FormulaUpdateInput:
+  slug: str | None = None
   name: str | None = None
   brand: str | None = None
   chill_type: ChillType | None = None
@@ -133,7 +141,6 @@ class NicProfileAddFlavoringPayload:
   
 @strawberry.input
 class NicProfileCreateInput:
-  formula_slug: str
   name: str
   nic_base_nic_str: float
   is_old_mix: bool
@@ -148,12 +155,12 @@ class NicProfileCreatePayload:
   
 @strawberry.input
 class NicProfileDeleteInput:
-  nic_profile_slug: str
+  slug: str
   
 @strawberry.type
 class NicProfileDeletePayload:
-  deleted_nic_profile_slug: str | None
-  deleted_nic_profile_full_name: str | None
+  deleted_slug: str | None
+  deleted_full_name: str | None
   feedback: Feedback
 
 @strawberry.input

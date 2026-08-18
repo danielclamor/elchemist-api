@@ -284,7 +284,40 @@ def create_flavoring_option(db: Session, flavoring_option_name: str, is_vg: bool
   db.refresh(flavoring_option)
   return flavoring_option
 
-def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: float, is_old_mix: bool, target_nic_str: float, target_vg: float, target_pg: float) -> NicProfileCreatePayload:
+def create_formula(db: Session, input: FormulaCreateInput) -> FormulaCreatePayload:
+  slug = make_slug(string=input.name)
+  
+  existing = db.scalar(select(models.Formula).where(models.Formula.slug == slug))
+  if existing:
+    print(f"Canceling — formula {slug!r} already exists")
+    return FormulaCreatePayload(
+      formula=formula_to_type(existing),
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Formula {slug} already existss",
+      )
+    )
+    
+  formula = models.Formula(
+    slug=slug,
+    name=input.name,
+    brand=input.brand,
+    chill_type=models.ChillType[input.chill_type.name],
+    nic_type=models.NicType[input.nic_type.name],
+  )
+  
+  db.add(formula)
+  db.commit()
+  db.refresh(formula)
+  return FormulaCreatePayload(
+    formula=formula_to_type(formula),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=None,
+    )
+  )
+
+def create_nic_profile(db: Session, formula_slug: str, nic_profile: NicProfileCreateInput) -> NicProfileCreatePayload:
   formula = db.scalar(select(models.Formula).where(models.Formula.slug == formula_slug))
   if not formula:
     return NicProfileCreatePayload(
@@ -295,8 +328,8 @@ def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: 
       )
     )
     
-  suffix = " - Old Mix" if is_old_mix else ""
-  full_name = f"{formula.name} - {name}{suffix}"
+  suffix = " - Old Mix" if nic_profile.is_old_mix else ""
+  full_name = f"{formula.name} - {nic_profile.name}{suffix}"
   slug = make_slug(full_name)
   
   existing = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == slug, 
@@ -314,12 +347,12 @@ def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: 
     formula_id=formula.id,
     slug=slug,
     full_name=full_name,
-    name=name,
-    is_old_mix=is_old_mix,
-    nic_base_nic_str=nic_base_str,
-    target_nic_str=target_nic_str,
-    target_vg=target_vg,
-    target_pg=target_pg,
+    name=nic_profile.name,
+    is_old_mix=nic_profile.is_old_mix,
+    nic_base_nic_str=nic_profile.nic_base_nic_str,
+    target_nic_str=nic_profile.target_nic_str,
+    target_vg=nic_profile.target_vg,
+    target_pg=nic_profile.target_pg,
   )
   
   db.add(nic_profile)
@@ -333,52 +366,19 @@ def create_nic_profile(db: Session, formula_slug: str, name: str, nic_base_str: 
     )
   )
   
-def create_formula(db: Session, name: str, brand: str, chill_type: ChillType, nic_type: NicType) -> FormulaCreatePayload:
-  slug = make_slug(string=name)
-  
-  existing = db.scalar(select(models.Formula).where(models.Formula.slug == slug))
-  if existing:
-    print(f"Canceling — formula {slug!r} already exists")
-    return FormulaCreatePayload(
-      formula=formula_to_type(existing),
-      feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
-        message=f"Formula {slug} already existss",
-      )
-    )
-    
-  formula = models.Formula(
-    slug=slug,
-    name=name,
-    brand=brand,
-    chill_type=models.ChillType[chill_type.name],
-    nic_type=models.NicType[nic_type.name],
-  )
-  
-  db.add(formula)
-  db.commit()
-  db.refresh(formula)
-  return FormulaCreatePayload(
-    formula=formula_to_type(formula),
-    feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
-      message=None,
-    )
-  )
-  
-def delete_formula(db: Session, formula_slug) -> FormulaDeletePayload:
+def delete_formula(db: Session, input: FormulaDeleteInput) -> FormulaDeletePayload:
   formula = get_formula(
     db=db,
-    formula_slug=formula_slug
+    formula_slug=input.slug
   )
   
   if not formula:
     return FormulaDeletePayload(
-      deleted_formula_slug=None,
-      deleted_formula_name=None,
+      deleted_slug=None,
+      deleted_name=None,
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
-        message=f"Formula {formula_slug} not found."
+        message=f"Formula {input.slug} not found."
       )
     )
 
@@ -386,27 +386,27 @@ def delete_formula(db: Session, formula_slug) -> FormulaDeletePayload:
   db.commit()
   
   return FormulaDeletePayload(
-    deleted_formula_slug=formula_slug,
-    deleted_formula_name=formula.name,
+    deleted_slug=input.slug,
+    deleted_name=formula.name,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=None
     )
   )
 
-def delete_nic_profile(db: Session, nic_profile_slug) -> NicProfileDeletePayload:
+def delete_nic_profile(db: Session, input: NicProfileDeleteInput) -> NicProfileDeletePayload:
   nic_profile = get_nic_profile(
     db=db,
-    nic_profile_slug=nic_profile_slug
+    nic_profile_slug=input.slug
   )
   
   if not nic_profile:
     return NicProfileDeletePayload(
       deleted_nic_profile_slug=None,
-      deleted_nic_profile_full_name=None,
+      deleted_full_name=None,
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
-        message=f"Nic profile {nic_profile_slug} not found."
+        message=f"Nic profile {input.slug} not found."
       )
     )
 
@@ -414,18 +414,18 @@ def delete_nic_profile(db: Session, nic_profile_slug) -> NicProfileDeletePayload
   db.commit()
   
   return NicProfileDeletePayload(
-    deleted_nic_profile_slug=nic_profile_slug,
-    deleted_nic_profile_full_name=nic_profile.full_name,
+    deleted_nic_profile_slug=input.slug,
+    deleted_full_name=nic_profile.full_name,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=None
     )
   )
 
-def update_formula(db: Session, input: FormulaUpdateInput) -> FormulaUpdatePayload:
+def update_formula(db: Session, identifier: FormulaUpdateIdentifier, formula: FormulaUpdateInput) -> FormulaUpdatePayload:
   formula = get_formula(
     db=db,
-    formula_slug=input.slug
+    formula_slug=identifier.slug
   )
   
   if not formula:
@@ -433,21 +433,24 @@ def update_formula(db: Session, input: FormulaUpdateInput) -> FormulaUpdatePaylo
       formula=None,
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
-        message=f"Formula {input.slug} not found."
+        message=f"Formula {identifier.slug} not found."
       )
     )
   
-  if input.name:
-    formula.name = input.name
+  if formula.slug:
+    formula.slug = formula.slug
   
-  if input.brand:
-    formula.brand = input.brand
+  if formula.name:
+    formula.name = formula.name
   
-  if input.chill_type:
-    formula.chill_type = models.ChillType[input.chill_type.name]
+  if formula.brand:
+    formula.brand = formula.brand
+  
+  if formula.chill_type:
+    formula.chill_type = models.ChillType[formula.chill_type.name]
     
-  if input.nic_type:
-    formula.nic_type = models.NicType[input.nic_type.name]
+  if formula.nic_type:
+    formula.nic_type = models.NicType[formula.nic_type.name]
     
   db.commit()
   db.refresh(formula)
@@ -459,7 +462,7 @@ def update_formula(db: Session, input: FormulaUpdateInput) -> FormulaUpdatePaylo
     )
   )
 
-def update_nic_profile(db: Session, identifier: NicProfileUpdateIdentifier, input: NicProfileUpdateInput) -> NicProfileUpdatePayload:
+def update_nic_profile(db: Session, identifier: NicProfileUpdateIdentifier, nic_profile: NicProfileUpdateInput) -> NicProfileUpdatePayload:
   nic_profile = get_nic_profile(
     db=db,
     nic_profile_slug=identifier.slug
@@ -474,26 +477,26 @@ def update_nic_profile(db: Session, identifier: NicProfileUpdateIdentifier, inpu
       )
     )
 
-  if input.slug:
-    nic_profile.slug = input.slug
+  if nic_profile.slug:
+    nic_profile.slug = nic_profile.slug
   
-  if input.name:
-    nic_profile.name = input.name
+  if nic_profile.name:
+    nic_profile.name = nic_profile.name
   
-  if input.is_old_mix is not None:
-    nic_profile.is_old_mix = input.is_old_mix
+  if nic_profile.is_old_mix is not None:
+    nic_profile.is_old_mix = nic_profile.is_old_mix
   
-  if input.nic_base_nic_str is not None:
-    nic_profile.nic_base_nic_str = input.nic_base_nic_str
+  if nic_profile.nic_base_nic_str is not None:
+    nic_profile.nic_base_nic_str = nic_profile.nic_base_nic_str
   
-  if input.target_nic_str is not None:
-    nic_profile.target_nic_str = input.target_nic_str
+  if nic_profile.target_nic_str is not None:
+    nic_profile.target_nic_str = nic_profile.target_nic_str
   
-  if input.target_vg is not None:
-    nic_profile.target_vg = input.target_vg
+  if nic_profile.target_vg is not None:
+    nic_profile.target_vg = nic_profile.target_vg
   
-  if input.target_pg is not None:
-    nic_profile.target_pg = input.target_pg
+  if nic_profile.target_pg is not None:
+    nic_profile.target_pg = nic_profile.target_pg
     
   db.commit()
   db.refresh(nic_profile)

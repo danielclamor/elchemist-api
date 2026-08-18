@@ -131,13 +131,15 @@ class Mutation:
   @strawberry.mutation
   def formulaUpdate(
     self,
+    identifier: FormulaUpdateIdentifier,
     input: FormulaUpdateInput
   ) -> FormulaUpdatePayload:
     db = SessionLocal()
     try:
       return update_formula(
         db=db,
-        input=input
+        identifier=identifier,
+        formula=input
       )
     finally:
       db.close()
@@ -182,7 +184,7 @@ class Mutation:
 
   @strawberry.mutation
   def nicProfileAddFlavoring(
-    self, 
+    self,
     nic_profile_slug: str, 
     flavoring_option_name: str, 
     ratio: float, 
@@ -224,21 +226,17 @@ class Mutation:
 
   @strawberry.mutation
   def nicProfileCreate(
-    self, 
-    input: NicProfileCreateInput
+    self,
+    formula_slug: str,
+    nic_profile: NicProfileCreateInput
     ) -> NicProfileCreatePayload:
     db = SessionLocal()
     try:
       return create_nic_profile(
         db=db, 
-        formula_slug=input.formula_slug, 
-        name=input.name,
-        nic_base_str=input.nic_base_nic_str,
-        is_old_mix=input.is_old_mix,
-        target_nic_str=input.target_nic_str,
-        target_vg=input.target_vg,
-        target_pg=input.target_pg,
-        )
+        formula_slug=formula_slug,
+        nic_profile=nic_profile
+      )
     finally:
       db.close()
 
@@ -251,7 +249,7 @@ class Mutation:
     try:
       return delete_nic_profile(
         db=db,
-        nic_profile_slug=input.nic_profile_slug
+        nic_profile_slug=input.slug
       )
     finally:
       db.close()
@@ -260,14 +258,14 @@ class Mutation:
   def nicProfileUpdate(
     self,
     identifier: NicProfileUpdateIdentifier,
-    input: NicProfileUpdateInput
+    nic_profile: NicProfileUpdateInput
   ) -> NicProfileUpdatePayload:
     db = SessionLocal()
     try:
       return update_nic_profile(
         db=db,
         identifier=identifier,
-        input=input
+        nic_profile=nic_profile
       )
     finally:
       db.close()
