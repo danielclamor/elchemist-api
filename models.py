@@ -86,8 +86,7 @@ class Formula(Base):
   brand: Mapped[str] = mapped_column(String(255))
   chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
   nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
-  is_pre_mix: Mapped[bool] = mapped_column(Boolean, default=False)
-
+  
   created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
   updated_at: Mapped[datetime] = mapped_column(
     DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)
@@ -110,6 +109,8 @@ class NicProfile(Base):
   slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
   name: Mapped[str] = mapped_column(String(255))
   full_name: Mapped[str | None] = mapped_column(String, nullable=True)
+  
+  is_pre_mix: Mapped[bool] = mapped_column(Boolean, default=False)
 
   is_old_mix: Mapped[bool] = mapped_column(Boolean, default=False)
 
