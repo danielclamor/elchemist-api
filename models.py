@@ -7,6 +7,7 @@ from sqlalchemy import (
   DateTime,
   Enum,
   ForeignKey,
+  Integer,
   Numeric,
   String,
 )
@@ -224,6 +225,13 @@ class NicProfile(Base):
   def __repr__(self) -> str:
     return f"<NicProfile {self.slug!r}>"
   
+ 
+class ProductionOrderCounter(Base):
+  __tablename__ = "production_order_counters"
+
+  date: Mapped[datetime] = mapped_column(DateTime, primary_key=True)
+  last_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    
   
 class ProductionOrderStatus(enum.Enum):
   PENDING = "pending"
