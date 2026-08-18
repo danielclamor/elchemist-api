@@ -27,6 +27,56 @@ class NicType(enum.Enum):
   FREEBASE = "freebase"
 
 
+chill_type_enum = Enum(ChillType, name="chilltype", create_type=False)
+nic_type_enum = Enum(NicType, name="nictype", create_type=False)
+
+
+class SizeOption(enum.Enum):
+  ML_30 = "30ml"
+  ML_60 = "60ml"
+  ML_120 = "120ml"
+
+
+class NicLevelOption(enum.Enum):
+  MG_0 = "0mg"
+  MG_3 = "3mg"
+  MG_5 = "5mg"
+  MG_6 = "6mg"
+  MG_10 = "10mg"
+  MG_12 = "12mg"
+  MG_15 = "15mg"
+  MG_18 = "18mg"
+  MG_20 = "20mg"
+  HIT_35 = "hit35"
+  HIT_50 = "hit50"
+  
+size_option_enum = Enum(SizeOption, name="sizeoption", create_type=False)
+nic_level_option_enum = Enum(NicLevelOption, name="nicleveloption", create_type=False)
+
+class Eliquid(Base):
+  __tablename__ = "eliquids"
+
+  id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+  upc: Mapped[str] = mapped_column(String(12), unique=True, index=True)
+  name: Mapped[str] = mapped_column(String(255))
+  brand: Mapped[str] = mapped_column(String(255))
+  chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
+  nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
+  size: Mapped[SizeOption] = mapped_column(size_option_enum)
+  nic_level: Mapped[NicLevelOption] = mapped_column(nic_level_option_enum)
+  formula_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("formulas.id"), nullable=True)
+
+  created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
+  updated_at: Mapped[datetime] = mapped_column(
+    DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)
+  )
+  
+  formula: Mapped["Formula"] = relationship()
+
+  def __repr__(self) -> str:
+    return f"<Eliquid {self.name!r}>"
+
+
 class Formula(Base):
   __tablename__ = "formulas"
 
@@ -34,8 +84,8 @@ class Formula(Base):
   slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
   name: Mapped[str] = mapped_column(String(255))
   brand: Mapped[str] = mapped_column(String(255))
-  chill_type: Mapped[ChillType] = mapped_column(Enum(ChillType))
-  nic_type: Mapped[NicType] = mapped_column(Enum(NicType))
+  chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
+  nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
 
   created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
   updated_at: Mapped[datetime] = mapped_column(
