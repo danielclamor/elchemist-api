@@ -147,13 +147,13 @@ class Mutation:
   @strawberry.mutation
   def nicBaseOptionCreate(
     self,
-    input: NicBaseOptionCreateInput
+    nic_base_option: NicBaseOptionCreateInput
   ) -> NicBaseOptionCreatePayload:
     db = SessionLocal()
     try:
       nic_base_option = get_nic_base_option(
         db=db,
-        nic_base_option_code=input.code
+        nic_base_option_code=nic_base_option.code
       )
       
       if nic_base_option:
@@ -161,15 +161,13 @@ class Mutation:
           nic_base_option=nic_base_option,
           feedback=Feedback(
             status=FeedbackStatus.CANCELLED,
-            message=f"Nic base option {input.code} already exists"
+            message=f"Nic base option {nic_base_option.code} already exists"
           )
         )
       
       nic_base_option = create_nic_base_option(
         db=db,
-        nic_base_option_code=input.code,
-        nic_base_option_name=input.name,
-        is_vg=input.is_vg
+        nic_base_option=nic_base_option
       )
       
       return NicBaseOptionCreatePayload(
@@ -206,20 +204,14 @@ class Mutation:
   def nicProfileAddNicBase(
     self, 
     nic_profile_slug: str, 
-    nic_base_option_code: str, 
-    ratio: float, 
-    nic_base_option_name: str | None = None, 
-    is_vg: bool | None = None
+    nic_base: NicProfileAddNicBaseInput
   ) -> NicProfileAddNicBasePayload:
     db = SessionLocal()
     try:
       return add_nic_profile_nic_base(
         db=db,
         nic_profile_slug=nic_profile_slug,
-        nic_base_option_code=nic_base_option_code,
-        ratio=ratio,
-        nic_base_option_name=nic_base_option_name,
-        is_vg=is_vg,
+        nic_base=nic_base,
       )
     finally:
       db.close()

@@ -129,16 +129,29 @@ class NicBaseOptionCreatePayload:
   nic_base_option: NicBaseOptionType | None
   feedback: Feedback
 
-@strawberry.type
-class NicProfileAddNicBasePayload:
-  nic_profile: NicProfileType | None
-  feedback: Feedback
+@strawberry.input
+class NicProfileAddFlavoringInput:
+  flavoring_option_slug: str
+  ratio: float
+  is_vg: bool | None = None
 
 @strawberry.type
 class NicProfileAddFlavoringPayload:
   nic_profile: NicProfileType | None
   feedback: Feedback
-  
+
+@strawberry.input
+class NicProfileAddNicBaseInput:
+  nic_base_option_code: str
+  nic_base_option_name: str | None = None
+  is_vg: bool | None = None
+  ratio: float
+
+@strawberry.type
+class NicProfileAddNicBasePayload:
+  nic_profile: NicProfileType | None
+  feedback: Feedback
+
 @strawberry.input
 class NicProfileCreateInput:
   name: str
