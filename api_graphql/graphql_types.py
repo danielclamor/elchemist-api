@@ -131,7 +131,7 @@ class NicBaseOptionCreatePayload:
 
 @strawberry.input
 class NicProfileAddFlavoringInput:
-  flavoring_option_slug: str
+  flavoring_option_name: str
   ratio: float
   is_vg: bool | None = None
 

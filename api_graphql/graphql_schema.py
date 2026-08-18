@@ -61,11 +61,11 @@ class Mutation:
   @strawberry.mutation
   def flavoringOptionCreate(
     self,
-    input: FlavoringOptionCreateInput
+    flavoring_option: FlavoringOptionCreateInput
   ) -> FlavoringOptionCreatePayload:
     db = SessionLocal()
     try:
-      flavoring_option_slug = make_slug(input.name)
+      flavoring_option_slug = make_slug(flavoring_option.name)
       
       flavoring_option = get_flavoring_option(
         db=db,
@@ -77,14 +77,14 @@ class Mutation:
           flavoring_option=flavoring_option,
           feedback=Feedback(
             status=FeedbackStatus.CANCELLED,
-            message=f"Flavoring option {input.name} already exists"
+            message=f"Flavoring option {flavoring_option.name} already exists"
           )
         )
       
       flavoring_option = create_flavoring_option(
         db=db,
-        flavoring_option_name=input.name,
-        is_vg=input.is_vg
+        flavoring_option_name=flavoring_option.name,
+        is_vg=flavoring_option.is_vg
       )
       
       return FlavoringOptionCreatePayload(
@@ -100,17 +100,14 @@ class Mutation:
   @strawberry.mutation
   def formulaCreate(
     self, 
-    input: FormulaCreateInput
+    formula: FormulaCreateInput
   ) -> FormulaCreatePayload:
     db = SessionLocal()
     try:
       return create_formula(
         db=db, 
-        name=input.name, 
-        brand=input.brand, 
-        chill_type=input.chill_type, 
-        nic_type=input.nic_type,
-        )
+        formula=formula
+      )
     finally:
       db.close()
   
@@ -184,18 +181,14 @@ class Mutation:
   def nicProfileAddFlavoring(
     self,
     nic_profile_slug: str, 
-    flavoring_option_name: str, 
-    ratio: float, 
-    is_vg: bool | None = None
+    flavoring: NicProfileAddFlavoringInput
   ) -> NicProfileAddFlavoringPayload:
     db = SessionLocal()
     try:
       return add_nic_profile_flavoring(
         db=db,
         nic_profile_slug=nic_profile_slug,
-        flavoring_option_name=flavoring_option_name,
-        is_vg=is_vg,
-        ratio=ratio,
+        flavoring=flavoring
       )
     finally:
       db.close()

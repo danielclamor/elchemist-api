@@ -131,21 +131,26 @@ def add_nic_profile_flavoring(db: Session, nic_profile_slug: str, flavoring: Nic
       )
     )
   
-  flavoring_option_slug = make_slug(flavoring.flavoring_option_slug)
+  flavoring_option_slug = make_slug(flavoring.flavoring_option_name)
   existing_flavoring_option = get_flavoring_option(db=db, flavoring_option_slug=flavoring_option_slug)
   if not existing_flavoring_option:
-    existing_flavoring_option = create_flavoring_option(
-      db=db,
-      flavoring_option_name=flavoring.flavoring_option_slug,
-      is_vg=flavoring.is_vg
-    )
-    
-    if isinstance(existing_flavoring_option, Feedback):
-      existing_flavoring_option.message = f"No flavoring option {flavoring.flavoring_option_slug} found. {existing_flavoring_option.message}"
+    if flavoring.is_vg is None:      
+      feedback = Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"No flavoring option {flavoring_option_slug} found. Can't create flavoring option {flavoring_option_slug} without isVg"
+      )
       return NicProfileAddFlavoringPayload(
         nic_profile=nic_profile_to_type(nic_profile),
-        feedback=existing_flavoring_option,
+        feedback=feedback,
       )
+  
+    existing_flavoring_option = create_flavoring_option(
+      db=db,
+      flavoring_option=FlavoringOptionCreateInput(
+        name=flavoring.flavoring_option_name,
+        is_vg=flavoring.is_vg
+      )
+    )
     
   existing_flavoring = db.scalar(select(models.Flavoring).where(models.Flavoring.flavoring_option_id == existing_flavoring_option.id, models.Flavoring.nic_profile_id == nic_profile.id))
   if existing_flavoring:
@@ -188,7 +193,7 @@ def add_nic_profile_nic_base(db: Session, nic_profile_slug: str, nic_base: NicPr
   existing_nic_base_option = get_nic_base_option(db=db, nic_base_option_code=nic_base.nic_base_option_code)
   if not existing_nic_base_option:
     feedback_message_part = ""
-    if nic_base.name is None:
+    if nic_base.nic_base_option_name is None:
       feedback_message_part = "nicBaseOptionName"
     if nic_base.is_vg is None:
       if feedback_message_part:
@@ -196,9 +201,9 @@ def add_nic_profile_nic_base(db: Session, nic_profile_slug: str, nic_base: NicPr
       feedback_message_part = f"{feedback_message_part}isVg"
 
     if feedback_message_part:
-      if nic_base.name:
-        nic_base_option_name = f"{nic_base.name} "
-      elif nic_base.name is None:
+      if nic_base.nic_base_option_name:
+        nic_base_option_name = f"{nic_base.nic_base_option_name} "
+      elif nic_base.nic_base_option_name is None:
         nic_base_option_name = ""
       
       feedback = Feedback(
@@ -259,19 +264,13 @@ def create_nic_base_option(db: Session, nic_base_option: NicBaseOptionCreateInpu
   db.refresh(nic_base_option)
   return nic_base_option
 
-def create_flavoring_option(db: Session, flavoring_option_name: str, is_vg: bool | None = None) -> models.FlavoringOption | Feedback:
-  if is_vg is None:
-    return Feedback(
-      status=FeedbackStatus.CANCELLED,
-      message=f"Can't create flavoring option {flavoring_option_slug} without isVg"
-    )
-  
-  flavoring_option_slug = make_slug(flavoring_option_name)
+def create_flavoring_option(db: Session, flavoring_option: FlavoringOptionCreateInput) -> models.FlavoringOption:
+  flavoring_option_slug = make_slug(flavoring_option.name)
     
   flavoring_option = models.FlavoringOption(
     slug=flavoring_option_slug,
-    name=flavoring_option_name,
-    is_vg=is_vg,
+    name=flavoring_option.name,
+    is_vg=flavoring_option.is_vg,
   )
   
   db.add(flavoring_option)
@@ -279,8 +278,8 @@ def create_flavoring_option(db: Session, flavoring_option_name: str, is_vg: bool
   db.refresh(flavoring_option)
   return flavoring_option
 
-def create_formula(db: Session, input: FormulaCreateInput) -> FormulaCreatePayload:
-  slug = make_slug(string=input.name)
+def create_formula(db: Session, formula: FormulaCreateInput) -> FormulaCreatePayload:
+  slug = make_slug(string=formula.name)
   
   existing = db.scalar(select(models.Formula).where(models.Formula.slug == slug))
   if existing:
@@ -295,10 +294,10 @@ def create_formula(db: Session, input: FormulaCreateInput) -> FormulaCreatePaylo
     
   formula = models.Formula(
     slug=slug,
-    name=input.name,
-    brand=input.brand,
-    chill_type=models.ChillType[input.chill_type.name],
-    nic_type=models.NicType[input.nic_type.name],
+    name=formula.name,
+    brand=formula.brand,
+    chill_type=models.ChillType[formula.chill_type.name],
+    nic_type=models.NicType[formula.nic_type.name],
   )
   
   db.add(formula)
