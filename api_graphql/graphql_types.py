@@ -41,14 +41,52 @@ class NicProfileType:
   flavorings: List[FlavoringType]
 
 @strawberry.enum
+class BottleColor(enum.Enum):
+  BLACK = "black"
+  CLEAR = "clear"
+  WHITE = "white"
+
+@strawberry.enum
 class ChillType(enum.Enum):
   CHILLED = "chilled"
   NON_CHILLED = "non-chilled"
 
 @strawberry.enum
 class NicType(enum.Enum):
-  SALT = "salt"
   FREEBASE = "freebase"
+  SALT = "salt"
+  
+@strawberry.enum
+class SizeOption(enum.Enum):
+  ML_30 = "30ml"
+  ML_60 = "60ml"
+  ML_120 = "120ml"
+
+@strawberry.enum
+class NicLevelOption(enum.Enum):
+  MG_0 = "0mg"
+  MG_3 = "3mg"
+  MG_5 = "5mg"
+  MG_6 = "6mg"
+  MG_10 = "10mg"
+  MG_12 = "12mg"
+  MG_15 = "15mg"
+  MG_18 = "18mg"
+  MG_20 = "20mg"
+  HIT_35 = "hit35"
+  HIT_50 = "hit50"
+
+@strawberry.type
+class EliquidType:
+  upc: str
+  description: str
+  brand: str
+  chill_type: ChillType
+  nic_type: NicType
+  size: SizeOption
+  nic_level: NicLevelOption
+  bottle_color: BottleColor
+  nic_profile: NicProfileType | None = None
 
 @strawberry.type
 class FormulaType:
