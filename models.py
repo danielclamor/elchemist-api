@@ -72,7 +72,7 @@ class Eliquid(Base):
   upc: Mapped[str] = mapped_column(String(12), unique=True, index=True)
   description: Mapped[str] = mapped_column(String(255))
   brand: Mapped[str] = mapped_column(String(255))
-  bottle_color: Mapped[BottleColor] = mapped_column(bottle_color_enum, nullable=True)
+  bottle_color: Mapped[BottleColor] = mapped_column(bottle_color_enum)
   chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
   nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
   size: Mapped[SizeOption] = mapped_column(size_option_enum)
