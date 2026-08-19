@@ -15,6 +15,26 @@ def make_slug(string: str) -> str:
 
 
 # SQLAlchemy model -> GraphQL model resolvers
+def eliquid_to_type(e: models.Eliquid) -> EliquidType:
+  return EliquidType(
+    upc=e.upc,
+    description=e.description,
+    brand=e.brand,
+    chill_type=ChillType[e.chill_type.name],
+    nic_type=NicType[e.nic_type.name],
+    size=SizeOption[e.size.name],
+    nic_level=NicLevelOption[e.nic_level.name],
+    bottle_color=BottleColor[e.bottle_color.name],
+    nic_profile=nic_profile_to_type(e.nic_profile) if e.nic_profile else None
+  )
+
+def flavoring_option_to_type(o: models.FlavoringOption) -> FlavoringOptionType:
+  return FlavoringOptionType(
+    slug=o.slug,
+    name=o.name,
+    is_vg=o.is_vg,
+  )
+  
 def formula_to_type(f: models.Formula) -> FormulaType:
   return FormulaType(
     slug=f.slug,
@@ -33,6 +53,7 @@ def nic_profile_to_type(p: models.NicProfile) -> NicProfileType:
     name=p.name,
     full_name=p.full_name,
     is_old_mix=p.is_old_mix,
+    is_pre_mix=p.is_pre_mix,
     target_nic_str=p.target_nic_str,
     target_vg=p.target_vg,
     target_pg=p.target_pg,
@@ -54,23 +75,21 @@ def nic_base_option_to_type(o: models.NicBaseOption) -> NicBaseOptionType:
     is_vg=o.is_vg,
   )
   
-def flavoring_option_to_type(o: models.FlavoringOption) -> FlavoringOptionType:
-  return FlavoringOptionType(
-    slug=o.slug,
-    name=o.name,
-    is_vg=o.is_vg,
-  )
-  
 
 # Query resolvers
 def get_all_brands(db: Session) -> list[str]:
   return list(
     db.scalars(select(models.Formula.brand)).unique().all()
   )
-
-def get_formula(db: Session, formula_slug: str) -> models.Formula:
+  
+def get_all_eliquids(db: Session) -> list[models.Eliquid]:
   return (
-    db.scalar(select(models.Formula).where(models.Formula.slug == formula_slug))
+    db.scalars(select(models.Eliquid)).all()
+  )
+
+def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
+  return (
+    db.scalars(select(models.FlavoringOption)).all()
   )
 
 def get_all_formulas(db: Session) -> list[models.Formula]:
@@ -87,15 +106,30 @@ def get_all_formulas(db: Session) -> list[models.Formula]:
     .unique()
     .all()
   )
+  
+def get_all_nic_base_options(db: Session) -> list[models.NicBaseOption]:
+  return (
+    db.scalars(select(models.NicBaseOption)).all()
+  )
+  
+def get_all_nic_profiles(db: Session) -> list[models.NicProfile]:
+  return (
+    db.scalars(select(models.NicProfile)).all()
+  )
+  
+def get_eliquid(db: Session, eliquid_upc: str) -> models.Eliquid:
+  return (
+    db.scalar(select(models.Eliquid).where(models.Eliquid.upc == eliquid_upc))
+  )
+
+def get_formula(db: Session, formula_slug: str) -> models.Formula:
+  return (
+    db.scalar(select(models.Formula).where(models.Formula.slug == formula_slug))
+  )
 
 def get_flavoring_option(db: Session, flavoring_option_slug: str) -> models.FlavoringOption:
   return (
     db.scalar(select(models.FlavoringOption).where(models.FlavoringOption.slug == flavoring_option_slug))
-  )
-
-def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
-  return (
-    db.scalars(select(models.FlavoringOption)).all()
   )
 
 def get_nic_base_option(db: Session, nic_base_option_code: str) -> models.NicBaseOption:
@@ -103,19 +137,9 @@ def get_nic_base_option(db: Session, nic_base_option_code: str) -> models.NicBas
     db.scalar(select(models.NicBaseOption).where(models.NicBaseOption.code == nic_base_option_code))
   )
 
-def get_all_nic_base_options(db: Session) -> list[models.NicBaseOption]:
-  return (
-    db.scalars(select(models.NicBaseOption)).all()
-  )
-
 def get_nic_profile(db: Session, nic_profile_slug: str) -> models.NicProfile:
   return (
     db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_slug))
-  )
-  
-def get_all_nic_profiles(db: Session) -> list[models.NicProfile]:
-  return (
-    db.scalars(select(models.NicProfile)).all()
   )
 
 
