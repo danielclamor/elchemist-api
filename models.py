@@ -18,6 +18,15 @@ class Base(DeclarativeBase):
   pass
 
 
+class BottleColor(enum.Enum):
+  CLEAR = "clear"
+  WHITE = "white"
+  BLACK = "black"
+
+
+bottle_color_enum = Enum(BottleColor, name="bottlecolor")
+
+
 class ChillType(enum.Enum):
   CHILLED = "chilled"
   NON_CHILLED = "non-chilled"
@@ -28,8 +37,8 @@ class NicType(enum.Enum):
   FREEBASE = "freebase"
 
 
-chill_type_enum = Enum(ChillType, name="chilltype", create_type=False)
-nic_type_enum = Enum(NicType, name="nictype", create_type=False)
+chill_type_enum = Enum(ChillType, name="chilltype")
+nic_type_enum = Enum(NicType, name="nictype")
 
 
 class SizeOption(enum.Enum):
@@ -52,8 +61,8 @@ class NicLevelOption(enum.Enum):
   HIT_50 = "hit50"
 
 
-size_option_enum = Enum(SizeOption, name="sizeoption", create_type=False)
-nic_level_option_enum = Enum(NicLevelOption, name="nicleveloption", create_type=False)
+size_option_enum = Enum(SizeOption, name="sizeoption")
+nic_level_option_enum = Enum(NicLevelOption, name="nicleveloption")
 
 
 class Eliquid(Base):
@@ -61,8 +70,9 @@ class Eliquid(Base):
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   upc: Mapped[str] = mapped_column(String(12), unique=True, index=True)
-  name: Mapped[str] = mapped_column(String(255))
+  description: Mapped[str] = mapped_column(String(255))
   brand: Mapped[str] = mapped_column(String(255))
+  bottle_color: Mapped[BottleColor] = mapped_column(bottle_color_enum, nullable=True)
   chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
   nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
   size: Mapped[SizeOption] = mapped_column(size_option_enum)
@@ -240,7 +250,7 @@ class ProductionOrderStatus(enum.Enum):
   CANCELLED = "cancelled"
 
 
-production_order_status_enum = Enum(ProductionOrderStatus, name="productionorderstatus", create_type=False)
+production_order_status_enum = Enum(ProductionOrderStatus, name="productionorderstatus")
 
 
 class ProductionOrder(Base):
