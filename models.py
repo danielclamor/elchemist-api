@@ -19,10 +19,10 @@ class Base(DeclarativeBase):
 
 
 class BottleColor(enum.Enum):
+  BLACK = "black"
   CLEAR = "clear"
   WHITE = "white"
-  BLACK = "black"
-
+  
 
 bottle_color_enum = Enum(BottleColor, name="bottlecolor")
 
@@ -33,8 +33,8 @@ class ChillType(enum.Enum):
 
 
 class NicType(enum.Enum):
-  SALT = "salt"
   FREEBASE = "freebase"
+  SALT = "salt"
 
 
 chill_type_enum = Enum(ChillType, name="chilltype")
