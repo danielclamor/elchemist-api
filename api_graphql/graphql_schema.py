@@ -15,6 +15,14 @@ class Query:
       db.close()
   
   @strawberry.field
+  def eliquids(self) -> List[EliquidType]:
+    db = SessionLocal()
+    try:
+      return [eliquid_to_type(e) for e in get_all_eliquids(db)]
+    finally:
+      db.close()
+  
+  @strawberry.field
   def flavoringOptions(self) -> List[FlavoringOptionType]:
     db = SessionLocal()
     try:
