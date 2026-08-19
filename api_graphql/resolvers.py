@@ -77,9 +77,15 @@ def nic_base_option_to_type(o: models.NicBaseOption) -> NicBaseOptionType:
   
 
 # Query resolvers
-def get_all_brands(db: Session) -> list[str]:
+def get_all_brands(db: Session) -> list[str]:  
   return list(
-    db.scalars(select(models.Formula.brand)).unique().all()
+    db.scalars(
+      select(models.Formula.brand)
+      .union(
+        select(models.Eliquid.brand)
+      )
+    )
+    .all()
   )
   
 def get_all_eliquids(db: Session) -> list[models.Eliquid]:
