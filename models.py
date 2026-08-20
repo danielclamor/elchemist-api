@@ -85,6 +85,8 @@ class Eliquid(Base):
   )
   
   nic_profile: Mapped["NicProfile"] = relationship()
+  
+  production_orders: Mapped[list["ProductionOrder"]] = relationship(back_populates="eliquid")
 
   def __repr__(self) -> str:
     return f"<Eliquid {self.description!r}>"
@@ -267,7 +269,37 @@ class ProductionOrder(Base):
     DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)
   )
 
-  eliquid: Mapped["Eliquid"] = relationship()
+  eliquid: Mapped["Eliquid"] = relationship(back_populates="production_orders")
+  
+  activity_logs: Mapped[list["ProductionOrderActivityLog"]] = relationship(
+    back_populates="production_order", cascade="all, delete-orphan"
+  )
 
   def __repr__(self) -> str:
-    return f"<ProductionOrder {self.order_number!r} eliquid={self.eliquid.name!r} quantity={self.quantity} status={self.status.value}>"
+    return f"<ProductionOrder {self.order_number!r} eliquid={self.eliquid.description!r} quantity={self.quantity} status={self.status.value}>"
+  
+
+class ProductionOrderActivity(enum.Enum):
+  CREATED = "created"
+  ADJUST_QUANTITY = "adjust_quantity"
+  CHANGE_STATUS = "change_status"
+  SWITCH_PRIORITY = "switch_priority"
+
+
+production_order_activity_enum = Enum(ProductionOrderActivity, name="productionorderactivity")
+
+
+class ProductionOrderActivityLog(Base):
+  __tablename__ = "production_order_activity_logs"
+  
+  id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+  production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id"))
+  activity: Mapped[ProductionOrderActivity] = mapped_column(production_order_activity_enum)
+  old_value: Mapped[str] = mapped_column(String(20), nullable=True)
+  new_value: Mapped[str] = mapped_column(String(20), nullable=True)
+  triggered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
+  
+  production_order: Mapped["ProductionOrder"] = relationship(back_populates="activity_logs")
+  
+  def __repr__(self) -> str:
+    return f"<ProductionOrderActivityLog {self.order_number!r} production_order={self.production_order.order_number!r} activity={self.activity} old_value={self.old_value} new_value={self.new_value}>"
