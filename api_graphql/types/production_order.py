@@ -1,27 +1,60 @@
+from __future__ import annotations
+
 from datetime import datetime
-from typing import List
+from typing import Annotated
 import uuid
 
 import strawberry
 from strawberry import relay
 
+import models
 from api_graphql.types.enums import ProductionOrderActivity, ProductionOrderStatus
 
+
 @strawberry.type
-class ProductionOrderActivityLog(relay.Node):
+class ProductionOrderActivityLogType(relay.Node):
   id: uuid.UUID
   activity: ProductionOrderActivity
   old_value: str
   new_value: str
   triggered_at: datetime
 
+  @classmethod
+  def from_model(cls, l: models.ProductionOrderActivityLog) -> "ProductionOrderActivityLogType":
+    return cls(
+      id=l.id,
+      activity=ProductionOrderActivity[l.activity.name],
+      old_value=l.old_value,
+      new_value=l.new_value,
+      triggered_at=l.triggered_at,
+    )
+
 @strawberry.type
 class ProductionOrderType(relay.Node):
   order_number: str
-  eliquid_id: uuid.UUID
-  eliquid_description: str
   quantity: int
   status: ProductionOrderStatus
   is_priority: bool
   created_at: datetime
-  activity_logs: List[ProductionOrderActivityLog]
+
+  _model: strawberry.Private[models.ProductionOrder]
+
+  @classmethod
+  def from_model(cls, o: models.ProductionOrder) -> "ProductionOrderType":
+    return cls(
+      order_number=o.order_number,
+      quantity=o.quantity,
+      status=ProductionOrderStatus[o.status.name],
+      is_priority=o.is_priority,
+      created_at=o.created_at,
+      _model=o,
+    )
+
+  @strawberry.field
+  def eliquid(self) -> Annotated["EliquidType", strawberry.lazy("api_graphql.types.eliquid")]:
+    from api_graphql.types.eliquid import EliquidType
+    return EliquidType.from_model(self._model.eliquid)
+
+  @strawberry.field
+  def activity_logs(self) -> list["ProductionOrderActivityLogType"]:
+    return [ProductionOrderActivityLogType.from_model(l) for l in self._model.activity_logs]

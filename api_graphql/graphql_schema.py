@@ -3,15 +3,69 @@ import strawberry
 from strawberry import relay
 from typing import List, Optional
 from database import SessionLocal
-from api_graphql.types.enums import *
-from api_graphql.types.eliquid import *
+
+from api_graphql.types.enums import FeedbackStatus
 from api_graphql.types.feedback import Feedback
-from api_graphql.types.flavoring import *
-from api_graphql.types.formula import *
-from api_graphql.types.nic_base import *
-from api_graphql.types.nic_profile import *
-from api_graphql.types.brand import *
-from api_graphql.resolvers import *
+from api_graphql.types.brand import BrandEdge, BrandConnection
+from api_graphql.types.eliquid import EliquidType
+from api_graphql.types.flavoring import (
+  FlavoringOptionType,
+  FlavoringOptionCreateInput,
+  FlavoringOptionCreatePayload,
+)
+from api_graphql.types.formula import (
+  FormulaType,
+  FormulaCreateInput,
+  FormulaCreatePayload,
+  FormulaDeleteInput,
+  FormulaDeletePayload,
+  FormulaUpdateIdentifier,
+  FormulaUpdateInput,
+  FormulaUpdatePayload,
+)
+from api_graphql.types.nic_base import (
+  NicBaseOptionType,
+  NicBaseOptionCreateInput,
+  NicBaseOptionCreatePayload,
+)
+from api_graphql.types.nic_profile import (
+  NicProfileType,
+  NicProfileAddFlavoringInput,
+  NicProfileAddFlavoringPayload,
+  NicProfileAddNicBaseInput,
+  NicProfileAddNicBasePayload,
+  NicProfileCreateInput,
+  NicProfileCreatePayload,
+  NicProfileDeleteInput,
+  NicProfileDeletePayload,
+  NicProfileUpdateIdentifier,
+  NicProfileUpdateInput,
+  NicProfileUpdatePayload,
+)
+
+from api_graphql.resolvers import (
+  get_all_brands,
+  get_all_eliquids,
+  get_all_flavoring_options,
+  get_all_formulas,
+  get_all_nic_base_options,
+  get_all_nic_profiles,
+  get_formula,
+  get_flavoring_option,
+  get_nic_base_option,
+  make_slug,
+  bulk_add_nic_profile_flavorings,
+  bulk_add_nic_profile_nic_bases,
+  create_flavoring_option,
+  create_formula,
+  create_nic_base_option,
+  create_nic_profile,
+  delete_formula,
+  delete_nic_profile,
+  update_formula,
+  update_nic_profile,
+)
+
 
 def _cursor_index(cursor: str) -> int:
   return int(relay.from_base64(cursor).split(":")[1])
@@ -22,17 +76,17 @@ def _validate_pagination_args(first, last, after, before) -> None:
       "Passing both `first` and `last` is not supported — use `first`/`after` "
       "for forward pagination or `last`/`before` for backward pagination."
     )
-  
+
   if (after is not None or before is not None) and (first is None and last is None):
     raise GraphQLError(
       "You must provide a `first` or `last`"
     )
 
 def _paginate_brands(
-  brands: List[str], 
-  after: Optional[str], 
-  before: Optional[str], 
-  first: Optional[int], 
+  brands: List[str],
+  after: Optional[str],
+  before: Optional[str],
+  first: Optional[int],
   last: Optional[int]
 ) -> BrandConnection:
   start, end = 0, len(brands)
@@ -46,17 +100,17 @@ def _paginate_brands(
     end = min(end, start + first)
   elif last is not None:
     start = max(start, end - last)
-  
+
   page = sorted(brands[start:end])
 
   edges = [
-    BrandEdge(cursor=strawberry.relay.to_base64("brandindex", str(start + i)), node=b)
+    BrandEdge(cursor=relay.to_base64("brandindex", str(start + i)), node=b)
     for i, b in enumerate(page)
   ]
 
   return BrandConnection(
     edges=edges,
-    page_info=strawberry.relay.PageInfo(
+    page_info=relay.PageInfo(
       has_previous_page=start > 0,
       has_next_page=end < len(brands),
       start_cursor=edges[0].cursor if edges else None,
@@ -81,7 +135,7 @@ class Query:
   def eliquids(self) -> List[EliquidType]:
     db = SessionLocal()
     try:
-      return [eliquid_to_type(e) for e in get_all_eliquids(db)]
+      return [EliquidType.from_model(e) for e in get_all_eliquids(db)]
     finally:
       db.close()
 
@@ -89,7 +143,7 @@ class Query:
   def flavoringOptions(self) -> List[FlavoringOptionType]:
     db = SessionLocal()
     try:
-      return [flavoring_option_to_type(o) for o in get_all_flavoring_options(db)]
+      return [FlavoringOptionType.from_model(o) for o in get_all_flavoring_options(db)]
     finally:
       db.close()
 
@@ -97,8 +151,8 @@ class Query:
   def formula(self, slug: str) -> Optional[FormulaType]:
     db = SessionLocal()
     try:
-      f = db.query(models.Formula).filter(models.Formula.slug == slug).first()
-      return formula_to_type(f) if f else None
+      f = get_formula(db=db, formula_slug=slug)
+      return FormulaType.from_model(f) if f else None
     finally:
       db.close()
 
@@ -106,7 +160,7 @@ class Query:
   def formulas(self) -> List[FormulaType]:
     db = SessionLocal()
     try:
-      return [formula_to_type(f) for f in get_all_formulas(db)]
+      return [FormulaType.from_model(f) for f in get_all_formulas(db)]
     finally:
       db.close()
 
@@ -114,7 +168,7 @@ class Query:
   def nicBaseOptions(self) -> List[NicBaseOptionType]:
     db = SessionLocal()
     try:
-      return [nic_base_option_to_type(o) for o in get_all_nic_base_options(db)]
+      return [NicBaseOptionType.from_model(o) for o in get_all_nic_base_options(db)]
     finally:
       db.close()
 
@@ -122,7 +176,7 @@ class Query:
   def nicProfiles(self) -> List[NicProfileType]:
     db = SessionLocal()
     try:
-      return [nic_profile_to_type(p) for p in get_all_nic_profiles(db)]
+      return [NicProfileType.from_model(p) for p in get_all_nic_profiles(db)]
     finally:
       db.close()
 
@@ -143,21 +197,17 @@ class Mutation:
 
       if existing:
         return FlavoringOptionCreatePayload(
-          flavoring_option=existing,
+          flavoring_option=FlavoringOptionType.from_model(existing),
           feedback=Feedback(
             status=FeedbackStatus.CANCELLED,
             message=f"Flavoring option {flavoring_option.name} already exists",
           ),
         )
 
-      created = create_flavoring_option(
-        db=db,
-        flavoring_option_name=flavoring_option.name,
-        is_vg=flavoring_option.is_vg,
-      )
+      created = create_flavoring_option(db=db, flavoring_option=flavoring_option)
 
       return FlavoringOptionCreatePayload(
-        flavoring_option=created,
+        flavoring_option=FlavoringOptionType.from_model(created),
         feedback=Feedback(status=FeedbackStatus.SUCCESS, message=None),
       )
     finally:
@@ -175,7 +225,7 @@ class Mutation:
   def formulaDelete(self, formula_slug: str) -> FormulaDeletePayload:
     db = SessionLocal()
     try:
-      return delete_formula(db=db, formula_slug=formula_slug)
+      return delete_formula(db=db, input=FormulaDeleteInput(slug=formula_slug))
     finally:
       db.close()
 
@@ -201,7 +251,7 @@ class Mutation:
 
       if existing:
         return NicBaseOptionCreatePayload(
-          nic_base_option=existing,
+          nic_base_option=NicBaseOptionType.from_model(existing),
           feedback=Feedback(
             status=FeedbackStatus.CANCELLED,
             message=f"Nic base option {nic_base_option.code} already exists",
@@ -211,7 +261,7 @@ class Mutation:
       created = create_nic_base_option(db=db, nic_base_option=nic_base_option)
 
       return NicBaseOptionCreatePayload(
-        nic_base_option=created,
+        nic_base_option=NicBaseOptionType.from_model(created),
         feedback=Feedback(status=FeedbackStatus.SUCCESS, message=None),
       )
     finally:
@@ -257,7 +307,7 @@ class Mutation:
   def nicProfileDelete(self, input: NicProfileDeleteInput) -> NicProfileDeletePayload:
     db = SessionLocal()
     try:
-      return delete_nic_profile(db=db, nic_profile_slug=input.slug)
+      return delete_nic_profile(db=db, input=input)
     finally:
       db.close()
 

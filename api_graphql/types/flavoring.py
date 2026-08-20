@@ -1,19 +1,31 @@
+from __future__ import annotations
+
 import strawberry
 from strawberry import relay
 
+import models
 from api_graphql.types.feedback import Feedback
+
 
 @strawberry.type
 class FlavoringOptionType(relay.Node):
   slug: relay.NodeID[str]
   name: str
   is_vg: bool
-  
+
+  @classmethod
+  def from_model(cls, o: models.FlavoringOption) -> "FlavoringOptionType":
+    return cls(
+      slug=o.slug,
+      name=o.name,
+      is_vg=o.is_vg
+    )
+
 @strawberry.input
 class FlavoringOptionCreateInput:
   name: str
   is_vg: bool
-  
+
 @strawberry.type
 class FlavoringOptionCreatePayload:
   flavoring_option: FlavoringOptionType | None
@@ -21,5 +33,17 @@ class FlavoringOptionCreatePayload:
 
 @strawberry.type
 class FlavoringType:
-  flavoring_option: FlavoringOptionType
   ratio: float
+
+  _model: strawberry.Private[models.Flavoring]
+
+  @classmethod
+  def from_model(cls, f: models.Flavoring) -> "FlavoringType":
+    return cls(
+      ratio=f.ratio,
+      _model=f,
+    )
+
+  @strawberry.field
+  def flavoring_option(self) -> "FlavoringOptionType":
+    return FlavoringOptionType.from_model(self._model.flavoring_option)

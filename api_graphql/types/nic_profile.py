@@ -1,11 +1,13 @@
-from typing import List
+from __future__ import annotations
+
+from typing import Annotated
 
 import strawberry
 from strawberry import relay
 
+import models
 from api_graphql.types.feedback import Feedback
-from api_graphql.types.flavoring import FlavoringType
-from api_graphql.types.nic_base import NicBaseType
+
 
 @strawberry.type
 class NicProfileType(relay.Node):
@@ -18,9 +20,34 @@ class NicProfileType(relay.Node):
   target_vg: float
   target_pg: float
   nic_base_nic_str: float
-  nic_bases: List[NicBaseType]
-  flavorings: List[FlavoringType]
-  
+
+  _model: strawberry.Private[models.NicProfile]
+
+  @classmethod
+  def from_model(cls, p: models.NicProfile) -> "NicProfileType":
+    return cls(
+      slug=p.slug,
+      name=p.name,
+      full_name=p.full_name,
+      is_pre_mix=p.is_pre_mix,
+      is_old_mix=p.is_old_mix,
+      target_nic_str=p.target_nic_str,
+      target_vg=p.target_vg,
+      target_pg=p.target_pg,
+      nic_base_nic_str=p.nic_base_nic_str,
+      _model=p,
+    )
+
+  @strawberry.field
+  def nic_bases(self) -> list[Annotated["NicBaseType", strawberry.lazy("api_graphql.types.nic_base")]]:
+    from api_graphql.types.nic_base import NicBaseType
+    return [NicBaseType.from_model(b) for b in self._model.nic_bases]
+
+  @strawberry.field
+  def flavorings(self) -> list[Annotated["FlavoringType", strawberry.lazy("api_graphql.types.flavoring")]]:
+    from api_graphql.types.flavoring import FlavoringType
+    return [FlavoringType.from_model(b) for b in self._model.flavorings]
+
 @strawberry.input
 class NicProfileAddFlavoringInput:
   flavoring_option_name: str
@@ -57,11 +84,11 @@ class NicProfileCreateInput:
 class NicProfileCreatePayload:
   nic_profile: NicProfileType | None
   feedback: Feedback
-  
+
 @strawberry.input
 class NicProfileDeleteInput:
   slug: str
-  
+
 @strawberry.type
 class NicProfileDeletePayload:
   deleted_slug: str | None
@@ -81,7 +108,7 @@ class NicProfileUpdateInput:
   target_nic_str: float | None = None
   target_vg: float | None = None
   target_pg: float | None = None
-  
+
 @strawberry.type
 class NicProfileUpdatePayload:
   nic_profile: NicProfileType | None
