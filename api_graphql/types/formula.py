@@ -12,7 +12,8 @@ from api_graphql.types.feedback import Feedback
 
 @strawberry.type
 class FormulaType(relay.Node):
-  slug: relay.NodeID[str]
+  id: relay.NodeID[str]
+  slug: str
   name: str
   brand: str
   chill_type: ChillType
@@ -23,6 +24,7 @@ class FormulaType(relay.Node):
   @classmethod
   def from_model(cls, f: models.Formula) -> "FormulaType":
     return cls(
+      id=f.id,
       slug=f.slug,
       name=f.name,
       brand=f.brand,

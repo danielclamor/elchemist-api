@@ -14,7 +14,8 @@ if TYPE_CHECKING:
 
 @strawberry.type
 class EliquidType(relay.Node):
-  upc: relay.NodeID[str]
+  id: relay.NodeID[str]
+  upc: str
   description: str
   brand: str
   chill_type: ChillType
@@ -28,6 +29,7 @@ class EliquidType(relay.Node):
   @classmethod
   def from_model(cls, e: "models.Eliquid") -> "EliquidType":
     return cls(
+      id=e.id,
       upc=e.upc,
       description=e.description,
       brand=e.brand,

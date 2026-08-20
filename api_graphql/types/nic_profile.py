@@ -11,7 +11,8 @@ from api_graphql.types.feedback import Feedback
 
 @strawberry.type
 class NicProfileType(relay.Node):
-  slug: relay.NodeID[str]
+  id: relay.NodeID[str]
+  slug: str
   name: str
   full_name: str
   is_pre_mix: bool
@@ -26,6 +27,7 @@ class NicProfileType(relay.Node):
   @classmethod
   def from_model(cls, p: models.NicProfile) -> "NicProfileType":
     return cls(
+      id=p.id,
       slug=p.slug,
       name=p.name,
       full_name=p.full_name,

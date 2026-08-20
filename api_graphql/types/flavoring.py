@@ -9,13 +9,15 @@ from api_graphql.types.feedback import Feedback
 
 @strawberry.type
 class FlavoringOptionType(relay.Node):
-  slug: relay.NodeID[str]
+  id: relay.NodeID[str]
+  slug: str
   name: str
   is_vg: bool
 
   @classmethod
   def from_model(cls, o: models.FlavoringOption) -> "FlavoringOptionType":
     return cls(
+      id=o.id,
       slug=o.slug,
       name=o.name,
       is_vg=o.is_vg

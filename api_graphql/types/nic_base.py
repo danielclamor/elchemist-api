@@ -9,13 +9,15 @@ from api_graphql.types.feedback import Feedback
 
 @strawberry.type
 class NicBaseOptionType(relay.Node):
-  code: relay.NodeID[str]
+  id: relay.NodeID[str]
+  code: str
   name: str
   is_vg: bool
 
   @classmethod
   def from_model(cls, o: models.NicBaseOption) -> "NicBaseOptionType":
     return cls(
+      id=o.id,
       code=o.code,
       name=o.name,
       is_vg=o.is_vg

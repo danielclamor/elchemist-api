@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Annotated
-import uuid
 
 import strawberry
 from strawberry import relay
@@ -13,7 +12,7 @@ from api_graphql.types.enums import ProductionOrderActivity, ProductionOrderStat
 
 @strawberry.type
 class ProductionOrderActivityLogType(relay.Node):
-  id: uuid.UUID
+  id: relay.NodeID[str]
   activity: ProductionOrderActivity
   old_value: str
   new_value: str
@@ -31,6 +30,7 @@ class ProductionOrderActivityLogType(relay.Node):
 
 @strawberry.type
 class ProductionOrderType(relay.Node):
+  id: relay.NodeID[str]
   order_number: str
   quantity: int
   status: ProductionOrderStatus
@@ -42,6 +42,7 @@ class ProductionOrderType(relay.Node):
   @classmethod
   def from_model(cls, o: models.ProductionOrder) -> "ProductionOrderType":
     return cls(
+      id=o.id,
       order_number=o.order_number,
       quantity=o.quantity,
       status=ProductionOrderStatus[o.status.name],
