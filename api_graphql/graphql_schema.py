@@ -1,7 +1,7 @@
 from graphql import GraphQLError
 import strawberry
 from strawberry import relay
-from typing import Any, List, Optional
+from typing import List, Optional
 from database import SessionLocal
 from api_graphql.types.enums import *
 from api_graphql.types.eliquid import *

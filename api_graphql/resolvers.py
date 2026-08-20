@@ -4,12 +4,12 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select
 from api_graphql.types.enums import *
 from api_graphql.types.eliquid import *
-from api_graphql.types.feedback import Feedback
+from api_graphql.types.feedback import *
 from api_graphql.types.flavoring import *
 from api_graphql.types.formula import *
 from api_graphql.types.nic_base import *
 from api_graphql.types.nic_profile import *
-import models  
+import models
   
 # Auxiliary functions  
 def make_slug(string: str) -> str:
