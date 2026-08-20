@@ -1,8 +1,8 @@
-"""test
+"""refactor is_pre_mix column to be non-nullable
 
-Revision ID: ef68c53ad83a
-Revises: 47a0cedab267
-Create Date: 2026-08-11 13:20:05.835904
+Revision ID: dc6ff99da581
+Revises: 5bf7187b3d43
+Create Date: 2026-08-18 15:42:03.236857
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ef68c53ad83a'
-down_revision: Union[str, Sequence[str], None] = '47a0cedab267'
+revision: str = 'dc6ff99da581'
+down_revision: Union[str, Sequence[str], None] = '5bf7187b3d43'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
