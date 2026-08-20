@@ -1,5 +1,6 @@
 from datetime import datetime
 import enum
+import uuid
 
 import strawberry
 from strawberry import relay
@@ -254,9 +255,25 @@ class ProductionOrderStatus(enum.Enum):
 
 @strawberry.type
 class ProductionOrderType(relay.Node):
-  order_numer: str
+  order_number: str
   eliquid: EliquidType
   quantity: int
   status: ProductionOrderStatus
   is_priority: bool
   created_at: datetime
+  activity_logs: List[ProductionOrderActivityLog]
+
+@strawberry.enum
+class ProductionOrderActivity(enum.Enum):
+  CREATED = "created"
+  ADJUST_QUANTITY = "adjust_quantity"
+  CHANGE_STATUS = "change_status"
+  SWITCH_PRIORITY = "switch_priority"
+  
+@strawberry.type
+class ProductionOrderActivityLog(relay.Node):
+  id: uuid.UUID
+  activity: ProductionOrderActivity
+  old_value: str
+  new_value: str
+  triggered_at: datetime
