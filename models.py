@@ -244,11 +244,11 @@ class ProductionOrderCounter(Base):
     
   
 class ProductionOrderStatus(enum.Enum):
-  PENDING = "pending"
-  MIXED = "mixed"
-  DELIVERED = "delivered"
   CANCELLED = "cancelled"
-
+  DELIVERED = "delivered"
+  MIXED = "mixed"
+  PENDING = "pending"
+  
 
 production_order_status_enum = Enum(ProductionOrderStatus, name="productionorderstatus")
 
