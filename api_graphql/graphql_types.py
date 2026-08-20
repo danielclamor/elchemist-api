@@ -256,7 +256,8 @@ class ProductionOrderStatus(enum.Enum):
 @strawberry.type
 class ProductionOrderType(relay.Node):
   order_number: str
-  eliquid: EliquidType
+  eliquid_id: uuid.UUID
+  eliquid_description: str
   quantity: int
   status: ProductionOrderStatus
   is_priority: bool
