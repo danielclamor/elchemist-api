@@ -22,6 +22,7 @@ def make_slug(string: str) -> str:
 # SQLAlchemy model -> GraphQL model resolvers
 def eliquid_to_type(e: models.Eliquid) -> EliquidType:
   return EliquidType(
+    id=e.id,
     upc=e.upc,
     description=e.description,
     brand=e.brand,
@@ -35,6 +36,7 @@ def eliquid_to_type(e: models.Eliquid) -> EliquidType:
 
 def flavoring_option_to_type(o: models.FlavoringOption) -> FlavoringOptionType:
   return FlavoringOptionType(
+    id=o.id,
     slug=o.slug,
     name=o.name,
     is_vg=o.is_vg,
@@ -42,6 +44,7 @@ def flavoring_option_to_type(o: models.FlavoringOption) -> FlavoringOptionType:
   
 def formula_to_type(f: models.Formula) -> FormulaType:
   return FormulaType(
+    id=f.id,
     slug=f.slug,
     name=f.name,
     brand=f.brand,
@@ -54,6 +57,7 @@ def formula_to_type(f: models.Formula) -> FormulaType:
 
 def nic_profile_to_type(p: models.NicProfile) -> NicProfileType:
   return NicProfileType(
+    id=p.id,
     slug=p.slug,
     name=p.name,
     full_name=p.full_name,
@@ -66,15 +70,16 @@ def nic_profile_to_type(p: models.NicProfile) -> NicProfileType:
     nic_bases=[
       NicBaseType(
         ratio=nb.ratio,
-        nic_base_option=NicBaseOptionType(code=nb.nic_base_option.code, name=nb.nic_base_option.name, is_vg=nb.nic_base_option.is_vg),
+        nic_base_option=NicBaseOptionType(id=nb.nic_base_option.id, code=nb.nic_base_option.code, name=nb.nic_base_option.name, is_vg=nb.nic_base_option.is_vg),
       )
       for nb in p.nic_bases
     ],
-    flavorings=[FlavoringType(flavoring_option=FlavoringOptionType(slug=fl.flavoring_option.slug, name=fl.flavoring_option.name, is_vg=fl.flavoring_option.is_vg), ratio=fl.ratio) for fl in p.flavorings],
+    flavorings=[FlavoringType(flavoring_option=FlavoringOptionType(id=fl.flavoring_option.id, slug=fl.flavoring_option.slug, name=fl.flavoring_option.name, is_vg=fl.flavoring_option.is_vg), ratio=fl.ratio) for fl in p.flavorings],
   )
   
 def nic_base_option_to_type(o: models.NicBaseOption) -> NicBaseOptionType:
   return NicBaseOptionType(
+    id=o.id,
     code=o.code,
     name=o.name,
     is_vg=o.is_vg,

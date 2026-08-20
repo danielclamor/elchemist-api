@@ -5,7 +5,8 @@ from api_graphql.types.feedback import Feedback
 
 @strawberry.type
 class NicBaseOptionType(relay.Node):
-  code: relay.NodeID[str]
+  id: relay.NodeID[str]
+  code: str
   name: str
   is_vg: bool
 

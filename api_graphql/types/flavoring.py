@@ -5,7 +5,8 @@ from api_graphql.types.feedback import Feedback
 
 @strawberry.type
 class FlavoringOptionType(relay.Node):
-  slug: relay.NodeID[str]
+  id: relay.NodeID[str]
+  slug: str
   name: str
   is_vg: bool
   

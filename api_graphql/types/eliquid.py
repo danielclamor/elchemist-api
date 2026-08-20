@@ -6,7 +6,8 @@ from api_graphql.types.nic_profile import NicProfileType
 
 @strawberry.type
 class EliquidType(relay.Node):
-  upc: relay.NodeID[str]
+  id: relay.NodeID[str]
+  upc: str
   description: str
   brand: str
   chill_type: ChillType

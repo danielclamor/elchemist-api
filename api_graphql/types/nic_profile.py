@@ -9,7 +9,8 @@ from api_graphql.types.nic_base import NicBaseType
 
 @strawberry.type
 class NicProfileType(relay.Node):
-  slug: relay.NodeID[str]
+  id: relay.NodeID[str]
+  slug: str
   name: str
   full_name: str
   is_pre_mix: bool

@@ -9,7 +9,8 @@ from api_graphql.types.nic_profile import NicProfileType
 
 @strawberry.type
 class FormulaType(relay.Node):
-  slug: relay.NodeID[str]
+  id: relay.NodeID[str]
+  slug: str
   name: str
   brand: str
   chill_type: ChillType
