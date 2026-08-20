@@ -5,7 +5,7 @@ import uuid
 import strawberry
 from strawberry import relay
 
-from api_graphql.types.enums import ProductionOrderActivity, ProductionOrderStatus
+from api_graphql.graphql_types.enums import ProductionOrderActivity, ProductionOrderStatus
 
 @strawberry.type
 class ProductionOrderType(relay.Node):

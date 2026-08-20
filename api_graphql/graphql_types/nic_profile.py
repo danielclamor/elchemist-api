@@ -3,9 +3,9 @@ from typing import List
 import strawberry
 from strawberry import relay
 
-from api_graphql.types.feedback import Feedback
-from api_graphql.types.flavoring import FlavoringType
-from api_graphql.types.nic_base import NicBaseType
+from api_graphql.graphql_types.feedback import Feedback
+from api_graphql.graphql_types.flavoring import FlavoringType
+from api_graphql.graphql_types.nic_base import NicBaseType
 
 @strawberry.type
 class NicProfileType(relay.Node):

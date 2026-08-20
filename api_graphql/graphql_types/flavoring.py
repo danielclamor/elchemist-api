@@ -1,7 +1,7 @@
 import strawberry
 from strawberry import relay
 
-from api_graphql.types.feedback import Feedback
+from api_graphql.graphql_types.feedback import Feedback
 
 @strawberry.type
 class FlavoringOptionType(relay.Node):

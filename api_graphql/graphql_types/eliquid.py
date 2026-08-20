@@ -1,11 +1,8 @@
-from datetime import datetime
-import enum
-
 import strawberry
 from strawberry import relay
 
-from api_graphql.types.enums import ChillType, NicType, SizeOption, NicLevelOption, BottleColor
-from api_graphql.types.nic_profile import NicProfileType
+from api_graphql.graphql_types.enums import ChillType, NicType, SizeOption, NicLevelOption, BottleColor
+from api_graphql.graphql_types.nic_profile import NicProfileType
 
 @strawberry.type
 class EliquidType(relay.Node):

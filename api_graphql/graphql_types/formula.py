@@ -1,12 +1,11 @@
-from datetime import datetime
 from typing import List
 
 import strawberry
 from strawberry import relay
 
-from api_graphql.types.enums import ChillType, NicType
-from api_graphql.types.feedback import Feedback
-from api_graphql.types.nic_profile import NicProfileType
+from api_graphql.graphql_types.enums import ChillType, NicType
+from api_graphql.graphql_types.feedback import Feedback
+from api_graphql.graphql_types.nic_profile import NicProfileType
 
 @strawberry.type
 class FormulaType(relay.Node):
