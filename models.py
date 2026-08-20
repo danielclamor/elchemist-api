@@ -245,8 +245,8 @@ class ProductionOrderCounter(Base):
   
 class ProductionOrderStatus(enum.Enum):
   PENDING = "pending"
-  IN_PROGRESS = "in_progress"
-  COMPLETED = "completed"
+  MIXED = "mixed"
+  DELIVERED = "delivered"
   CANCELLED = "cancelled"
 
 
