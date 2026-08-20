@@ -1,6 +1,7 @@
 import strawberry
+from strawberry import relay
 
-from api_graphql.graphql_types.enums import FeedbackStatus
+from api_graphql.types.enums import FeedbackStatus
 
 @strawberry.type
 class Feedback:
