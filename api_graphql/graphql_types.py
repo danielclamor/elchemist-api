@@ -1,3 +1,4 @@
+from datetime import datetime
 import enum
 
 import strawberry
@@ -243,3 +244,19 @@ class NicProfileUpdateInput:
 class NicProfileUpdatePayload:
   nic_profile: NicProfileType | None
   feedback: Feedback
+  
+@strawberry.enum
+class ProductionOrderStatus(enum.Enum):
+  CANCELLED = "cancelled"
+  DELIVERED = "delivered"
+  MIXED = "mixed"
+  PENDING = "pending"
+
+@strawberry.type
+class ProductionOrderType(relay.Node):
+  order_numer: str
+  eliquid: EliquidType
+  quantity: int
+  status: ProductionOrderStatus
+  is_priority: bool
+  created_at: datetime
