@@ -1,12 +1,22 @@
 import enum
-import uuid
 
 import strawberry
+from strawberry import relay
 from typing import List
 
 @strawberry.type
-class NicBaseOptionType:
-  code: str
+class BrandEdge:
+  cursor: str
+  node: str
+
+@strawberry.type
+class BrandConnection:
+  edges: List[BrandEdge]
+  page_info: relay.PageInfo
+
+@strawberry.type
+class NicBaseOptionType(relay.Node):
+  code: relay.NodeID[str]
   name: str
   is_vg: bool
 
@@ -16,8 +26,8 @@ class NicBaseType:
   nic_base_option: NicBaseOptionType
 
 @strawberry.type
-class FlavoringOptionType:
-  slug: str
+class FlavoringOptionType(relay.Node):
+  slug: relay.NodeID[str]
   name: str
   is_vg: bool
 
@@ -27,8 +37,8 @@ class FlavoringType:
   ratio: float
   
 @strawberry.type
-class NicProfileType:
-  slug: str
+class NicProfileType(relay.Node):
+  slug: relay.NodeID[str]
   name: str
   full_name: str
   is_pre_mix: bool
@@ -77,8 +87,8 @@ class NicLevelOption(enum.Enum):
   HIT_50 = "hit50"
 
 @strawberry.type
-class EliquidType:
-  upc: str
+class EliquidType(relay.Node):
+  upc: relay.NodeID[str]
   description: str
   brand: str
   chill_type: ChillType
@@ -89,8 +99,8 @@ class EliquidType:
   nic_profile: NicProfileType | None = None
 
 @strawberry.type
-class FormulaType:
-  slug: str
+class FormulaType(relay.Node):
+  slug: relay.NodeID[str]
   name: str
   brand: str
   chill_type: ChillType
