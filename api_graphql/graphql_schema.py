@@ -222,10 +222,10 @@ class Mutation:
       db.close()
 
   @strawberry.mutation
-  def formulaDelete(self, formula_slug: str) -> FormulaDeletePayload:
+  def formulaDelete(self, input: FormulaDeleteInput) -> FormulaDeletePayload:
     db = SessionLocal()
     try:
-      return delete_formula(db=db, input=FormulaDeleteInput(slug=formula_slug))
+      return delete_formula(db=db, input=input)
     finally:
       db.close()
 
