@@ -3,7 +3,14 @@ import strawberry
 from strawberry import relay
 from typing import Any, List, Optional
 from database import SessionLocal
-from api_graphql.graphql_types import *
+from api_graphql.types.enums import *
+from api_graphql.types.eliquid import *
+from api_graphql.types.feedback import Feedback
+from api_graphql.types.flavoring import *
+from api_graphql.types.formula import *
+from api_graphql.types.nic_base import *
+from api_graphql.types.nic_profile import *
+from api_graphql.types.brand import *
 from api_graphql.resolvers import *
 
 def _cursor_index(cursor: str) -> int:
