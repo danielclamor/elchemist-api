@@ -2,7 +2,6 @@ from graphql import GraphQLError
 import strawberry
 from strawberry import relay
 from typing import List, Optional
-from database import SessionLocal
 
 from api_graphql.types.enums import FeedbackStatus
 from api_graphql.types.feedback import Feedback
@@ -42,6 +41,11 @@ from api_graphql.types.nic_profile import (
   NicProfileUpdateInput,
   NicProfileUpdatePayload,
 )
+from api_graphql.types.production_order import (
+  ProductionOrderType,
+  ProductionOrderCreateInput,
+  ProductionOrderCreatePayload,
+)
 
 from api_graphql.resolvers.utils import make_slug
 
@@ -80,6 +84,12 @@ from api_graphql.resolvers.nic_base import (
   get_all_nic_base_options,
   get_nic_base_option,
   create_nic_base_option,
+)
+
+from api_graphql.resolvers.production_order import (
+  get_all_production_orders,
+  get_production_order,
+  create_production_order,
 )
 
 def _cursor_index(cursor: str) -> int:
@@ -185,6 +195,20 @@ class Query:
   ) -> List[NicProfileType]:
     db = info.context["db"]
     return [NicProfileType.from_model(p) for p in get_all_nic_profiles(db)]
+  
+  @strawberry.field
+  def productionOrder(
+    self, info: strawberry.Info
+  ) -> ProductionOrderType:
+    db = info.context["db"]
+    return ProductionOrderType.from_model(get_production_order(db))
+  
+  @relay.connection(relay.ListConnection[ProductionOrderType])
+  def productionOrders(
+    self, info: strawberry.Info
+  ) -> List[ProductionOrderType]:
+    db = info.context["db"]
+    return [ProductionOrderType.from_model(po) for po in get_all_production_orders(db)]
 
 
 @strawberry.type
@@ -303,5 +327,11 @@ class Mutation:
     db = info.context["db"]
     return update_nic_profile(db=db, identifier=identifier, nic_profile=nic_profile)
 
+  @strawberry.mutation
+  def productionOrderCreate(
+    self, info: strawberry.Info, input: ProductionOrderCreateInput
+  ) -> ProductionOrderCreatePayload:
+    db = info.context["db"]
+    return create_production_order(db=db, production_order=input)
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
