@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, TYPE_CHECKING
 
 import strawberry
 from strawberry import relay
 
 import models
 from api_graphql.types.enums import ProductionOrderActivity, ProductionOrderStatus
+
+if TYPE_CHECKING:
+  from api_graphql.types.eliquid import EliquidType
 
 @strawberry.type
 class ProductionOrderActivityLogType(relay.Node):
@@ -55,6 +58,6 @@ class ProductionOrderType(relay.Node):
     from api_graphql.types.eliquid import EliquidType
     return EliquidType.from_model(self._model.eliquid)
 
-  @strawberry.field
+  @relay.connection(relay.ListConnection["ProductionOrderActivityLogType"])
   def activity_logs(self) -> list["ProductionOrderActivityLogType"]:
     return [ProductionOrderActivityLogType.from_model(l) for l in self._model.activity_logs]
