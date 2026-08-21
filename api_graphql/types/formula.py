@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, TYPE_CHECKING
 
 import strawberry
 from strawberry import relay
@@ -8,6 +8,9 @@ from strawberry import relay
 import models
 from api_graphql.types.enums import ChillType, NicType
 from api_graphql.types.feedback import Feedback
+
+if TYPE_CHECKING:
+  from api_graphql.types.nic_profile import NicProfileType
 
 @strawberry.type
 class FormulaType(relay.Node):
@@ -32,7 +35,7 @@ class FormulaType(relay.Node):
       _model=f,
     )
 
-  @strawberry.field
+  @relay.connection(relay.ListConnection[Annotated["NicProfileType", strawberry.lazy("api_graphql.types.nic_profile")]])
   def nic_profiles(self) -> list[Annotated["NicProfileType", strawberry.lazy("api_graphql.types.nic_profile")]]:
     from api_graphql.types.nic_profile import NicProfileType
     return [NicProfileType.from_model(p) for p in self._model.nic_profiles]
