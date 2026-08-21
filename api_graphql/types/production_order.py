@@ -73,3 +73,18 @@ class ProductionOrderCreateInput:
 class ProductionOrderCreatePayload:
   production_order: ProductionOrderType | None
   feedback: Feedback
+
+@strawberry.input
+class ProductionOrderUpdateIdentifier:
+  order_number: str
+  
+@strawberry.input
+class ProductionOrderUpdateInput:
+  status: ProductionOrderStatus | None = None
+  quantity: int | None = None
+  is_priority: bool | None = None
+  
+@strawberry.type
+class ProductionOrderUpdatePayload:
+  production_order: ProductionOrderType | None
+  feedback: Feedback
