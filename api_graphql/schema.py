@@ -43,22 +43,14 @@ from api_graphql.types.nic_profile import (
   NicProfileUpdatePayload,
 )
 
-from api_graphql.resolvers_old import (
+from api_graphql.resolvers.utils import make_slug
+
+from api_graphql.resolvers.brand import (
   get_all_brands,
+)
+
+from api_graphql.resolvers.eliquid import (
   get_all_eliquids,
-  get_all_flavoring_options,
-  get_all_nic_base_options,
-  get_all_nic_profiles,
-  get_flavoring_option,
-  get_nic_base_option,
-  make_slug,
-  bulk_add_nic_profile_flavorings,
-  bulk_add_nic_profile_nic_bases,
-  create_flavoring_option,
-  create_nic_base_option,
-  create_nic_profile,
-  delete_nic_profile,
-  update_nic_profile,
 )
 
 from api_graphql.resolvers.formula import (
@@ -69,6 +61,26 @@ from api_graphql.resolvers.formula import (
   update_formula,
 )
 
+from api_graphql.resolvers.nic_profile import (
+  get_all_nic_profiles,
+  bulk_add_nic_profile_flavorings,
+  bulk_add_nic_profile_nic_bases,
+  create_nic_profile,
+  delete_nic_profile,
+  update_nic_profile,
+)
+
+from api_graphql.resolvers.flavoring import (
+  get_all_flavoring_options,
+  get_flavoring_option,
+  create_flavoring_option,
+)
+
+from api_graphql.resolvers.nic_base import (
+  get_all_nic_base_options,
+  get_nic_base_option,
+  create_nic_base_option,
+)
 
 def _cursor_index(cursor: str) -> int:
   return int(relay.from_base64(cursor).split(":")[1])
