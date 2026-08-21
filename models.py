@@ -233,6 +233,7 @@ class NicProfile(Base):
     back_populates="nic_profile", cascade="all, delete-orphan"
   )
   
+  @property
   def full_name(self) -> str:
     is_old_mix = " - Old Mix" if self.is_old_mix else None
     return f"{self.formula.name} - {self.name}{is_old_mix if is_old_mix else ""}"
