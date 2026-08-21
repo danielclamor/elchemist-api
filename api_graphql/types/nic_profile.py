@@ -13,7 +13,6 @@ class NicProfileType(relay.Node):
   id: relay.NodeID[str]
   slug: str
   name: str
-  full_name: str
   is_pre_mix: bool
   is_old_mix: bool
   target_nic_str: float
@@ -29,7 +28,6 @@ class NicProfileType(relay.Node):
       id=p.id,
       slug=p.slug,
       name=p.name,
-      full_name=p.full_name,
       is_pre_mix=p.is_pre_mix,
       is_old_mix=p.is_old_mix,
       target_nic_str=p.target_nic_str,
@@ -38,6 +36,11 @@ class NicProfileType(relay.Node):
       nic_base_nic_str=p.nic_base_nic_str,
       _model=p,
     )
+    
+  @strawberry.field
+  def full_name(self) -> str:
+    is_old_mix = " - Old Mix" if self._model.is_old_mix else None
+    return f"{self._model.formula.name} - {self._model.name}{is_old_mix if is_old_mix else ""}"
     
   @strawberry.field
   def formula(self) -> Annotated["FormulaType", strawberry.lazy("api_graphql.types.formula")]:
