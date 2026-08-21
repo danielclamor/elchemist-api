@@ -7,6 +7,7 @@ import strawberry
 from strawberry import relay
 
 import models
+from api_graphql.types.feedback import Feedback
 from api_graphql.types.enums import ProductionOrderActivity, ProductionOrderStatus
 
 if TYPE_CHECKING:
@@ -61,3 +62,14 @@ class ProductionOrderType(relay.Node):
   @relay.connection(relay.ListConnection["ProductionOrderActivityLogType"])
   def activity_logs(self) -> list["ProductionOrderActivityLogType"]:
     return [ProductionOrderActivityLogType.from_model(l) for l in self._model.activity_logs]
+  
+@strawberry.input
+class ProductionOrderCreateInput:
+  eliquid_upc: str
+  quantity: int
+  is_priority: bool | None = None
+
+@strawberry.type
+class ProductionOrderCreatePayload:
+  production_order: ProductionOrderType | None
+  feedback: Feedback
