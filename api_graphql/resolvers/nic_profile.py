@@ -4,8 +4,27 @@ import models
 
 from .utils import make_slug
 
+from api_graphql.resolvers.flavoring import (
+  get_flavoring_option,
+  create_flavoring_option,
+)
+
+from api_graphql.resolvers.nic_base import (
+  get_nic_base_option,
+  create_nic_base_option,
+)
+
 from api_graphql.types.enums import FeedbackStatus
 from api_graphql.types.feedback import Feedback
+
+from api_graphql.types.flavoring import (
+  FlavoringOptionCreateInput,
+)
+
+from api_graphql.types.nic_base import (
+  NicBaseOptionCreateInput,
+)
+
 from api_graphql.types.nic_profile import (
   NicProfileType,
   NicProfileCreatePayload,
@@ -224,7 +243,6 @@ def create_nic_profile(db: Session, formula_slug: str, nic_profile: "NicProfileC
   nic_profile = models.NicProfile(
     formula_id=formula.id,
     slug=slug,
-    full_name=full_name,
     name=nic_profile.name,
     is_old_mix=nic_profile.is_old_mix,
     nic_base_nic_str=nic_profile.nic_base_nic_str,
