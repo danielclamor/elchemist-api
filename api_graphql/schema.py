@@ -45,6 +45,8 @@ from api_graphql.types.production_order import (
   ProductionOrderType,
   ProductionOrderCreateInput,
   ProductionOrderCreatePayload,
+  ProductionOrderDeleteInput,
+  ProductionOrderDeletePayload,
   ProductionOrderUpdateIdentifier,
   ProductionOrderUpdateInput,
   ProductionOrderUpdatePayload,
@@ -93,6 +95,7 @@ from api_graphql.resolvers.production_order import (
   get_all_production_orders,
   get_production_order,
   create_production_order,
+  delete_production_order,
   update_production_order,
 )
 
@@ -337,6 +340,13 @@ class Mutation:
   ) -> ProductionOrderCreatePayload:
     db = info.context["db"]
     return create_production_order(db=db, production_order=production_order)
+  
+  @strawberry.mutation
+  def productionOrderDelete(
+    self, info: strawberry.Info, input: ProductionOrderDeleteInput
+  ) -> ProductionOrderDeletePayload:
+    db = info.context["db"]
+    return delete_production_order(db=db, input=input)
   
   @strawberry.mutation
   def productionOrderUpdate(

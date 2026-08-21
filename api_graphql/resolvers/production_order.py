@@ -12,12 +12,19 @@ from api_graphql.types.enums import FeedbackStatus
 from api_graphql.types.feedback import Feedback
 from api_graphql.types.production_order import (
   ProductionOrderType,
-  ProductionOrderCreateInput,
   ProductionOrderCreatePayload,
-  ProductionOrderUpdateIdentifier,
-  ProductionOrderUpdateInput,
+  ProductionOrderDeletePayload,
   ProductionOrderUpdatePayload,
 )
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  from api_graphql.types.production_order import (
+    ProductionOrderCreateInput,
+    ProductionOrderDeleteInput,
+    ProductionOrderUpdateIdentifier,
+    ProductionOrderUpdateInput,
+  )
 
 from .utils import generate_production_order_number, get_today
 
@@ -54,10 +61,9 @@ def create_production_order_activity_log(
   
   return log
   
-
 def create_production_order(
   db: Session, 
-  production_order: ProductionOrderCreateInput
+  production_order: "ProductionOrderCreateInput"
 ) -> ProductionOrderCreatePayload:
   eliquid = db.scalar(select(models.Eliquid).where(models.Eliquid.upc == production_order.eliquid_upc))
   if not eliquid:
@@ -122,10 +128,39 @@ def create_production_order(
     )
   )
   
+def delete_production_order(
+  db: Session,
+  input: "ProductionOrderDeleteInput"
+) -> ProductionOrderDeletePayload:
+  po = get_production_order(
+    db=db,
+    order_number=input.order_number,
+  )
+  
+  if not po:
+    return ProductionOrderDeletePayload(
+      deleted_order_number=None,
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Production order {input.order_number} not found."
+      )
+    )
+  
+  db.delete(po)
+  db.commit()
+  
+  return ProductionOrderDeletePayload(
+    deleted_order_number=input.order_number,
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=None
+    )
+  )
+  
 def update_production_order(
   db: Session, 
   identifier: ProductionOrderUpdateIdentifier,
-  production_order: ProductionOrderUpdateInput,
+  production_order: "ProductionOrderUpdateInput",
 ) -> ProductionOrderUpdatePayload:
   po = db.scalar(select(models.ProductionOrder).where(models.ProductionOrder.order_number == identifier.order_number))
   if not po:

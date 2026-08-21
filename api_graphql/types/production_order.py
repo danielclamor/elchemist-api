@@ -75,6 +75,15 @@ class ProductionOrderCreatePayload:
   feedback: Feedback
 
 @strawberry.input
+class ProductionOrderDeleteInput:
+  order_number: str
+  
+@strawberry.type
+class ProductionOrderDeletePayload:
+  deleted_order_number: str | None
+  feedback: Feedback
+
+@strawberry.input
 class ProductionOrderUpdateIdentifier:
   order_number: str
   
