@@ -300,8 +300,8 @@ class ProductionOrderActivityLog(Base):
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"))
   activity: Mapped[ProductionOrderActivity] = mapped_column(production_order_activity_enum)
-  old_value: Mapped[str] = mapped_column(String(20), nullable=True)
-  new_value: Mapped[str] = mapped_column(String(20), nullable=True)
+  old_value: Mapped[str] = mapped_column(String(255), nullable=True)
+  new_value: Mapped[str] = mapped_column(String(255), nullable=True)
   triggered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
   
   production_order: Mapped["ProductionOrder"] = relationship(back_populates="activity_logs")
