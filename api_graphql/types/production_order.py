@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 class ProductionOrderActivityLogType(relay.Node):
   id: relay.NodeID[str]
   activity: ProductionOrderActivity
-  old_value: str
-  new_value: str
+  old_value: str | None
+  new_value: str | None
   triggered_at: datetime
 
   @classmethod
