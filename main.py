@@ -82,7 +82,7 @@
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
 from database import SessionLocal
-from api_graphql.graphql_schema import schema
+from api_graphql.schema import schema
 
 app = FastAPI(title="Elchemist API")
 
