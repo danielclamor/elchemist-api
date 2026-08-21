@@ -11,7 +11,10 @@ def make_slug(string: str) -> str:
   tokens = [token for token in tokens if token != ""]
   return '-'.join(tokens).lower()
 
-def get_today() -> datetime:
+def get_today(timezone: str | None = None) -> datetime:
+  if timezone:
+    return datetime.now(ZoneInfo(timezone))
+
   import os 
   from dotenv import load_dotenv
   load_dotenv()
