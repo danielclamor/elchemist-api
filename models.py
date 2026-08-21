@@ -209,7 +209,6 @@ class NicProfile(Base):
 
   slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
   name: Mapped[str] = mapped_column(String(255))
-  full_name: Mapped[str | None] = mapped_column(String, nullable=True)
   
   is_pre_mix: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -233,6 +232,10 @@ class NicProfile(Base):
   flavorings: Mapped[list["Flavoring"]] = relationship(
     back_populates="nic_profile", cascade="all, delete-orphan"
   )
+  
+  def full_name(self) -> str:
+    is_old_mix = " - Old Mix" if self.is_old_mix else None
+    return f"{self.formula.name} - {self.name}{is_old_mix if is_old_mix else ""}"
 
   def __repr__(self) -> str:
     return f"<NicProfile {self.slug!r}>"

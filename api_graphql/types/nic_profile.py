@@ -39,8 +39,7 @@ class NicProfileType(relay.Node):
     
   @strawberry.field
   def full_name(self) -> str:
-    is_old_mix = " - Old Mix" if self._model.is_old_mix else None
-    return f"{self._model.formula.name} - {self._model.name}{is_old_mix if is_old_mix else ""}"
+    return self._model.full_name()
     
   @strawberry.field
   def formula(self) -> Annotated["FormulaType", strawberry.lazy("api_graphql.types.formula")]:
