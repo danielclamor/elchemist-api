@@ -1,3 +1,6 @@
+from datetime import datetime
+import uuid
+
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -9,8 +12,11 @@ from api_graphql.types.enums import FeedbackStatus
 from api_graphql.types.feedback import Feedback
 from api_graphql.types.production_order import (
   ProductionOrderType,
-  ProductionOrderCreateInput, 
+  ProductionOrderCreateInput,
   ProductionOrderCreatePayload,
+  ProductionOrderUpdateIdentifier,
+  ProductionOrderUpdateInput,
+  ProductionOrderUpdatePayload,
 )
 
 from .utils import generate_production_order_number, get_today
@@ -28,7 +34,31 @@ def get_production_order(db: Session, order_number: str) -> models.ProductionOrd
 
 
 # Mutations
-def create_production_order(db: Session, production_order: ProductionOrderCreateInput) -> ProductionOrderCreatePayload:
+def create_production_order_activity_log(
+  db: Session,
+  production_order_id: uuid.UUID,
+  activity: models.ProductionOrderActivity,
+  triggered_at: datetime,
+  old_value: str | None = None,
+  new_value: str | None = None,
+) -> models.ProductionOrderActivityLog:
+  log = models.ProductionOrderActivityLog(
+    production_order_id=production_order_id,
+    activity=activity,
+    triggered_at=triggered_at,
+    old_value=old_value,
+    new_value=new_value,
+  )
+    
+  db.add(log)
+  
+  return log
+  
+
+def create_production_order(
+  db: Session, 
+  production_order: ProductionOrderCreateInput
+) -> ProductionOrderCreatePayload:
   eliquid = db.scalar(select(models.Eliquid).where(models.Eliquid.upc == production_order.eliquid_upc))
   if not eliquid:
     return ProductionOrderCreatePayload(
@@ -60,32 +90,124 @@ def create_production_order(db: Session, production_order: ProductionOrderCreate
   
   po_number = generate_production_order_number(date=todate, counter=counter.last_number)
   
+  created_at_utc = today.astimezone(ZoneInfo("UTC"))
+  
   po = models.ProductionOrder(
     order_number=po_number,
     eliquid_id=eliquid.id,
     quantity=production_order.quantity,
     is_priority=production_order.is_priority or False,
-    created_at=today.astimezone(ZoneInfo("UTC")),
-    updated_at=today.astimezone(ZoneInfo("UTC")),
+    created_at=created_at_utc,
+    updated_at=created_at_utc,
   )
   
   db.add(po)
   db.flush()
-  db.refresh(po)
   
-  l = models.ProductionOrderActivityLog(
+  create_production_order_activity_log(
+    db=db,
     production_order_id=po.id,
     activity=models.ProductionOrderActivity.CREATED,
-    triggered_at=today.astimezone(ZoneInfo("UTC")),
+    triggered_at=created_at_utc,
   )
   
-  db.add(l)
   db.commit()
-  
+  db.refresh(po)
+    
   return ProductionOrderCreatePayload(
     production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=f"Production order {po_number} for {eliquid.description} created"
+    )
+  )
+  
+def update_production_order(
+  db: Session, 
+  identifier: ProductionOrderUpdateIdentifier,
+  production_order: ProductionOrderUpdateInput,
+) -> ProductionOrderUpdatePayload:
+  po = db.scalar(select(models.ProductionOrder).where(models.ProductionOrder.order_number == identifier.order_number))
+  if not po:
+    return ProductionOrderUpdatePayload(
+      production_order=None,
+      feedback=Feedback(
+        status=FeedbackStatus.FAILED,
+        message=f"Production order {identifier.order_number} not found"
+      )
+    )
+  
+  updated_columns = []  
+  
+  if production_order.status and production_order.status.value != po.status.value:
+    today = get_today("UTC")
+    old = po.status
+    new = models.ProductionOrderStatus[production_order.status.name]
+    
+    po.status = new
+    db.flush()
+    
+    create_production_order_activity_log(
+      db=db,
+      production_order_id=po.id,
+      activity=models.ProductionOrderActivity.CHANGE_STATUS,
+      triggered_at=today,
+      old_value=f"{old.name}",
+      new_value=f"{po.status.name}",
+    )
+    
+    updated_columns.append("status")
+  
+  if production_order.quantity and production_order.quantity != po.quantity:
+    today = get_today("UTC")
+    old = po.quantity
+    new = production_order.quantity
+    
+    po.quantity = new
+    db.flush()
+    
+    create_production_order_activity_log(
+      db=db,
+      production_order_id=po.id,
+      activity=models.ProductionOrderActivity.ADJUST_QUANTITY,
+      triggered_at=today,
+      old_value=f"{old}",
+      new_value=f"{po.quantity}",
+    )
+      
+    updated_columns.append("quantity")
+      
+  if production_order.is_priority and production_order.is_priority != po.is_priority:
+    today = get_today("UTC")
+    old = po.is_priority
+    new = production_order.is_priority
+    
+    po.is_priority = new
+    db.flush()
+    
+    create_production_order_activity_log(
+      db=db,
+      production_order_id=po.id,
+      activity=models.ProductionOrderActivity.SWITCH_PRIORITY,
+      triggered_at=today,
+      old_value=f"{old}",
+      new_value=f"{po.is_priority}",
+    )
+    
+    updated_columns.append("isPriority")
+  
+  if len(updated_columns) > 0:
+    db.commit()
+    db.refresh(po)
+    
+    message = f"Updated {", ".join(updated_columns)}"
+  else:
+    message="Nothing to update"
+  
+  return ProductionOrderUpdatePayload(
+    production_order=ProductionOrderType.from_model(po),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=message
     )
   )
