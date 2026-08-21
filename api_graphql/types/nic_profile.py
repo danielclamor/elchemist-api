@@ -39,7 +39,7 @@ class NicProfileType(relay.Node):
     
   @strawberry.field
   def full_name(self) -> str:
-    return self._model.full_name()
+    return self._model.full_name
     
   @strawberry.field
   def formula(self) -> Annotated["FormulaType", strawberry.lazy("api_graphql.types.formula")]:
