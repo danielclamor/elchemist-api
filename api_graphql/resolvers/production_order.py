@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
+from zoneinfo import ZoneInfo
+
 import models
 
 from api_graphql.types.enums import FeedbackStatus
@@ -37,10 +39,11 @@ def create_production_order(db: Session, production_order: ProductionOrderCreate
       )
     )
   
-  today = get_today().date()
+  today = get_today()
+  todate = today.date()
   counter = db.scalar(
     select(models.ProductionOrderCounter)
-    .where(models.ProductionOrderCounter.date == today)
+    .where(models.ProductionOrderCounter.date == todate)
     .with_for_update()
   )
 
@@ -48,29 +51,41 @@ def create_production_order(db: Session, production_order: ProductionOrderCreate
     counter.last_number += 1
   else:
     counter = models.ProductionOrderCounter(
-      date=today,
+      date=todate,
       last_number=1,
     )
     db.add(counter)
 
   db.flush()
   
-  po_number = generate_production_order_number(date=today, counter=counter.last_number)
+  po_number = generate_production_order_number(date=todate, counter=counter.last_number)
   
   po = models.ProductionOrder(
     order_number=po_number,
     eliquid_id=eliquid.id,
     quantity=production_order.quantity,
-    is_priority=production_order.is_priority or False
+    is_priority=production_order.is_priority or False,
+    created_at=today.astimezone(ZoneInfo("UTC")),
+    updated_at=today.astimezone(ZoneInfo("UTC")),
   )
+  
   db.add(po)
-  db.commit()
+  db.flush()
   db.refresh(po)
+  
+  l = models.ProductionOrderActivityLog(
+    production_order_id=po.id,
+    activity=models.ProductionOrderActivity.CREATED,
+    triggered_at=today.astimezone(ZoneInfo("UTC")),
+  )
+  
+  db.add(l)
+  db.commit()
   
   return ProductionOrderCreatePayload(
     production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
-      status=FeedbackStatus.CANCELLED,
-      message=f"test {po_number}"
+      status=FeedbackStatus.SUCCESS,
+      message=f"Production order {po_number} for {eliquid.description} created"
     )
   )
