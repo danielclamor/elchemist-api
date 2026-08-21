@@ -51,12 +51,12 @@ class NicProfileType(relay.Node):
     from api_graphql.types.formula import FormulaType
     return FormulaType.from_model(self._model.formula)
 
-  @strawberry.field
+  @relay.connection(relay.ListConnection[Annotated["NicBaseType", strawberry.lazy("api_graphql.types.nic_base")]])
   def nic_bases(self) -> list[Annotated["NicBaseType", strawberry.lazy("api_graphql.types.nic_base")]]:
     from api_graphql.types.nic_base import NicBaseType
     return [NicBaseType.from_model(b) for b in self._model.nic_bases]
 
-  @strawberry.field
+  @relay.connection(relay.ListConnection[Annotated["FlavoringType", strawberry.lazy("api_graphql.types.flavoring")]])
   def flavorings(self) -> list[Annotated["FlavoringType", strawberry.lazy("api_graphql.types.flavoring")]]:
     from api_graphql.types.flavoring import FlavoringType
     return [FlavoringType.from_model(b) for b in self._model.flavorings]
