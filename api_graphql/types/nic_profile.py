@@ -1,12 +1,17 @@
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, TYPE_CHECKING
 
 import strawberry
 from strawberry import relay
 
 import models
 from api_graphql.types.feedback import Feedback
+
+if TYPE_CHECKING:
+  from api_graphql.types.formula import FormulaType
+  from api_graphql.types.flavoring import FlavoringType
+  from api_graphql.types.nic_base import NicBaseType
 
 @strawberry.type
 class NicProfileType(relay.Node):
