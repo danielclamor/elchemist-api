@@ -78,7 +78,7 @@ class Eliquid(Base):
   size: Mapped[SizeOption] = mapped_column(size_option_enum)
   nic_level: Mapped[NicLevelOption] = mapped_column(nic_level_option_enum)
   bottle_color: Mapped[BottleColor] = mapped_column(bottle_color_enum)
-  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id"), nullable=True)
+  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="SET NULL"), nullable=True)
 
   created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
   updated_at: Mapped[datetime] = mapped_column(
@@ -131,7 +131,7 @@ class Flavoring(Base):
   __tablename__ = "flavorings"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id"))
+  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="CASCADE"))
   flavoring_option_id: Mapped[uuid.UUID] = mapped_column(
     ForeignKey("flavoring_options.id")
   )
@@ -173,7 +173,7 @@ class NicBase(Base):
   __tablename__ = "nic_bases"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id"))
+  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="CASCADE"))
   nic_base_option_id: Mapped[uuid.UUID] = mapped_column(
     ForeignKey("nic_base_options.id")
   )
@@ -206,7 +206,7 @@ class NicProfile(Base):
   __tablename__ = "nic_profiles"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  formula_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("formulas.id"))
+  formula_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("formulas.id", ondelete="CASCADE"))
 
   slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
   name: Mapped[str] = mapped_column(String(255))
@@ -298,7 +298,7 @@ class ProductionOrderActivityLog(Base):
   __tablename__ = "production_order_activity_logs"
   
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id"))
+  production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"))
   activity: Mapped[ProductionOrderActivity] = mapped_column(production_order_activity_enum)
   old_value: Mapped[str] = mapped_column(String(20), nullable=True)
   new_value: Mapped[str] = mapped_column(String(20), nullable=True)
