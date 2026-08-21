@@ -123,203 +123,170 @@ def _paginate_brands(
 class Query:
   @strawberry.field
   def brands(
-    self, after: Optional[str] = None, before: Optional[str] = None, first: Optional[int] = None, last: Optional[int] = None
+    self, info: strawberry.Info, after: Optional[str] = None, before: Optional[str] = None, first: Optional[int] = None, last: Optional[int] = None
   ) -> BrandConnection:
-    db = SessionLocal()
-    try:
-      return _paginate_brands(get_all_brands(db=db), after, before, first, last)
-    finally:
-      db.close()
+    db = info.context["db"]
+    return _paginate_brands(get_all_brands(db=db), after, before, first, last)
 
   @relay.connection(relay.ListConnection[EliquidType])
-  def eliquids(self) -> List[EliquidType]:
-    db = SessionLocal()
-    try:
-      return [EliquidType.from_model(e) for e in get_all_eliquids(db)]
-    finally:
-      db.close()
+  def eliquids(
+    self, info: strawberry.Info
+  ) -> List[EliquidType]:
+    db = info.context["db"]
+    return [EliquidType.from_model(e) for e in get_all_eliquids(db)]
 
   @relay.connection(relay.ListConnection[FlavoringOptionType])
-  def flavoringOptions(self) -> List[FlavoringOptionType]:
-    db = SessionLocal()
-    try:
-      return [FlavoringOptionType.from_model(o) for o in get_all_flavoring_options(db)]
-    finally:
-      db.close()
+  def flavoringOptions(
+    self, info: strawberry.Info
+  ) -> List[FlavoringOptionType]:
+    db = info.context["db"]
+    return [FlavoringOptionType.from_model(o) for o in get_all_flavoring_options(db)]
 
   @strawberry.field
-  def formula(self, slug: str) -> Optional[FormulaType]:
-    db = SessionLocal()
-    try:
-      f = get_formula(db=db, formula_slug=slug)
-      return FormulaType.from_model(f) if f else None
-    finally:
-      db.close()
+  def formula(
+    self, info: strawberry.Info, slug: str
+  ) -> Optional[FormulaType]:
+    db = info.context["db"]
+    f = get_formula(db=db, formula_slug=slug)
+    return FormulaType.from_model(f) if f else None
 
   @relay.connection(relay.ListConnection[FormulaType])
-  def formulas(self) -> List[FormulaType]:
-    db = SessionLocal()
-    try:
-      return [FormulaType.from_model(f) for f in get_all_formulas(db)]
-    finally:
-      db.close()
+  def formulas(
+    self, info: strawberry.Info
+  ) -> List[FormulaType]:
+    db = info.context["db"]
+    return [FormulaType.from_model(f) for f in get_all_formulas(db)]
 
   @relay.connection(relay.ListConnection[NicBaseOptionType])
-  def nicBaseOptions(self) -> List[NicBaseOptionType]:
-    db = SessionLocal()
-    try:
-      return [NicBaseOptionType.from_model(o) for o in get_all_nic_base_options(db)]
-    finally:
-      db.close()
+  def nicBaseOptions(
+    self, info: strawberry.Info
+  ) -> List[NicBaseOptionType]:
+    db = info.context["db"]
+    return [NicBaseOptionType.from_model(o) for o in get_all_nic_base_options(db)]
 
   @relay.connection(relay.ListConnection[NicProfileType])
-  def nicProfiles(self) -> List[NicProfileType]:
-    db = SessionLocal()
-    try:
-      return [NicProfileType.from_model(p) for p in get_all_nic_profiles(db)]
-    finally:
-      db.close()
+  def nicProfiles(
+    self, info: strawberry.Info
+  ) -> List[NicProfileType]:
+    db = info.context["db"]
+    return [NicProfileType.from_model(p) for p in get_all_nic_profiles(db)]
 
 
 @strawberry.type
 class Mutation:
   @strawberry.mutation
   def flavoringOptionCreate(
-    self, flavoring_option: FlavoringOptionCreateInput
+    self, info: strawberry.Info, flavoring_option: FlavoringOptionCreateInput
   ) -> FlavoringOptionCreatePayload:
-    db = SessionLocal()
-    try:
-      flavoring_option_slug = make_slug(flavoring_option.name)
+    db = info.context["db"]
+    flavoring_option_slug = make_slug(flavoring_option.name)
 
-      existing = get_flavoring_option(
-        db=db, flavoring_option_slug=flavoring_option_slug
-      )
+    existing = get_flavoring_option(
+      db=db, flavoring_option_slug=flavoring_option_slug
+    )
 
-      if existing:
-        return FlavoringOptionCreatePayload(
-          flavoring_option=FlavoringOptionType.from_model(existing),
-          feedback=Feedback(
-            status=FeedbackStatus.CANCELLED,
-            message=f"Flavoring option {flavoring_option.name} already exists",
-          ),
-        )
-
-      created = create_flavoring_option(db=db, flavoring_option=flavoring_option)
-
+    if existing:
       return FlavoringOptionCreatePayload(
-        flavoring_option=FlavoringOptionType.from_model(created),
-        feedback=Feedback(status=FeedbackStatus.SUCCESS, message=None),
+        flavoring_option=FlavoringOptionType.from_model(existing),
+        feedback=Feedback(
+          status=FeedbackStatus.CANCELLED,
+          message=f"Flavoring option {flavoring_option.name} already exists",
+        ),
       )
-    finally:
-      db.close()
+
+    created = create_flavoring_option(db=db, flavoring_option=flavoring_option)
+
+    return FlavoringOptionCreatePayload(
+      flavoring_option=FlavoringOptionType.from_model(created),
+      feedback=Feedback(status=FeedbackStatus.SUCCESS, message=None),
+    )
 
   @strawberry.mutation
-  def formulaCreate(self, formula: FormulaCreateInput) -> FormulaCreatePayload:
-    db = SessionLocal()
-    try:
-      return create_formula(db=db, formula=formula)
-    finally:
-      db.close()
+  def formulaCreate(
+    self, info: strawberry.Info, formula: FormulaCreateInput
+  ) -> FormulaCreatePayload:
+    db = info.context["db"]
+    return create_formula(db=db, formula=formula)
 
   @strawberry.mutation
-  def formulaDelete(self, input: FormulaDeleteInput) -> FormulaDeletePayload:
-    db = SessionLocal()
-    try:
-      return delete_formula(db=db, input=input)
-    finally:
-      db.close()
+  def formulaDelete(
+    self, info: strawberry.Info, input: FormulaDeleteInput
+  ) -> FormulaDeletePayload:
+    db = info.context["db"]
+    return delete_formula(db=db, input=input)
 
   @strawberry.mutation
   def formulaUpdate(
-    self, identifier: FormulaUpdateIdentifier, input: FormulaUpdateInput
+    self, info: strawberry.Info, identifier: FormulaUpdateIdentifier, input: FormulaUpdateInput
   ) -> FormulaUpdatePayload:
-    db = SessionLocal()
-    try:
-      return update_formula(db=db, identifier=identifier, formula=input)
-    finally:
-      db.close()
+    db = info.context["db"]
+    return update_formula(db=db, identifier=identifier, formula=input)
 
   @strawberry.mutation
   def nicBaseOptionCreate(
-    self, nic_base_option: NicBaseOptionCreateInput
+    self, info: strawberry.Info, nic_base_option: NicBaseOptionCreateInput
   ) -> NicBaseOptionCreatePayload:
-    db = SessionLocal()
-    try:
-      existing = get_nic_base_option(
-        db=db, nic_base_option_code=nic_base_option.code
-      )
+    db = info.context["db"]
+    existing = get_nic_base_option(
+      db=db, nic_base_option_code=nic_base_option.code
+    )
 
-      if existing:
-        return NicBaseOptionCreatePayload(
-          nic_base_option=NicBaseOptionType.from_model(existing),
-          feedback=Feedback(
-            status=FeedbackStatus.CANCELLED,
-            message=f"Nic base option {nic_base_option.code} already exists",
-          ),
-        )
-
-      created = create_nic_base_option(db=db, nic_base_option=nic_base_option)
-
+    if existing:
       return NicBaseOptionCreatePayload(
-        nic_base_option=NicBaseOptionType.from_model(created),
-        feedback=Feedback(status=FeedbackStatus.SUCCESS, message=None),
+        nic_base_option=NicBaseOptionType.from_model(existing),
+        feedback=Feedback(
+          status=FeedbackStatus.CANCELLED,
+          message=f"Nic base option {nic_base_option.code} already exists",
+        ),
       )
-    finally:
-      db.close()
+
+    created = create_nic_base_option(db=db, nic_base_option=nic_base_option)
+
+    return NicBaseOptionCreatePayload(
+      nic_base_option=NicBaseOptionType.from_model(created),
+      feedback=Feedback(status=FeedbackStatus.SUCCESS, message=None),
+    )
 
   @strawberry.mutation
   def nicProfileBulkAddFlavoring(
-      self, nic_profile_slug: str, flavorings: List[NicProfileAddFlavoringInput]
+      self, info: strawberry.Info, nic_profile_slug: str, flavorings: List[NicProfileAddFlavoringInput]
   ) -> NicProfileAddFlavoringPayload:
-    db = SessionLocal()
-    try:
-      return bulk_add_nic_profile_flavorings(
-        db=db, nic_profile_slug=nic_profile_slug, flavorings=flavorings
-      )
-    finally:
-      db.close()
+    db = info.context["db"]
+    return bulk_add_nic_profile_flavorings(
+      db=db, nic_profile_slug=nic_profile_slug, flavorings=flavorings
+    )
 
   @strawberry.mutation
   def nicProfileBulkAddNicBases(
-      self, nic_profile_slug: str, nic_bases: List[NicProfileAddNicBaseInput]
+      self, info: strawberry.Info, nic_profile_slug: str, nic_bases: List[NicProfileAddNicBaseInput]
   ) -> NicProfileAddNicBasePayload:
-    db = SessionLocal()
-    try:
-      return bulk_add_nic_profile_nic_bases(
-        db=db, nic_profile_slug=nic_profile_slug, nic_bases=nic_bases
-      )
-    finally:
-      db.close()
-
+    db = info.context["db"]
+    return bulk_add_nic_profile_nic_bases(
+      db=db, nic_profile_slug=nic_profile_slug, nic_bases=nic_bases
+    )
+    
   @strawberry.mutation
   def nicProfileCreate(
-      self, formula_slug: str, nic_profile: NicProfileCreateInput
+      self, info: strawberry.Info, formula_slug: str, nic_profile: NicProfileCreateInput
   ) -> NicProfileCreatePayload:
-    db = SessionLocal()
-    try:
-      return create_nic_profile(
-        db=db, formula_slug=formula_slug, nic_profile=nic_profile
-      )
-    finally:
-      db.close()
+    db = info.context["db"]
+    return create_nic_profile(
+      db=db, formula_slug=formula_slug, nic_profile=nic_profile
+    )
 
   @strawberry.mutation
-  def nicProfileDelete(self, input: NicProfileDeleteInput) -> NicProfileDeletePayload:
-    db = SessionLocal()
-    try:
-      return delete_nic_profile(db=db, input=input)
-    finally:
-      db.close()
+  def nicProfileDelete(
+    self, info: strawberry.Info, input: NicProfileDeleteInput
+  ) -> NicProfileDeletePayload:
+    db = info.context["db"]
+    return delete_nic_profile(db=db, input=input)
 
   @strawberry.mutation
   def nicProfileUpdate(
-      self, identifier: NicProfileUpdateIdentifier, nic_profile: NicProfileUpdateInput
+      self, info: strawberry.Info, identifier: NicProfileUpdateIdentifier, nic_profile: NicProfileUpdateInput
   ) -> NicProfileUpdatePayload:
-    db = SessionLocal()
-    try:
-      return update_nic_profile(db=db, identifier=identifier, nic_profile=nic_profile)
-    finally:
-      db.close()
+    db = info.context["db"]
+    return update_nic_profile(db=db, identifier=identifier, nic_profile=nic_profile)
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
