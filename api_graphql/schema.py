@@ -45,6 +45,9 @@ from api_graphql.types.production_order import (
   ProductionOrderType,
   ProductionOrderCreateInput,
   ProductionOrderCreatePayload,
+  ProductionOrderUpdateIdentifier,
+  ProductionOrderUpdateInput,
+  ProductionOrderUpdatePayload,
 )
 
 from api_graphql.resolvers.utils import make_slug
@@ -90,6 +93,7 @@ from api_graphql.resolvers.production_order import (
   get_all_production_orders,
   get_production_order,
   create_production_order,
+  update_production_order,
 )
 
 def _cursor_index(cursor: str) -> int:
@@ -329,9 +333,17 @@ class Mutation:
 
   @strawberry.mutation
   def productionOrderCreate(
-    self, info: strawberry.Info, input: ProductionOrderCreateInput
+    self, info: strawberry.Info, production_order: ProductionOrderCreateInput
   ) -> ProductionOrderCreatePayload:
     db = info.context["db"]
-    return create_production_order(db=db, production_order=input)
+    return create_production_order(db=db, production_order=production_order)
+  
+  @strawberry.mutation
+  def productionOrderUpdate(
+    self, info: strawberry.Info, identifier: ProductionOrderUpdateIdentifier, production_order: ProductionOrderUpdateInput
+  ) -> ProductionOrderUpdatePayload:
+    db = info.context["db"]
+    return update_production_order(db=db, identifier=identifier, production_order=production_order)
+
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
