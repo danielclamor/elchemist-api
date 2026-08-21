@@ -1,9 +1,10 @@
 import enum
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 
 from sqlalchemy import (
   Boolean,
+  Date,
   DateTime,
   Enum,
   ForeignKey,
@@ -245,7 +246,7 @@ class NicProfile(Base):
 class ProductionOrderCounter(Base):
   __tablename__ = "production_order_counters"
 
-  date: Mapped[datetime] = mapped_column(DateTime, primary_key=True)
+  date: Mapped[date] = mapped_column(Date, primary_key=True)
   last_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     
   
