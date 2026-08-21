@@ -9,7 +9,6 @@ import models
 from api_graphql.types.enums import ChillType, NicType
 from api_graphql.types.feedback import Feedback
 
-
 @strawberry.type
 class FormulaType(relay.Node):
   id: relay.NodeID[str]

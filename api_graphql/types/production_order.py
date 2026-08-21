@@ -9,7 +9,6 @@ from strawberry import relay
 import models
 from api_graphql.types.enums import ProductionOrderActivity, ProductionOrderStatus
 
-
 @strawberry.type
 class ProductionOrderActivityLogType(relay.Node):
   id: relay.NodeID[str]

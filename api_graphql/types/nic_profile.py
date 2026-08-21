@@ -8,7 +8,6 @@ from strawberry import relay
 import models
 from api_graphql.types.feedback import Feedback
 
-
 @strawberry.type
 class NicProfileType(relay.Node):
   id: relay.NodeID[str]
@@ -39,6 +38,11 @@ class NicProfileType(relay.Node):
       nic_base_nic_str=p.nic_base_nic_str,
       _model=p,
     )
+    
+  @strawberry.field
+  def formula(self) -> Annotated["FormulaType", strawberry.lazy("api_graphql.types.formula")]:
+    from api_graphql.types.formula import FormulaType
+    return FormulaType.from_model(self._model.formula)
 
   @strawberry.field
   def nic_bases(self) -> list[Annotated["NicBaseType", strawberry.lazy("api_graphql.types.nic_base")]]:

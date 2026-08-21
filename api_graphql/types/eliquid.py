@@ -1,16 +1,12 @@
 from __future__ import annotations
 
+from typing import Annotated
+
 import strawberry
 from strawberry import relay
 
 import models
 from api_graphql.types.enums import ChillType, NicType, SizeOption, NicLevelOption, BottleColor
-
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-  from api_graphql.types.nic_profile import NicProfileType
-  from api_graphql.types.production_order import ProductionOrderType
 
 @strawberry.type
 class EliquidType(relay.Node):
@@ -42,11 +38,11 @@ class EliquidType(relay.Node):
     )
     
   @strawberry.field
-  def nic_profile(self) -> "NicProfileType":
+  def nic_profile(self) -> Annotated["NicProfileType", strawberry.lazy("api_graphql.types.nic_profile")]:
     from api_graphql.types.nic_profile import NicProfileType
     return NicProfileType.from_model(self._model.nic_profile)
   
   @strawberry.field
-  def production_orders(self) -> list["ProductionOrderType"]:
+  def production_orders(self) -> list[Annotated["ProductionOrderType", strawberry.lazy("api_graphql.types.production_order")]]:
     from api_graphql.types.production_order import ProductionOrderType
     return [ProductionOrderType.from_model(o) for o in self._model.production_orders]
