@@ -6,10 +6,11 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select
 import models
 
+from api_graphql.resolvers.utils import make_slug
+
 from api_graphql.types.enums import FeedbackStatus
 from api_graphql.types.feedback import Feedback
 from api_graphql.types.flavoring import FlavoringOptionCreateInput
-from api_graphql.types.formula import FormulaType, FormulaCreatePayload, FormulaDeletePayload, FormulaUpdatePayload
 from api_graphql.types.nic_base import NicBaseOptionCreateInput
 from api_graphql.types.nic_profile import (
   NicProfileType,
@@ -21,12 +22,6 @@ from api_graphql.types.nic_profile import (
 )
 
 if TYPE_CHECKING:
-  from api_graphql.types.formula import (
-    FormulaCreateInput,
-    FormulaDeleteInput,
-    FormulaUpdateIdentifier,
-    FormulaUpdateInput,
-  )
   from api_graphql.types.nic_profile import (
     NicProfileCreateInput,
     NicProfileDeleteInput,
@@ -35,14 +30,6 @@ if TYPE_CHECKING:
     NicProfileAddFlavoringInput,
     NicProfileAddNicBaseInput,
   )
-
-
-# Auxiliary functions
-def make_slug(string: str) -> str:
-  import re
-  tokens = re.sub(r'[^a-zA-Z0-9]', ' ', string).strip().split(' ')
-  tokens = [token for token in tokens if token != ""]
-  return '-'.join(tokens).lower()
 
 # Query resolvers
 def get_all_brands(db: Session) -> list[str]:
@@ -66,21 +53,6 @@ def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
     db.scalars(select(models.FlavoringOption)).all()
   )
 
-def get_all_formulas(db: Session) -> list[models.Formula]:
-  return (
-    db.scalars(
-      select(models.Formula).options(
-        joinedload(models.Formula.nic_profiles)
-        .joinedload(models.NicProfile.nic_bases)
-        .joinedload(models.NicBase.nic_base_option),
-        joinedload(models.Formula.nic_profiles)
-        .joinedload(models.NicProfile.flavorings),
-      )
-    )
-    .unique()
-    .all()
-  )
-
 def get_all_nic_base_options(db: Session) -> list[models.NicBaseOption]:
   return (
     db.scalars(select(models.NicBaseOption)).all()
@@ -94,11 +66,6 @@ def get_all_nic_profiles(db: Session) -> list[models.NicProfile]:
 def get_eliquid(db: Session, eliquid_upc: str) -> models.Eliquid:
   return (
     db.scalar(select(models.Eliquid).where(models.Eliquid.upc == eliquid_upc))
-  )
-
-def get_formula(db: Session, formula_slug: str) -> models.Formula:
-  return (
-    db.scalar(select(models.Formula).where(models.Formula.slug == formula_slug))
   )
 
 def get_flavoring_option(db: Session, flavoring_option_slug: str) -> models.FlavoringOption:
@@ -300,38 +267,6 @@ def create_flavoring_option(db: Session, flavoring_option: FlavoringOptionCreate
   db.refresh(flavoring_option)
   return flavoring_option
 
-def create_formula(db: Session, formula: "FormulaCreateInput") -> FormulaCreatePayload:
-  slug = make_slug(string=formula.name)
-
-  existing = db.scalar(select(models.Formula).where(models.Formula.slug == slug))
-  if existing:
-    return FormulaCreatePayload(
-      formula=FormulaType.from_model(existing),
-      feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
-        message=f"Formula {slug} already exists",
-      )
-    )
-
-  formula = models.Formula(
-    slug=slug,
-    name=formula.name,
-    brand=formula.brand,
-    chill_type=models.ChillType[formula.chill_type.name],
-    nic_type=models.NicType[formula.nic_type.name],
-  )
-
-  db.add(formula)
-  db.commit()
-  db.refresh(formula)
-  return FormulaCreatePayload(
-    formula=FormulaType.from_model(formula),
-    feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
-      message=None,
-    )
-  )
-
 def create_nic_profile(db: Session, formula_slug: str, nic_profile: "NicProfileCreateInput") -> NicProfileCreatePayload:
   formula = db.scalar(select(models.Formula).where(models.Formula.slug == formula_slug))
   if not formula:
@@ -381,34 +316,6 @@ def create_nic_profile(db: Session, formula_slug: str, nic_profile: "NicProfileC
     )
   )
 
-def delete_formula(db: Session, input: "FormulaDeleteInput") -> FormulaDeletePayload:
-  formula = get_formula(
-    db=db,
-    formula_slug=input.slug
-  )
-
-  if not formula:
-    return FormulaDeletePayload(
-      deleted_slug=None,
-      deleted_name=None,
-      feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
-        message=f"Formula {input.slug} not found."
-      )
-    )
-
-  db.delete(formula)
-  db.commit()
-
-  return FormulaDeletePayload(
-    deleted_slug=input.slug,
-    deleted_name=formula.name,
-    feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
-      message=None
-    )
-  )
-
 def delete_nic_profile(db: Session, input: "NicProfileDeleteInput") -> NicProfileDeletePayload:
   nic_profile = get_nic_profile(
     db=db,
@@ -431,46 +338,6 @@ def delete_nic_profile(db: Session, input: "NicProfileDeleteInput") -> NicProfil
   return NicProfileDeletePayload(
     deleted_slug=input.slug,
     deleted_full_name=nic_profile.full_name,
-    feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
-      message=None
-    )
-  )
-
-def update_formula(db: Session, identifier: "FormulaUpdateIdentifier", formula: "FormulaUpdateInput") -> FormulaUpdatePayload:
-  formula_model = get_formula(
-    db=db,
-    formula_slug=identifier.slug
-  )
-
-  if not formula_model:
-    return FormulaUpdatePayload(
-      formula=None,
-      feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
-        message=f"Formula {identifier.slug} not found."
-      )
-    )
-
-  if formula.slug:
-    formula_model.slug = formula.slug
-
-  if formula.name:
-    formula_model.name = formula.name
-
-  if formula.brand:
-    formula_model.brand = formula.brand
-
-  if formula.chill_type:
-    formula_model.chill_type = models.ChillType[formula.chill_type.name]
-
-  if formula.nic_type:
-    formula_model.nic_type = models.NicType[formula.nic_type.name]
-
-  db.commit()
-  db.refresh(formula_model)
-  return FormulaUpdatePayload(
-    formula=FormulaType.from_model(formula_model),
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=None

@@ -43,27 +43,30 @@ from api_graphql.types.nic_profile import (
   NicProfileUpdatePayload,
 )
 
-from api_graphql.resolvers import (
+from api_graphql.resolvers_old import (
   get_all_brands,
   get_all_eliquids,
   get_all_flavoring_options,
-  get_all_formulas,
   get_all_nic_base_options,
   get_all_nic_profiles,
-  get_formula,
   get_flavoring_option,
   get_nic_base_option,
   make_slug,
   bulk_add_nic_profile_flavorings,
   bulk_add_nic_profile_nic_bases,
   create_flavoring_option,
-  create_formula,
   create_nic_base_option,
   create_nic_profile,
-  delete_formula,
   delete_nic_profile,
-  update_formula,
   update_nic_profile,
+)
+
+from api_graphql.resolvers.formula import (
+  get_all_formulas,
+  get_formula,
+  create_formula,
+  delete_formula,
+  update_formula,
 )
 
 
