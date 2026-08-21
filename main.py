@@ -81,8 +81,17 @@
 
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
-from api_graphql.graphql_schema import schema
+from database import SessionLocal
+from api_graphql.schema import schema
 
 app = FastAPI(title="Elchemist API")
-graphql_app = GraphQLRouter(schema)
+
+async def get_context():
+  db = SessionLocal()
+  try:
+    yield {"db": db}
+  finally:
+    db.close()
+
+graphql_app = GraphQLRouter(schema, context_getter=get_context)
 app.include_router(graphql_app, prefix="/graphql")
