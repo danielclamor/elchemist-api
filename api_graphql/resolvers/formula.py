@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select
 import models
 
-from .utils import make_slug
+from .utils import generate_slug
 
 from api_graphql.types.enums import FeedbackStatus
 from api_graphql.types.feedback import Feedback
@@ -41,7 +41,7 @@ def get_formula(db: Session, formula_slug: str) -> models.Formula:
 
 # Mutations
 def create_formula(db: Session, formula: "FormulaCreateInput") -> FormulaCreatePayload:
-  slug = make_slug(string=formula.name)
+  slug = generate_slug(string=formula.name)
 
   existing = db.scalar(select(models.Formula).where(models.Formula.slug == slug))
   if existing:

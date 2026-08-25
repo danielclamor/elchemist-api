@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 import models
 
-from .utils import make_slug
+from .utils import generate_slug
 
 from api_graphql.resolvers.flavoring import (
   get_flavoring_option,
@@ -59,7 +59,7 @@ def get_nic_profile(db: Session, nic_profile_slug: str) -> models.NicProfile:
   
 # Mutations
 def add_nic_profile_flavoring(db: Session, nic_profile: models.NicProfile, flavoring: "NicProfileAddFlavoringInput") -> NicProfileAddFlavoringPayload:
-  flavoring_option_slug = make_slug(flavoring.flavoring_option_name)
+  flavoring_option_slug = generate_slug(flavoring.flavoring_option_name)
   existing_flavoring_option = get_flavoring_option(db=db, flavoring_option_slug=flavoring_option_slug)
   if not existing_flavoring_option:
     if flavoring.flavoring_option_is_vg is None:
@@ -227,7 +227,7 @@ def create_nic_profile(db: Session, formula_slug: str, nic_profile: "NicProfileC
 
   suffix = " - Old Mix" if nic_profile.is_old_mix else ""
   full_name = f"{formula.name} - {nic_profile.name}{suffix}"
-  slug = make_slug(full_name)
+  slug = generate_slug(full_name)
 
   existing = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == slug,
                                                        models.NicProfile.formula_id == formula.id))

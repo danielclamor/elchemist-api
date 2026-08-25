@@ -52,7 +52,7 @@ from api_graphql.types.production_order import (
   ProductionOrderUpdatePayload,
 )
 
-from api_graphql.resolvers.utils import make_slug
+from api_graphql.resolvers.utils import generate_slug
 
 from api_graphql.resolvers.brand import (
   get_all_brands,
@@ -225,7 +225,7 @@ class Mutation:
     self, info: strawberry.Info, flavoring_option: FlavoringOptionCreateInput
   ) -> FlavoringOptionCreatePayload:
     db = info.context["db"]
-    flavoring_option_slug = make_slug(flavoring_option.name)
+    flavoring_option_slug = generate_slug(flavoring_option.name)
 
     existing = get_flavoring_option(
       db=db, flavoring_option_slug=flavoring_option_slug
