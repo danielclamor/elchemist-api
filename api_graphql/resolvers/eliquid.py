@@ -1,7 +1,14 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
+from api_graphql.types.eliquid import EliquidCreatePayload, EliquidType
+from api_graphql.types.enums import FeedbackStatus
+from api_graphql.types.feedback import Feedback
 import models
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  from api_graphql.types.eliquid import EliquidCreateInput
 
 # Queries
 def get_all_eliquids(db: Session) -> list[models.Eliquid]:
@@ -9,7 +16,53 @@ def get_all_eliquids(db: Session) -> list[models.Eliquid]:
     db.scalars(select(models.Eliquid)).all()
   )
 
-def get_eliquid(db: Session, eliquid_upc: str) -> models.Eliquid:
+def get_eliquid(db: Session, upc: str) -> models.Eliquid:
   return (
-    db.scalar(select(models.Eliquid).where(models.Eliquid.upc == eliquid_upc))
+    db.scalar(select(models.Eliquid).where(models.Eliquid.upc == upc))
+  )
+
+
+# Mutations
+def create_eliquid(db: Session, eliquid: "EliquidCreateInput") -> EliquidCreatePayload:
+  existing = db.scalar(select(models.Eliquid).where(models.Eliquid.upc == eliquid.upc))
+  if existing:
+    return EliquidCreatePayload(
+      eliquid=EliquidType.from_model(existing),
+      feedback=Feedback(
+        status=FeedbackStatus.Cancelled,
+        message=f"Eliquid with upc {eliquid.upc} already exists",
+      )
+    )
+  
+  nic_profile_id = None
+  
+  nic_profile_slug = eliquid.nic_profile_slug
+  if nic_profile_slug:
+    nic_profile = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_slug))
+    if nic_profile:
+      nic_profile_id = nic_profile.id
+    else:
+      connect_nic_profile_feedback = f"Failed to connect NicProfile. NicProfile {nic_profile_slug} not found."
+  
+  eliquid = models.Eliquid(
+    upc=eliquid.upc,
+    description=eliquid.description,
+    brand=eliquid.brand,
+    chill_type=models.ChillType[eliquid.chill_type.name],
+    nic_type=models.NicType[eliquid.nic_type.name],
+    size=models.SizeOption[eliquid.size.name],
+    nic_level=models.NicLevelOption[eliquid.nic_level.name],
+    bottle_color=models.BottleColor[eliquid.bottle_color.name],
+    nic_profile_id=nic_profile_id,
+  )
+  
+  db.add(eliquid)
+  db.commit()
+  db.refresh(eliquid)
+  return EliquidCreatePayload(
+    eliquid=EliquidType.from_model(eliquid),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=connect_nic_profile_feedback or None
+    )
   )
