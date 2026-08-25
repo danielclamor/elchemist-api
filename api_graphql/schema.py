@@ -6,7 +6,11 @@ from typing import List, Optional
 from api_graphql.types.enums import FeedbackStatus
 from api_graphql.types.feedback import Feedback
 from api_graphql.types.brand import BrandEdge, BrandConnection
-from api_graphql.types.eliquid import EliquidType
+from api_graphql.types.eliquid import (
+  EliquidType,
+  EliquidCreateInput, 
+  EliquidCreatePayload, 
+)
 from api_graphql.types.flavoring import (
   FlavoringOptionType,
   FlavoringOptionCreateInput,
@@ -59,6 +63,7 @@ from api_graphql.resolvers.brand import (
 )
 
 from api_graphql.resolvers.eliquid import (
+  create_eliquid,
   get_all_eliquids,
 )
 
@@ -220,6 +225,13 @@ class Query:
 
 @strawberry.type
 class Mutation:
+  @strawberry.mutation
+  def eliquidCreate(
+    self, info: strawberry.Info, eliquid: EliquidCreateInput
+  ) -> EliquidCreatePayload:
+    db = info.context["db"]
+    return create_eliquid(db=db, eliquid=eliquid)
+  
   @strawberry.mutation
   def flavoringOptionCreate(
     self, info: strawberry.Info, flavoring_option: FlavoringOptionCreateInput
