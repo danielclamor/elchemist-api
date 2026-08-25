@@ -5,6 +5,7 @@ from typing import Annotated, TYPE_CHECKING
 import strawberry
 from strawberry import relay
 
+from api_graphql.types.feedback import Feedback
 import models
 from api_graphql.types.enums import ChillType, NicType, SizeOption, NicLevelOption, BottleColor
 
@@ -50,3 +51,20 @@ class EliquidType(relay.Node):
   def production_orders(self) -> list[Annotated["ProductionOrderType", strawberry.lazy("api_graphql.types.production_order")]]:
     from api_graphql.types.production_order import ProductionOrderType
     return [ProductionOrderType.from_model(o) for o in self._model.production_orders]
+  
+@strawberry.input
+class EliquidCreateInput:
+  upc: str
+  description: str
+  brand: str
+  chill_type: ChillType
+  nic_type: NicType
+  size: SizeOption
+  nic_level: NicLevelOption
+  bottle_color: BottleColor
+  nic_profile_slug: str | None 
+  
+@strawberry.type
+class EliquidCreatePayload:
+  eliquid: EliquidType | None
+  feedback: Feedback
