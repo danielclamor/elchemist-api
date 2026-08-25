@@ -205,10 +205,10 @@ class Query:
   
   @strawberry.field
   def productionOrder(
-    self, info: strawberry.Info
+    self, info: strawberry.Info, order_number: str,
   ) -> ProductionOrderType:
     db = info.context["db"]
-    return ProductionOrderType.from_model(get_production_order(db))
+    return ProductionOrderType.from_model(get_production_order(db, order_number=order_number))
   
   @relay.connection(relay.ListConnection[ProductionOrderType])
   def productionOrders(
