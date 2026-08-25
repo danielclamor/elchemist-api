@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:18
-    container_name: elchemist_postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: elchemist_db
