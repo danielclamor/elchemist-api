@@ -180,6 +180,7 @@ def update_production_order(
     new = models.ProductionOrderStatus[production_order.status.name]
     
     po.status = new
+    po.updated_at = today
     db.flush()
     
     create_production_order_activity_log(
@@ -199,6 +200,7 @@ def update_production_order(
     new = production_order.quantity
     
     po.quantity = new
+    po.updated_at = today
     db.flush()
     
     create_production_order_activity_log(
@@ -218,6 +220,7 @@ def update_production_order(
     new = production_order.is_priority
     
     po.is_priority = new
+    po.updated_at = today
     db.flush()
     
     create_production_order_activity_log(
