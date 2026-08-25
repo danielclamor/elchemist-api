@@ -20,15 +20,7 @@ if TYPE_CHECKING:
 # Queries
 def get_all_formulas(db: Session) -> list[models.Formula]:
   return (
-    db.scalars(
-      select(models.Formula).options(
-        joinedload(models.Formula.nic_profiles)
-        .joinedload(models.NicProfile.nic_bases)
-        .joinedload(models.NicBase.nic_base_option),
-        joinedload(models.Formula.nic_profiles)
-        .joinedload(models.NicProfile.flavorings),
-      )
-    )
+    db.scalars(select(models.Formula))
     .unique()
     .all()
   )
