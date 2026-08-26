@@ -51,7 +51,11 @@ class EliquidType(relay.Node):
   def production_orders(self) -> list[Annotated["ProductionOrderType", strawberry.lazy("api_graphql.types.production_order")]]:
     from api_graphql.types.production_order import ProductionOrderType
     return [ProductionOrderType.from_model(o) for o in self._model.production_orders]
-  
+
+@strawberry.input
+class EliquidIdentifier:
+  upc: str
+
 @strawberry.input
 class EliquidCreateInput:
   upc: str
@@ -68,10 +72,6 @@ class EliquidCreateInput:
 class EliquidCreatePayload:
   eliquid: EliquidType | None
   feedback: Feedback
-
-@strawberry.input
-class EliquidUpdateIdentifier:
-  upc: str
 
 @strawberry.input
 class EliquidUpdateInput:
