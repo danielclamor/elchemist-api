@@ -28,19 +28,14 @@ def get_all_formulas(db: Session) -> list[models.Formula]:
   )
   
 def get_formula(db: Session, identifier: "FormulaIdentifierInput") -> models.Formula:
-  conditions = []
-  
-  for attr, value in vars(identifier).items():
-    if value is not strawberry.UNSET:
-      if attr == "id":
-        node_id = value.node_id
-        conditions.append(models.Formula.id == node_id)
-      else:
-        conditions.append(getattr(models.Formula, attr) == value)
-  
-  return (
-    db.scalar(select(models.Formula).where(and_(*conditions)))
-  )
+  attr, value = next((a, v) for a, v in vars(identifier).items() if v is not strawberry.UNSET)
+
+  if attr == "id":
+      condition = models.Formula.id == value.node_id
+  else:
+      condition = getattr(models.Formula, attr) == value
+
+  return db.scalar(select(models.Formula).where(condition))
   
 
 # Mutations
