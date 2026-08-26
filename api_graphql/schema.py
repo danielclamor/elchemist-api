@@ -10,7 +10,7 @@ from api_graphql.types.eliquid import (
   EliquidType,
   EliquidCreateInput, 
   EliquidCreatePayload,
-  EliquidUpdateIdentifier,
+  EliquidIdentifier,
   EliquidUpdateInput, 
   EliquidUpdatePayload,
 )
@@ -35,16 +35,16 @@ from api_graphql.types.nic_base import (
   NicBaseOptionCreatePayload,
 )
 from api_graphql.types.nic_profile import (
+  NicProfileIdentifier,
   NicProfileType,
+  NicProfileIdentifier,
   NicProfileAddFlavoringInput,
   NicProfileAddFlavoringPayload,
   NicProfileAddNicBaseInput,
   NicProfileAddNicBasePayload,
   NicProfileCreateInput,
   NicProfileCreatePayload,
-  NicProfileDeleteInput,
   NicProfileDeletePayload,
-  NicProfileUpdateIdentifier,
   NicProfileUpdateInput,
   NicProfileUpdatePayload,
 )
@@ -69,6 +69,7 @@ from api_graphql.resolvers.eliquid import (
   create_eliquid,
   get_all_eliquids,
   update_eliquid,
+  update_eliquid_nic_profile,
 )
 
 from api_graphql.resolvers.formula import (
@@ -231,17 +232,24 @@ class Query:
 class Mutation:
   @strawberry.mutation
   def eliquidCreate(
-    self, info: strawberry.Info, input: EliquidCreateInput
+    self, info: strawberry.Info, eliquid: EliquidCreateInput
   ) -> EliquidCreatePayload:
     db = info.context["db"]
-    return create_eliquid(db=db, eliquid=input)
+    return create_eliquid(db=db, input=eliquid)
   
   @strawberry.mutation
   def eliquidUpdate(
-    self, info: strawberry.Info, identifier: EliquidUpdateIdentifier, eliquid: EliquidUpdateInput
+    self, info: strawberry.Info, identifier: EliquidIdentifier, eliquid: EliquidUpdateInput
   ) -> EliquidUpdatePayload:
     db = info.context["db"]
     return update_eliquid(db=db, identifier=identifier, input=eliquid)
+  
+  @strawberry.mutation
+  def eliquidUpdateNicProfile(
+    self, info: strawberry.Info, identifier: EliquidIdentifier, nic_profile: NicProfileIdentifier | None
+  ) -> EliquidUpdatePayload:
+    db = info.context["db"]
+    return update_eliquid_nic_profile(db=db, identifier=identifier, nic_profile_identifier=nic_profile)
   
   @strawberry.mutation
   def flavoringOptionCreate(
@@ -345,14 +353,14 @@ class Mutation:
 
   @strawberry.mutation
   def nicProfileDelete(
-    self, info: strawberry.Info, input: NicProfileDeleteInput
+    self, info: strawberry.Info, identifier: NicProfileIdentifier
   ) -> NicProfileDeletePayload:
     db = info.context["db"]
-    return delete_nic_profile(db=db, input=input)
+    return delete_nic_profile(db=db, identifier=identifier)
 
   @strawberry.mutation
   def nicProfileUpdate(
-      self, info: strawberry.Info, identifier: NicProfileUpdateIdentifier, nic_profile: NicProfileUpdateInput
+      self, info: strawberry.Info, identifier: NicProfileIdentifier, nic_profile: NicProfileUpdateInput
   ) -> NicProfileUpdatePayload:
     db = info.context["db"]
     return update_nic_profile(db=db, identifier=identifier, nic_profile=nic_profile)
