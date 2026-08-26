@@ -62,6 +62,10 @@ class NicProfileType(relay.Node):
     return [FlavoringType.from_model(b) for b in self._model.flavorings]
 
 @strawberry.input
+class NicProfileIdentifier:
+  slug: str
+
+@strawberry.input
 class NicProfileAddFlavoringInput:
   flavoring_option_name: str
   flavoring_option_is_vg: bool | None = None
@@ -98,19 +102,11 @@ class NicProfileCreatePayload:
   nic_profile: NicProfileType | None
   feedback: Feedback
 
-@strawberry.input
-class NicProfileDeleteInput:
-  slug: str
-
 @strawberry.type
 class NicProfileDeletePayload:
   deleted_slug: str | None
   deleted_full_name: str | None
   feedback: Feedback
-
-@strawberry.input
-class NicProfileUpdateIdentifier:
-  slug: str
 
 @strawberry.input
 class NicProfileUpdateInput:
