@@ -68,3 +68,23 @@ class EliquidCreateInput:
 class EliquidCreatePayload:
   eliquid: EliquidType | None
   feedback: Feedback
+
+@strawberry.input
+class EliquidUpdateIdentifier:
+  upc: str
+
+@strawberry.input
+class EliquidUpdateInput:
+  upc: str | None = strawberry.UNSET
+  description: str | None = strawberry.UNSET
+  brand: str | None = strawberry.UNSET
+  chill_type: ChillType | None = strawberry.UNSET
+  nic_type: NicType | None = strawberry.UNSET
+  size: SizeOption | None = strawberry.UNSET
+  nic_level: NicLevelOption | None = strawberry.UNSET
+  bottle_color: BottleColor | None = strawberry.UNSET
+  
+@strawberry.type
+class EliquidUpdatePayload:
+  eliquid: EliquidType | None
+  feedback: Feedback
