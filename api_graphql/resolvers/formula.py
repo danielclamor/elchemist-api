@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, and_
+import strawberry
 import models
 
 from .utils import generate_slug
@@ -11,6 +12,7 @@ from api_graphql.types.formula import FormulaType, FormulaCreatePayload, Formula
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from api_graphql.types.formula import (
+    FormulaIdentifierInput,
     FormulaCreateInput,
     FormulaDeleteInput,
     FormulaUpdateIdentifier,
@@ -25,9 +27,19 @@ def get_all_formulas(db: Session) -> list[models.Formula]:
     .all()
   )
   
-def get_formula(db: Session, formula_slug: str) -> models.Formula:
+def get_formula(db: Session, identifier: "FormulaIdentifierInput") -> models.Formula:
+  conditions = []
+  
+  for attr, value in vars(identifier).items():
+    if value is not strawberry.UNSET:
+      if attr == "id":
+        node_id = value.node_id
+        conditions.append(models.Formula.id == node_id)
+      else:
+        conditions.append(getattr(models.Formula, attr) == value)
+  
   return (
-    db.scalar(select(models.Formula).where(models.Formula.slug == formula_slug))
+    db.scalar(select(models.Formula).where(and_(*conditions)))
   )
   
 
