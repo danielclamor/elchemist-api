@@ -351,7 +351,7 @@ class Mutation:
     self, info: strawberry.Info, production_order: ProductionOrderCreateInput
   ) -> ProductionOrderCreatePayload:
     db = info.context["db"]
-    return create_production_order(db=db, production_order=production_order)
+    return create_production_order(db=db, input=production_order)
   
   @strawberry.mutation
   def productionOrderDelete(

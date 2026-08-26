@@ -42,6 +42,8 @@ def get_production_order(db: Session, order_number: str) -> models.ProductionOrd
 
 # Mutations
 def create_production_order_activity_log(
+  # this mutation is called internally on every update of ProductionOrder
+  # doesn't need graphql schema, input, and payload type
   db: Session,
   production_order_id: uuid.UUID,
   activity: models.ProductionOrderActivity,
@@ -61,17 +63,14 @@ def create_production_order_activity_log(
   
   return log
   
-def create_production_order(
-  db: Session, 
-  production_order: "ProductionOrderCreateInput"
-) -> ProductionOrderCreatePayload:
-  eliquid = db.scalar(select(models.Eliquid).where(models.Eliquid.upc == production_order.eliquid_upc))
+def create_production_order(db: Session, input: "ProductionOrderCreateInput") -> ProductionOrderCreatePayload:
+  eliquid = db.scalar(select(models.Eliquid).where(models.Eliquid.upc == input.eliquid_upc))
   if not eliquid:
     return ProductionOrderCreatePayload(
       production_order=None,
       feedback=Feedback(
         status=FeedbackStatus.FAILED,
-        message=f"Eliquid {production_order.eliquid_upc} not found"
+        message=f"Eliquid {input.eliquid_upc} not found"
       )
     )
   
@@ -101,8 +100,8 @@ def create_production_order(
   po = models.ProductionOrder(
     order_number=po_number,
     eliquid_id=eliquid.id,
-    quantity=production_order.quantity,
-    is_priority=production_order.is_priority or False,
+    quantity=input.quantity,
+    is_priority=input.is_priority or False,
     created_at=created_at_utc,
     updated_at=created_at_utc,
   )
@@ -128,10 +127,7 @@ def create_production_order(
     )
   )
   
-def delete_production_order(
-  db: Session,
-  input: "ProductionOrderDeleteInput"
-) -> ProductionOrderDeletePayload:
+def delete_production_order(db: Session, input: "ProductionOrderDeleteInput") -> ProductionOrderDeletePayload:
   po = get_production_order(
     db=db,
     order_number=input.order_number,
