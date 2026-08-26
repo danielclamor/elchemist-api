@@ -7,6 +7,7 @@ import strawberry
 from strawberry import relay
 
 import models
+from api_graphql.types.feedback import Feedback
 from api_graphql.types.enums import ProductionOrderActivity, ProductionOrderStatus
 
 if TYPE_CHECKING:
@@ -16,8 +17,8 @@ if TYPE_CHECKING:
 class ProductionOrderActivityLogType(relay.Node):
   id: relay.NodeID[str]
   activity: ProductionOrderActivity
-  old_value: str
-  new_value: str
+  old_value: str | None
+  new_value: str | None
   triggered_at: datetime
 
   @classmethod
@@ -61,3 +62,38 @@ class ProductionOrderType(relay.Node):
   @relay.connection(relay.ListConnection["ProductionOrderActivityLogType"])
   def activity_logs(self) -> list["ProductionOrderActivityLogType"]:
     return [ProductionOrderActivityLogType.from_model(l) for l in self._model.activity_logs]
+  
+@strawberry.input
+class ProductionOrderCreateInput:
+  eliquid_upc: str
+  quantity: int
+  is_priority: bool | None = None
+
+@strawberry.type
+class ProductionOrderCreatePayload:
+  production_order: ProductionOrderType | None
+  feedback: Feedback
+
+@strawberry.input
+class ProductionOrderDeleteInput:
+  order_number: str
+  
+@strawberry.type
+class ProductionOrderDeletePayload:
+  deleted_order_number: str | None
+  feedback: Feedback
+
+@strawberry.input
+class ProductionOrderUpdateIdentifier:
+  order_number: str
+  
+@strawberry.input
+class ProductionOrderUpdateInput:
+  status: ProductionOrderStatus | None = None
+  quantity: int | None = None
+  is_priority: bool | None = None
+  
+@strawberry.type
+class ProductionOrderUpdatePayload:
+  production_order: ProductionOrderType | None
+  feedback: Feedback

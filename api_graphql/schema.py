@@ -2,12 +2,19 @@ from graphql import GraphQLError
 import strawberry
 from strawberry import relay
 from typing import List, Optional
-from database import SessionLocal
 
 from api_graphql.types.enums import FeedbackStatus
 from api_graphql.types.feedback import Feedback
 from api_graphql.types.brand import BrandEdge, BrandConnection
-from api_graphql.types.eliquid import EliquidType
+from api_graphql.types.eliquid import (
+  EliquidType,
+  EliquidCreateInput, 
+  EliquidCreatePayload,
+  EliquidDeletePayload,
+  EliquidIdentifier,
+  EliquidUpdateInput, 
+  EliquidUpdatePayload,
+)
 from api_graphql.types.flavoring import (
   FlavoringOptionType,
   FlavoringOptionCreateInput,
@@ -29,21 +36,31 @@ from api_graphql.types.nic_base import (
   NicBaseOptionCreatePayload,
 )
 from api_graphql.types.nic_profile import (
+  NicProfileIdentifier,
   NicProfileType,
+  NicProfileIdentifier,
   NicProfileAddFlavoringInput,
   NicProfileAddFlavoringPayload,
   NicProfileAddNicBaseInput,
   NicProfileAddNicBasePayload,
   NicProfileCreateInput,
   NicProfileCreatePayload,
-  NicProfileDeleteInput,
   NicProfileDeletePayload,
-  NicProfileUpdateIdentifier,
   NicProfileUpdateInput,
   NicProfileUpdatePayload,
 )
+from api_graphql.types.production_order import (
+  ProductionOrderType,
+  ProductionOrderCreateInput,
+  ProductionOrderCreatePayload,
+  ProductionOrderDeleteInput,
+  ProductionOrderDeletePayload,
+  ProductionOrderUpdateIdentifier,
+  ProductionOrderUpdateInput,
+  ProductionOrderUpdatePayload,
+)
 
-from api_graphql.resolvers.utils import make_slug
+from api_graphql.resolvers.utils import generate_slug
 
 from api_graphql.resolvers.brand import (
   get_all_brands,
@@ -51,6 +68,10 @@ from api_graphql.resolvers.brand import (
 
 from api_graphql.resolvers.eliquid import (
   get_all_eliquids,
+  create_eliquid,
+  delete_eliquid,
+  set_eliquid_nic_profile,
+  update_eliquid,
 )
 
 from api_graphql.resolvers.formula import (
@@ -80,6 +101,14 @@ from api_graphql.resolvers.nic_base import (
   get_all_nic_base_options,
   get_nic_base_option,
   create_nic_base_option,
+)
+
+from api_graphql.resolvers.production_order import (
+  get_all_production_orders,
+  get_production_order,
+  create_production_order,
+  delete_production_order,
+  update_production_order,
 )
 
 def _cursor_index(cursor: str) -> int:
@@ -185,16 +214,58 @@ class Query:
   ) -> List[NicProfileType]:
     db = info.context["db"]
     return [NicProfileType.from_model(p) for p in get_all_nic_profiles(db)]
+  
+  @strawberry.field
+  def productionOrder(
+    self, info: strawberry.Info, order_number: str,
+  ) -> ProductionOrderType:
+    db = info.context["db"]
+    return ProductionOrderType.from_model(get_production_order(db, order_number=order_number))
+  
+  @relay.connection(relay.ListConnection[ProductionOrderType])
+  def productionOrders(
+    self, info: strawberry.Info
+  ) -> List[ProductionOrderType]:
+    db = info.context["db"]
+    return [ProductionOrderType.from_model(po) for po in get_all_production_orders(db)]
 
 
 @strawberry.type
 class Mutation:
   @strawberry.mutation
+  def eliquidCreate(
+    self, info: strawberry.Info, eliquid: EliquidCreateInput
+  ) -> EliquidCreatePayload:
+    db = info.context["db"]
+    return create_eliquid(db=db, input=eliquid)
+  
+  @strawberry.mutation
+  def eliquidDelete(
+    self, info: strawberry.Info, identifier: EliquidIdentifier
+  ) -> EliquidDeletePayload:
+    db = info.context["db"]
+    return delete_eliquid(db=db, identifier=identifier)
+  
+  @strawberry.mutation
+  def eliquidUpdate(
+    self, info: strawberry.Info, identifier: EliquidIdentifier, eliquid: EliquidUpdateInput
+  ) -> EliquidUpdatePayload:
+    db = info.context["db"]
+    return update_eliquid(db=db, identifier=identifier, input=eliquid)
+  
+  @strawberry.mutation
+  def eliquidNicProfileSet(
+    self, info: strawberry.Info, identifier: EliquidIdentifier, nic_profile_id: relay.GlobalID | None
+  ) -> EliquidUpdatePayload:
+    db = info.context["db"]
+    return set_eliquid_nic_profile(db=db, identifier=identifier, nic_profile_id=nic_profile_id)
+  
+  @strawberry.mutation
   def flavoringOptionCreate(
     self, info: strawberry.Info, flavoring_option: FlavoringOptionCreateInput
   ) -> FlavoringOptionCreatePayload:
     db = info.context["db"]
-    flavoring_option_slug = make_slug(flavoring_option.name)
+    flavoring_option_slug = generate_slug(flavoring_option.name)
 
     existing = get_flavoring_option(
       db=db, flavoring_option_slug=flavoring_option_slug
@@ -263,7 +334,7 @@ class Mutation:
     )
 
   @strawberry.mutation
-  def nicProfileBulkAddFlavoring(
+  def nicProfileFlavoringsBulkAdd(
       self, info: strawberry.Info, nic_profile_slug: str, flavorings: List[NicProfileAddFlavoringInput]
   ) -> NicProfileAddFlavoringPayload:
     db = info.context["db"]
@@ -272,7 +343,7 @@ class Mutation:
     )
 
   @strawberry.mutation
-  def nicProfileBulkAddNicBases(
+  def nicProfileNicBasesBulkAdd(
       self, info: strawberry.Info, nic_profile_slug: str, nic_bases: List[NicProfileAddNicBaseInput]
   ) -> NicProfileAddNicBasePayload:
     db = info.context["db"]
@@ -291,17 +362,38 @@ class Mutation:
 
   @strawberry.mutation
   def nicProfileDelete(
-    self, info: strawberry.Info, input: NicProfileDeleteInput
+    self, info: strawberry.Info, identifier: NicProfileIdentifier
   ) -> NicProfileDeletePayload:
     db = info.context["db"]
-    return delete_nic_profile(db=db, input=input)
+    return delete_nic_profile(db=db, identifier=identifier)
 
   @strawberry.mutation
   def nicProfileUpdate(
-      self, info: strawberry.Info, identifier: NicProfileUpdateIdentifier, nic_profile: NicProfileUpdateInput
+      self, info: strawberry.Info, identifier: NicProfileIdentifier, nic_profile: NicProfileUpdateInput
   ) -> NicProfileUpdatePayload:
     db = info.context["db"]
     return update_nic_profile(db=db, identifier=identifier, nic_profile=nic_profile)
+
+  @strawberry.mutation
+  def productionOrderCreate(
+    self, info: strawberry.Info, production_order: ProductionOrderCreateInput
+  ) -> ProductionOrderCreatePayload:
+    db = info.context["db"]
+    return create_production_order(db=db, input=production_order)
+  
+  @strawberry.mutation
+  def productionOrderDelete(
+    self, info: strawberry.Info, input: ProductionOrderDeleteInput
+  ) -> ProductionOrderDeletePayload:
+    db = info.context["db"]
+    return delete_production_order(db=db, input=input)
+  
+  @strawberry.mutation
+  def productionOrderUpdate(
+    self, info: strawberry.Info, identifier: ProductionOrderUpdateIdentifier, production_order: ProductionOrderUpdateInput
+  ) -> ProductionOrderUpdatePayload:
+    db = info.context["db"]
+    return update_production_order(db=db, identifier=identifier, input=production_order)
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)

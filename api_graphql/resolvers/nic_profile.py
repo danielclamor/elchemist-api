@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 import models
 
-from .utils import make_slug
+from .utils import generate_slug
 
 from api_graphql.resolvers.flavoring import (
   get_flavoring_option,
@@ -37,9 +37,8 @@ from api_graphql.types.nic_profile import (
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from api_graphql.types.nic_profile import (
+    NicProfileIdentifier,
     NicProfileCreateInput,
-    NicProfileDeleteInput,
-    NicProfileUpdateIdentifier,
     NicProfileUpdateInput,
     NicProfileAddFlavoringInput,
     NicProfileAddNicBaseInput,
@@ -59,7 +58,7 @@ def get_nic_profile(db: Session, nic_profile_slug: str) -> models.NicProfile:
   
 # Mutations
 def add_nic_profile_flavoring(db: Session, nic_profile: models.NicProfile, flavoring: "NicProfileAddFlavoringInput") -> NicProfileAddFlavoringPayload:
-  flavoring_option_slug = make_slug(flavoring.flavoring_option_name)
+  flavoring_option_slug = generate_slug(flavoring.flavoring_option_name)
   existing_flavoring_option = get_flavoring_option(db=db, flavoring_option_slug=flavoring_option_slug)
   if not existing_flavoring_option:
     if flavoring.flavoring_option_is_vg is None:
@@ -227,7 +226,7 @@ def create_nic_profile(db: Session, formula_slug: str, nic_profile: "NicProfileC
 
   suffix = " - Old Mix" if nic_profile.is_old_mix else ""
   full_name = f"{formula.name} - {nic_profile.name}{suffix}"
-  slug = make_slug(full_name)
+  slug = generate_slug(full_name)
 
   existing = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == slug,
                                                        models.NicProfile.formula_id == formula.id))
@@ -262,10 +261,10 @@ def create_nic_profile(db: Session, formula_slug: str, nic_profile: "NicProfileC
     )
   )
 
-def delete_nic_profile(db: Session, input: "NicProfileDeleteInput") -> NicProfileDeletePayload:
+def delete_nic_profile(db: Session, identifier: "NicProfileIdentifier") -> NicProfileDeletePayload:
   nic_profile = get_nic_profile(
     db=db,
-    nic_profile_slug=input.slug
+    nic_profile_slug=identifier.slug
   )
 
   if not nic_profile:
@@ -274,7 +273,7 @@ def delete_nic_profile(db: Session, input: "NicProfileDeleteInput") -> NicProfil
       deleted_full_name=None,
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
-        message=f"Nic profile {input.slug} not found."
+        message=f"Nic profile {identifier.slug} not found."
       )
     )
 
@@ -282,7 +281,7 @@ def delete_nic_profile(db: Session, input: "NicProfileDeleteInput") -> NicProfil
   db.commit()
 
   return NicProfileDeletePayload(
-    deleted_slug=input.slug,
+    deleted_slug=identifier.slug,
     deleted_full_name=nic_profile.full_name,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
@@ -290,7 +289,7 @@ def delete_nic_profile(db: Session, input: "NicProfileDeleteInput") -> NicProfil
     )
   )
 
-def update_nic_profile(db: Session, identifier: "NicProfileUpdateIdentifier", nic_profile: "NicProfileUpdateInput") -> NicProfileUpdatePayload:
+def update_nic_profile(db: Session, identifier: "NicProfileIdentifier", nic_profile: "NicProfileUpdateInput") -> NicProfileUpdatePayload:
   nic_profile_model = get_nic_profile(
     db=db,
     nic_profile_slug=identifier.slug
