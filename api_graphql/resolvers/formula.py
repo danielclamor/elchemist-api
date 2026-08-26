@@ -39,8 +39,8 @@ def get_formula(db: Session, identifier: "FormulaIdentifierInput") -> models.For
   
 
 # Mutations
-def create_formula(db: Session, formula: "FormulaCreateInput") -> FormulaCreatePayload:
-  slug = generate_slug(string=formula.name)
+def create_formula(db: Session, input: "FormulaCreateInput") -> FormulaCreatePayload:
+  slug = generate_slug(string=input.name)
 
   existing = db.scalar(select(models.Formula).where(models.Formula.slug == slug))
   if existing:

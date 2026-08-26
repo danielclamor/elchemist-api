@@ -293,7 +293,7 @@ class Mutation:
     self, info: strawberry.Info, formula: FormulaCreateInput
   ) -> FormulaCreatePayload:
     db = info.context["db"]
-    return create_formula(db=db, formula=formula)
+    return create_formula(db=db, input=formula)
 
   @strawberry.mutation
   def formulaDelete(
