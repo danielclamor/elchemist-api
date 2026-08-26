@@ -1,14 +1,25 @@
+from enum import Enum
+
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+import strawberry
 
-from api_graphql.types.eliquid import EliquidCreatePayload, EliquidType
+from api_graphql.types.eliquid import (
+  EliquidType,
+  EliquidCreatePayload,
+  EliquidUpdatePayload,
+)
 from api_graphql.types.enums import FeedbackStatus
 from api_graphql.types.feedback import Feedback
 import models
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from api_graphql.types.eliquid import EliquidCreateInput
+  from api_graphql.types.eliquid import (
+    EliquidCreateInput,
+    EliquidUpdateIdentifier,
+    EliquidUpdateInput,
+  )
 
 # Queries
 def get_all_eliquids(db: Session) -> list[models.Eliquid]:
@@ -66,3 +77,48 @@ def create_eliquid(db: Session, eliquid: "EliquidCreateInput") -> EliquidCreateP
       message=connect_nic_profile_feedback or None
     )
   )
+  
+def update_eliquid(db: Session, identifier: "EliquidUpdateIdentifier", input: "EliquidUpdateInput") -> EliquidUpdatePayload:
+  eliquid = get_eliquid(db=db, upc=identifier.upc)
+  
+  if not eliquid:
+    return EliquidUpdatePayload(
+      eliquid=None,
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Eliquid {identifier} not found."
+      )
+    )
+  
+  updated_columns = []
+  
+  for attr, value in vars(input).items():
+    current = getattr(eliquid, attr, None)
+    
+    if value is strawberry.UNSET:
+      continue
+    if isinstance(value, Enum):
+      value = value.name
+      current = current.name
+    
+    if value != current:
+      setattr(eliquid, attr, value)
+      db.flush()
+      updated_columns.append(f"{attr}")
+  
+  if len(updated_columns) == 0:
+    message = "Nothing to update"
+  else:
+    db.commit()
+    db.refresh(eliquid)
+    
+    message = f"Updated {", ".join(updated_columns)}"
+    
+  return EliquidUpdatePayload(
+    eliquid=EliquidType.from_model(eliquid),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=message
+    )
+  )
+    
