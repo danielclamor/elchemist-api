@@ -10,6 +10,7 @@ from api_graphql.types.eliquid import (
   EliquidType,
   EliquidCreateInput, 
   EliquidCreatePayload,
+  EliquidDeletePayload,
   EliquidIdentifier,
   EliquidUpdateInput, 
   EliquidUpdatePayload,
@@ -66,10 +67,11 @@ from api_graphql.resolvers.brand import (
 )
 
 from api_graphql.resolvers.eliquid import (
-  create_eliquid,
   get_all_eliquids,
-  update_eliquid,
+  create_eliquid,
+  delete_eliquid,
   set_eliquid_nic_profile,
+  update_eliquid,
 )
 
 from api_graphql.resolvers.formula import (
@@ -236,6 +238,13 @@ class Mutation:
   ) -> EliquidCreatePayload:
     db = info.context["db"]
     return create_eliquid(db=db, input=eliquid)
+  
+  @strawberry.mutation
+  def eliquidDelete(
+    self, info: strawberry.Info, identifier: EliquidIdentifier
+  ) -> EliquidDeletePayload:
+    db = info.context["db"]
+    return delete_eliquid(db=db, identifier=identifier)
   
   @strawberry.mutation
   def eliquidUpdate(

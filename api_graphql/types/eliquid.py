@@ -75,6 +75,12 @@ class EliquidCreateInput:
 class EliquidCreatePayload:
   eliquid: EliquidType | None
   feedback: Feedback
+  
+@strawberry.type
+class EliquidDeletePayload:
+  deleted_upc: str | None
+  deleted_description: str | None
+  feedback: Feedback
 
 @strawberry.input
 class EliquidUpdateInput:

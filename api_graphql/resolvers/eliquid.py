@@ -8,6 +8,7 @@ from strawberry import relay
 from api_graphql.types.eliquid import (
   EliquidType,
   EliquidCreatePayload,
+  EliquidDeletePayload,
   EliquidUpdatePayload,
 )
 from api_graphql.types.enums import FeedbackStatus
@@ -80,50 +81,31 @@ def create_eliquid(db: Session, input: "EliquidCreateInput") -> EliquidCreatePay
     )
   )
   
-def update_eliquid(db: Session, identifier: "EliquidIdentifier", input: "EliquidUpdateInput") -> EliquidUpdatePayload:
+def delete_eliquid(db: Session, identifier: "EliquidIdentifier") -> EliquidDeletePayload:
   eliquid = get_eliquid(db=db, upc=identifier.upc)
   
   if not eliquid:
-    return EliquidUpdatePayload(
-      eliquid=None,
+    return EliquidDeletePayload(
+      deleted_upc=None,
+      deleted_description=None,
       feedback=Feedback(
         status=FeedbackStatus.FAILED,
-        message=f"Eliquid {identifier} not found."
+        message="Eliquid not found."
       )
     )
   
-  updated_columns = []
+  db.delete(eliquid)
+  db.commit()
   
-  for attr, value in vars(input).items():
-    current = getattr(eliquid, attr, None)
-    
-    if value is strawberry.UNSET:
-      continue
-    if isinstance(value, Enum):
-      value = value.name
-      current = current.name
-    
-    if value != current:
-      setattr(eliquid, attr, value)
-      db.flush()
-      updated_columns.append(f"{attr}")
-  
-  if len(updated_columns) == 0:
-    message = "Nothing to update"
-  else:
-    db.commit()
-    db.refresh(eliquid)
-    
-    message = f"Updated {", ".join(updated_columns)}"
-    
-  return EliquidUpdatePayload(
-    eliquid=EliquidType.from_model(eliquid),
+  return EliquidDeletePayload(
+    deleted_upc=eliquid.upc,
+    deleted_description=eliquid.description,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
-      message=message
+      message=None
     )
   )
-
+  
 def set_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifier", nic_profile_id: relay.GlobalID | None) -> EliquidUpdatePayload:
   eliquid = get_eliquid(db=db, upc=identifier.upc)
   
@@ -176,5 +158,49 @@ def set_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifier", nic_pr
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=None,
+    )
+  )
+  
+def update_eliquid(db: Session, identifier: "EliquidIdentifier", input: "EliquidUpdateInput") -> EliquidUpdatePayload:
+  eliquid = get_eliquid(db=db, upc=identifier.upc)
+  
+  if not eliquid:
+    return EliquidUpdatePayload(
+      eliquid=None,
+      feedback=Feedback(
+        status=FeedbackStatus.FAILED,
+        message=f"Eliquid {identifier} not found."
+      )
+    )
+  
+  updated_columns = []
+  
+  for attr, value in vars(input).items():
+    current = getattr(eliquid, attr, None)
+    
+    if value is strawberry.UNSET:
+      continue
+    if isinstance(value, Enum):
+      value = value.name
+      current = current.name
+    
+    if value != current:
+      setattr(eliquid, attr, value)
+      db.flush()
+      updated_columns.append(f"{attr}")
+  
+  if len(updated_columns) == 0:
+    message = "Nothing to update"
+  else:
+    db.commit()
+    db.refresh(eliquid)
+    
+    message = f"Updated {", ".join(updated_columns)}"
+    
+  return EliquidUpdatePayload(
+    eliquid=EliquidType.from_model(eliquid),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=message
     )
   )
