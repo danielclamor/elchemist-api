@@ -43,9 +43,12 @@ class EliquidType(relay.Node):
     )
     
   @strawberry.field
-  def nic_profile(self) -> Annotated["NicProfileType", strawberry.lazy("api_graphql.types.nic_profile")]:
-    from api_graphql.types.nic_profile import NicProfileType
-    return NicProfileType.from_model(self._model.nic_profile)
+  def nic_profile(self) -> Annotated["NicProfileType", strawberry.lazy("api_graphql.types.nic_profile")] | None:
+    if self._model.nic_profile:
+      from api_graphql.types.nic_profile import NicProfileType
+      return NicProfileType.from_model(self._model.nic_profile)
+
+    return None
   
   @relay.connection(relay.ListConnection[Annotated["ProductionOrderType", strawberry.lazy("api_graphql.types.production_order")]])
   def production_orders(self) -> list[Annotated["ProductionOrderType", strawberry.lazy("api_graphql.types.production_order")]]:
