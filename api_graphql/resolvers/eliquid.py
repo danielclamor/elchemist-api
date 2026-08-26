@@ -34,20 +34,20 @@ def get_eliquid(db: Session, upc: str) -> models.Eliquid:
 
 
 # Mutations
-def create_eliquid(db: Session, eliquid: "EliquidCreateInput") -> EliquidCreatePayload:
+def create_eliquid(db: Session, input: "EliquidCreateInput") -> EliquidCreatePayload:
   existing = db.scalar(select(models.Eliquid).where(models.Eliquid.upc == eliquid.upc))
   if existing:
     return EliquidCreatePayload(
       eliquid=EliquidType.from_model(existing),
       feedback=Feedback(
         status=FeedbackStatus.Cancelled,
-        message=f"Eliquid with upc {eliquid.upc} already exists",
+        message=f"Eliquid with upc {input.upc} already exists",
       )
     )
   
   nic_profile_id = None
   
-  nic_profile_slug = eliquid.nic_profile_slug
+  nic_profile_slug = input.nic_profile_slug
   if nic_profile_slug:
     nic_profile = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_slug))
     if nic_profile:
@@ -56,14 +56,14 @@ def create_eliquid(db: Session, eliquid: "EliquidCreateInput") -> EliquidCreateP
       connect_nic_profile_feedback = f"Failed to connect NicProfile. NicProfile {nic_profile_slug} not found."
   
   eliquid = models.Eliquid(
-    upc=eliquid.upc,
-    description=eliquid.description,
-    brand=eliquid.brand,
-    chill_type=models.ChillType[eliquid.chill_type.name],
-    nic_type=models.NicType[eliquid.nic_type.name],
-    size=models.SizeOption[eliquid.size.name],
-    nic_level=models.NicLevelOption[eliquid.nic_level.name],
-    bottle_color=models.BottleColor[eliquid.bottle_color.name],
+    upc=input.upc,
+    description=input.description,
+    brand=input.brand,
+    chill_type=models.ChillType[input.chill_type.name],
+    nic_type=models.NicType[input.nic_type.name],
+    size=models.SizeOption[input.size.name],
+    nic_level=models.NicLevelOption[input.nic_level.name],
+    bottle_color=models.BottleColor[input.bottle_color.name],
     nic_profile_id=nic_profile_id,
   )
   

@@ -231,10 +231,10 @@ class Query:
 class Mutation:
   @strawberry.mutation
   def eliquidCreate(
-    self, info: strawberry.Info, eliquid: EliquidCreateInput
+    self, info: strawberry.Info, input: EliquidCreateInput
   ) -> EliquidCreatePayload:
     db = info.context["db"]
-    return create_eliquid(db=db, eliquid=eliquid)
+    return create_eliquid(db=db, eliquid=input)
   
   @strawberry.mutation
   def eliquidUpdate(
