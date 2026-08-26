@@ -157,13 +157,9 @@ def delete_production_order(
     )
   )
   
-def update_production_order(
-  db: Session, 
-  identifier: ProductionOrderUpdateIdentifier,
-  production_order: "ProductionOrderUpdateInput",
-) -> ProductionOrderUpdatePayload:
-  po_model = db.scalar(select(models.ProductionOrder).where(models.ProductionOrder.order_number == identifier.order_number))
-  if not po_model:
+def update_production_order(db: Session, identifier: ProductionOrderUpdateIdentifier, input: "ProductionOrderUpdateInput") -> ProductionOrderUpdatePayload:
+  po = db.scalar(select(models.ProductionOrder).where(models.ProductionOrder.order_number == identifier.order_number))
+  if not po:
     return ProductionOrderUpdatePayload(
       production_order=None,
       feedback=Feedback(
@@ -174,76 +170,76 @@ def update_production_order(
   
   updated_columns = []  
   
-  if production_order.status and production_order.status.value != po_model.status.value:
+  if input.status and input.status.value != po.status.value:
     today = get_today("UTC")
-    old = po_model.status
-    new = models.ProductionOrderStatus[production_order.status.name]
+    old = po.status
+    new = models.ProductionOrderStatus[input.status.name]
     
-    po_model.status = new
-    po_model.updated_at = today
+    po.status = new
+    po.updated_at = today
     db.flush()
     
     create_production_order_activity_log(
       db=db,
-      production_order_id=po_model.id,
+      production_order_id=po.id,
       activity=models.ProductionOrderActivity.CHANGE_STATUS,
       triggered_at=today,
       old_value=f"{old.name}",
-      new_value=f"{po_model.status.name}",
+      new_value=f"{po.status.name}",
     )
     
     updated_columns.append("status")
   
-  if production_order.quantity and production_order.quantity != po_model.quantity:
+  if input.quantity and input.quantity != po.quantity:
     today = get_today("UTC")
-    old = po_model.quantity
-    new = production_order.quantity
+    old = po.quantity
+    new = input.quantity
     
-    po_model.quantity = new
-    po_model.updated_at = today
+    po.quantity = new
+    po.updated_at = today
     db.flush()
     
     create_production_order_activity_log(
       db=db,
-      production_order_id=po_model.id,
+      production_order_id=po.id,
       activity=models.ProductionOrderActivity.ADJUST_QUANTITY,
       triggered_at=today,
       old_value=f"{old}",
-      new_value=f"{po_model.quantity}",
+      new_value=f"{po.quantity}",
     )
       
     updated_columns.append("quantity")
       
-  if production_order.is_priority and production_order.is_priority != po_model.is_priority:
+  if input.is_priority and input.is_priority != po.is_priority:
     today = get_today("UTC")
-    old = po_model.is_priority
-    new = production_order.is_priority
+    old = po.is_priority
+    new = input.is_priority
     
-    po_model.is_priority = new
-    po_model.updated_at = today
+    po.is_priority = new
+    po.updated_at = today
     db.flush()
     
     create_production_order_activity_log(
       db=db,
-      production_order_id=po_model.id,
+      production_order_id=po.id,
       activity=models.ProductionOrderActivity.SWITCH_PRIORITY,
       triggered_at=today,
       old_value=f"{old}",
-      new_value=f"{po_model.is_priority}",
+      new_value=f"{po.is_priority}",
     )
     
     updated_columns.append("isPriority")
   
   if len(updated_columns) > 0:
     db.commit()
-    db.refresh(po_model)
+    db.refresh(po)
     
     message = f"Updated {", ".join(updated_columns)}"
   else:
     message="Nothing to update"
   
   return ProductionOrderUpdatePayload(
-    production_order=ProductionOrderType.from_model(po_model),
+    production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=message

@@ -365,7 +365,7 @@ class Mutation:
     self, info: strawberry.Info, identifier: ProductionOrderUpdateIdentifier, production_order: ProductionOrderUpdateInput
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
-    return update_production_order(db=db, identifier=identifier, production_order=production_order)
+    return update_production_order(db=db, identifier=identifier, input=production_order)
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
