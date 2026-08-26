@@ -69,7 +69,7 @@ from api_graphql.resolvers.eliquid import (
   create_eliquid,
   get_all_eliquids,
   update_eliquid,
-  update_eliquid_nic_profile,
+  set_eliquid_nic_profile,
 )
 
 from api_graphql.resolvers.formula import (
@@ -245,11 +245,11 @@ class Mutation:
     return update_eliquid(db=db, identifier=identifier, input=eliquid)
   
   @strawberry.mutation
-  def eliquidUpdateNicProfile(
-    self, info: strawberry.Info, identifier: EliquidIdentifier, nic_profile: NicProfileIdentifier | None
+  def eliquidNicProfileSet(
+    self, info: strawberry.Info, identifier: EliquidIdentifier, nic_profile_id: relay.GlobalID | None
   ) -> EliquidUpdatePayload:
     db = info.context["db"]
-    return update_eliquid_nic_profile(db=db, identifier=identifier, nic_profile_identifier=nic_profile)
+    return set_eliquid_nic_profile(db=db, identifier=identifier, nic_profile_id=nic_profile_id)
   
   @strawberry.mutation
   def flavoringOptionCreate(
@@ -325,7 +325,7 @@ class Mutation:
     )
 
   @strawberry.mutation
-  def nicProfileBulkAddFlavoring(
+  def nicProfileFlavoringsBulkAdd(
       self, info: strawberry.Info, nic_profile_slug: str, flavorings: List[NicProfileAddFlavoringInput]
   ) -> NicProfileAddFlavoringPayload:
     db = info.context["db"]
@@ -334,7 +334,7 @@ class Mutation:
     )
 
   @strawberry.mutation
-  def nicProfileBulkAddNicBases(
+  def nicProfileNicBasesBulkAdd(
       self, info: strawberry.Info, nic_profile_slug: str, nic_bases: List[NicProfileAddNicBaseInput]
   ) -> NicProfileAddNicBasePayload:
     db = info.context["db"]

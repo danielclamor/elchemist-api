@@ -3,6 +3,7 @@ from enum import Enum
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 import strawberry
+from strawberry import relay
 
 from api_graphql.types.eliquid import (
   EliquidType,
@@ -11,6 +12,7 @@ from api_graphql.types.eliquid import (
 )
 from api_graphql.types.enums import FeedbackStatus
 from api_graphql.types.feedback import Feedback
+from api_graphql.types.nic_profile import NicProfileType
 import models
 
 from typing import TYPE_CHECKING
@@ -19,10 +21,6 @@ if TYPE_CHECKING:
     EliquidIdentifier,
     EliquidCreateInput,
     EliquidUpdateInput,
-  )
-  
-  from api_graphql.types.nic_profile import (
-    NicProfileIdentifier,
   )
 
 # Queries
@@ -89,7 +87,7 @@ def update_eliquid(db: Session, identifier: "EliquidIdentifier", input: "Eliquid
     return EliquidUpdatePayload(
       eliquid=None,
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatus.FAILED,
         message=f"Eliquid {identifier} not found."
       )
     )
@@ -126,30 +124,50 @@ def update_eliquid(db: Session, identifier: "EliquidIdentifier", input: "Eliquid
     )
   )
 
-def update_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifier", nic_profile_identifier: "NicProfileIdentifier") -> EliquidUpdatePayload:
+def set_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifier", nic_profile_id: relay.GlobalID | None) -> EliquidUpdatePayload:
   eliquid = get_eliquid(db=db, upc=identifier.upc)
   
   if not eliquid:
     return EliquidUpdatePayload(
       eliquid=None,
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatus.FAILED,
         message=f"Eliquid {identifier} not found."
       )
     )
+  
+  if nic_profile_id:
+    type_name = nic_profile_id.type_name
+    node_id = nic_profile_id.node_id
+
+    if type_name != NicProfileType.__strawberry_definition__.name:
+      raise ValueError(f"Expected NicProfile GlobalId, got {type_name}")
     
-  nic_profile = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_identifier.slug))
-  
-  if not nic_profile:
-    return EliquidUpdatePayload(
-      eliquid=EliquidType.from_model(eliquid),
-      feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
-        message=f"NicProfile {nic_profile_identifier.slug} not found."
+    print(eliquid.nic_profile_id, node_id)
+    if str(eliquid.nic_profile_id) == node_id:
+      return EliquidUpdatePayload(
+        eliquid=EliquidType.from_model(eliquid),
+        feedback=Feedback(
+          status=FeedbackStatus.CANCELLED,
+          message="NicProfile already connected.",
+        )
       )
-    )
+    
+    nic_profile = db.scalar(select(models.NicProfile).where(models.NicProfile.id == node_id))
+    
+    if not nic_profile:
+      return EliquidUpdatePayload(
+        eliquid=EliquidType.from_model(eliquid),
+        feedback=Feedback(
+          status=FeedbackStatus.FAILED,
+          message="NicProfile not found."
+        )
+      )
+      
+    eliquid.nic_profile_id = nic_profile.id
+  else:
+    eliquid.nic_profile_id = None    
   
-  eliquid.nic_profile_id = nic_profile.id
   db.commit()
   db.refresh(eliquid)
   
@@ -159,4 +177,4 @@ def update_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifier", nic
       status=FeedbackStatus.SUCCESS,
       message=None,
     )
-  ) 
+  )
