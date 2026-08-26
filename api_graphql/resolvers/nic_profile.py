@@ -37,9 +37,8 @@ from api_graphql.types.nic_profile import (
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from api_graphql.types.nic_profile import (
+    NicProfileIdentifier,
     NicProfileCreateInput,
-    NicProfileDeleteInput,
-    NicProfileUpdateIdentifier,
     NicProfileUpdateInput,
     NicProfileAddFlavoringInput,
     NicProfileAddNicBaseInput,
@@ -262,10 +261,10 @@ def create_nic_profile(db: Session, formula_slug: str, nic_profile: "NicProfileC
     )
   )
 
-def delete_nic_profile(db: Session, input: "NicProfileDeleteInput") -> NicProfileDeletePayload:
+def delete_nic_profile(db: Session, identifier: "NicProfileIdentifier") -> NicProfileDeletePayload:
   nic_profile = get_nic_profile(
     db=db,
-    nic_profile_slug=input.slug
+    nic_profile_slug=identifier.slug
   )
 
   if not nic_profile:
@@ -274,7 +273,7 @@ def delete_nic_profile(db: Session, input: "NicProfileDeleteInput") -> NicProfil
       deleted_full_name=None,
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
-        message=f"Nic profile {input.slug} not found."
+        message=f"Nic profile {identifier.slug} not found."
       )
     )
 
@@ -282,7 +281,7 @@ def delete_nic_profile(db: Session, input: "NicProfileDeleteInput") -> NicProfil
   db.commit()
 
   return NicProfileDeletePayload(
-    deleted_slug=input.slug,
+    deleted_slug=identifier.slug,
     deleted_full_name=nic_profile.full_name,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
@@ -290,7 +289,7 @@ def delete_nic_profile(db: Session, input: "NicProfileDeleteInput") -> NicProfil
     )
   )
 
-def update_nic_profile(db: Session, identifier: "NicProfileUpdateIdentifier", nic_profile: "NicProfileUpdateInput") -> NicProfileUpdatePayload:
+def update_nic_profile(db: Session, identifier: "NicProfileIdentifier", nic_profile: "NicProfileUpdateInput") -> NicProfileUpdatePayload:
   nic_profile_model = get_nic_profile(
     db=db,
     nic_profile_slug=identifier.slug
