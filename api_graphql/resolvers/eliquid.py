@@ -16,9 +16,13 @@ import models
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from api_graphql.types.eliquid import (
+    EliquidIdentifier,
     EliquidCreateInput,
-    EliquidUpdateIdentifier,
     EliquidUpdateInput,
+  )
+  
+  from api_graphql.types.nic_profile import (
+    NicProfileIdentifier,
   )
 
 # Queries
@@ -47,7 +51,7 @@ def create_eliquid(db: Session, input: "EliquidCreateInput") -> EliquidCreatePay
   
   nic_profile_id = None
   
-  nic_profile_slug = input.nic_profile_slug
+  nic_profile_slug = eliquid.nic_profile_slug
   if nic_profile_slug:
     nic_profile = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_slug))
     if nic_profile:
@@ -78,7 +82,7 @@ def create_eliquid(db: Session, input: "EliquidCreateInput") -> EliquidCreatePay
     )
   )
   
-def update_eliquid(db: Session, identifier: "EliquidUpdateIdentifier", input: "EliquidUpdateInput") -> EliquidUpdatePayload:
+def update_eliquid(db: Session, identifier: "EliquidIdentifier", input: "EliquidUpdateInput") -> EliquidUpdatePayload:
   eliquid = get_eliquid(db=db, upc=identifier.upc)
   
   if not eliquid:
@@ -121,4 +125,38 @@ def update_eliquid(db: Session, identifier: "EliquidUpdateIdentifier", input: "E
       message=message
     )
   )
+
+def update_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifier", nic_profile_identifier: "NicProfileIdentifier") -> EliquidUpdatePayload:
+  eliquid = get_eliquid(db=db, upc=identifier.upc)
+  
+  if not eliquid:
+    return EliquidUpdatePayload(
+      eliquid=None,
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"Eliquid {identifier} not found."
+      )
+    )
     
+  nic_profile = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_identifier.slug))
+  
+  if not nic_profile:
+    return EliquidUpdatePayload(
+      eliquid=EliquidType.from_model(eliquid),
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"NicProfile {nic_profile_identifier.slug} not found."
+      )
+    )
+  
+  eliquid.nic_profile_id = nic_profile.id
+  db.commit()
+  db.refresh(eliquid)
+  
+  return EliquidUpdatePayload(
+    eliquid=EliquidType.from_model(eliquid),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=None,
+    )
+  ) 
