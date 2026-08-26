@@ -9,7 +9,10 @@ from api_graphql.types.brand import BrandEdge, BrandConnection
 from api_graphql.types.eliquid import (
   EliquidType,
   EliquidCreateInput, 
-  EliquidCreatePayload, 
+  EliquidCreatePayload,
+  EliquidUpdateIdentifier,
+  EliquidUpdateInput, 
+  EliquidUpdatePayload,
 )
 from api_graphql.types.flavoring import (
   FlavoringOptionType,
@@ -65,6 +68,7 @@ from api_graphql.resolvers.brand import (
 from api_graphql.resolvers.eliquid import (
   create_eliquid,
   get_all_eliquids,
+  update_eliquid,
 )
 
 from api_graphql.resolvers.formula import (
@@ -231,6 +235,13 @@ class Mutation:
   ) -> EliquidCreatePayload:
     db = info.context["db"]
     return create_eliquid(db=db, eliquid=eliquid)
+  
+  @strawberry.mutation
+  def eliquidUpdate(
+    self, info: strawberry.Info, identifier: EliquidUpdateIdentifier, eliquid: EliquidUpdateInput
+  ) -> EliquidUpdatePayload:
+    db = info.context["db"]
+    return update_eliquid(db=db, identifier=identifier, input=eliquid)
   
   @strawberry.mutation
   def flavoringOptionCreate(
