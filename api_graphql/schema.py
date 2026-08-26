@@ -22,6 +22,7 @@ from api_graphql.types.flavoring import (
 )
 from api_graphql.types.formula import (
   FormulaType,
+  FormulaIdentifierInput,
   FormulaCreateInput,
   FormulaCreatePayload,
   FormulaDeleteInput,
@@ -188,10 +189,10 @@ class Query:
 
   @strawberry.field
   def formula(
-    self, info: strawberry.Info, slug: str
+    self, info: strawberry.Info, identifier: FormulaIdentifierInput
   ) -> Optional[FormulaType]:
     db = info.context["db"]
-    f = get_formula(db=db, formula_slug=slug)
+    f = get_formula(db=db, identifier=identifier)
     return FormulaType.from_model(f) if f else None
 
   @relay.connection(relay.ListConnection[FormulaType])
