@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from graphql import GraphQLError
+
 from typing import Annotated, TYPE_CHECKING
 
 import strawberry
@@ -39,6 +41,29 @@ class FormulaType(relay.Node):
   def nic_profiles(self) -> list[Annotated["NicProfileType", strawberry.lazy("api_graphql.types.nic_profile")]]:
     from api_graphql.types.nic_profile import NicProfileType
     return [NicProfileType.from_model(p) for p in self._model.nic_profiles]
+
+@strawberry.input
+class FormulaIdentifierInput:
+  id: relay.GlobalID | None = strawberry.UNSET
+  slug: str | None = strawberry.UNSET
+  
+  def __post_init__(self):
+    provided = sum(1 for value in vars(self).values() if value is not strawberry.UNSET)
+    if provided != 1:
+      raise GraphQLError(
+        "Exactly one identifier must be provided.",
+        extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+      )
+    
+    if self.id is not strawberry.UNSET:
+      type_name = self.id.type_name
+      expected_name = FormulaType.__strawberry_definition__.name
+      if type_name != expected_name:
+        raise GraphQLError(
+          f"Expected {expected_name} ID, got {type_name} ID",
+          extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+        )
+        
 
 @strawberry.input
 class FormulaCreateInput:
