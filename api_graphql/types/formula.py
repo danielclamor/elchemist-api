@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from graphql import GraphQLError
 
-from typing import Annotated, TYPE_CHECKING
+from typing import Annotated, TYPE_CHECKING, Optional
 
 import strawberry
 from strawberry import relay
@@ -44,10 +44,16 @@ class FormulaType(relay.Node):
 
 @strawberry.input
 class FormulaIdentifierInput:
-  id: relay.GlobalID | None = strawberry.UNSET
-  slug: str | None = strawberry.UNSET
+  id: Optional[relay.GlobalID] = strawberry.UNSET
+  slug: Optional[str] = strawberry.UNSET
   
   def __post_init__(self):
+    if any(v is None for v in vars(self).values()):
+      raise GraphQLError(
+        "Identifier fields cannot be null.",
+        extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+      )
+    
     provided = sum(1 for value in vars(self).values() if value is not strawberry.UNSET)
     if provided != 1:
       raise GraphQLError(
