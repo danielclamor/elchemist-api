@@ -25,9 +25,7 @@ from api_graphql.types.formula import (
   FormulaIdentifierInput,
   FormulaCreateInput,
   FormulaCreatePayload,
-  FormulaDeleteInput,
   FormulaDeletePayload,
-  FormulaUpdateIdentifier,
   FormulaUpdateInput,
   FormulaUpdatePayload,
 )
@@ -304,10 +302,10 @@ class Mutation:
 
   @strawberry.mutation
   def formulaUpdate(
-    self, info: strawberry.Info, identifier: FormulaUpdateIdentifier, input: FormulaUpdateInput
+    self, info: strawberry.Info, identifier: FormulaIdentifierInput, formula: FormulaUpdateInput
   ) -> FormulaUpdatePayload:
     db = info.context["db"]
-    return update_formula(db=db, identifier=identifier, formula=input)
+    return update_formula(db=db, identifier=identifier, input=formula)
 
   @strawberry.mutation
   def nicBaseOptionCreate(
