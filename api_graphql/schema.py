@@ -297,10 +297,10 @@ class Mutation:
 
   @strawberry.mutation
   def formulaDelete(
-    self, info: strawberry.Info, input: FormulaDeleteInput
+    self, info: strawberry.Info, identifier: FormulaIdentifierInput
   ) -> FormulaDeletePayload:
     db = info.context["db"]
-    return delete_formula(db=db, input=input)
+    return delete_formula(db=db, identifier=identifier)
 
   @strawberry.mutation
   def formulaUpdate(
