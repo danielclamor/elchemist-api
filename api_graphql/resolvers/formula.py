@@ -1,3 +1,5 @@
+from enum import Enum
+
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
 import strawberry
@@ -6,16 +8,21 @@ import models
 from .utils import generate_slug
 
 from api_graphql.types.enums import FeedbackStatus
+
 from api_graphql.types.feedback import Feedback
-from api_graphql.types.formula import FormulaType, FormulaCreatePayload, FormulaDeletePayload, FormulaUpdatePayload
+
+from api_graphql.types.formula import (
+  FormulaType, 
+  FormulaCreatePayload, 
+  FormulaDeletePayload, 
+  FormulaUpdatePayload
+)
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from api_graphql.types.formula import (
     FormulaIdentifierInput,
     FormulaCreateInput,
-    FormulaDeleteInput,
-    FormulaUpdateIdentifier,
     FormulaUpdateInput,
   )
 
@@ -58,6 +65,7 @@ def create_formula(db: Session, input: "FormulaCreateInput") -> FormulaCreatePay
   db.add(formula)
   db.commit()
   db.refresh(formula)
+  
   return FormulaCreatePayload(
     formula=FormulaType.from_model(formula),
     feedback=Feedback(
@@ -68,6 +76,7 @@ def create_formula(db: Session, input: "FormulaCreateInput") -> FormulaCreatePay
 
 def delete_formula(db: Session, identifier: "FormulaIdentifierInput") -> FormulaDeletePayload:
   formula = get_formula(db=db, identifier=identifier)
+  
   if not formula:
     return FormulaDeletePayload(
       deleted_slug=None,
@@ -90,42 +99,49 @@ def delete_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula
     )
   )
   
-def update_formula(db: Session, identifier: "FormulaUpdateIdentifier", formula: "FormulaUpdateInput") -> FormulaUpdatePayload:
-  formula_model = get_formula(
-    db=db,
-    formula_slug=identifier.slug
-  )
-
-  if not formula_model:
+def update_formula(db: Session, identifier: "FormulaIdentifierInput", input: "FormulaUpdateInput") -> FormulaUpdatePayload:
+  formula = get_formula(db=db, identifier=identifier)
+  
+  if not formula:
     return FormulaUpdatePayload(
       formula=None,
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
-        message=f"Formula {identifier.slug} not found."
+        status=FeedbackStatus.FAILED,
+        message=f"Formula not found."
       )
     )
-
-  if formula.slug:
-    formula_model.slug = formula.slug
-
-  if formula.name:
-    formula_model.name = formula.name
-
-  if formula.brand:
-    formula_model.brand = formula.brand
-
-  if formula.chill_type:
-    formula_model.chill_type = models.ChillType[formula.chill_type.name]
-
-  if formula.nic_type:
-    formula_model.nic_type = models.NicType[formula.nic_type.name]
+  
+  updated_columns = []
+  
+  for attr, value in vars(input).items():
+    current = getattr(formula, attr, None)
+    
+    if value is strawberry.UNSET:
+      continue
+    if isinstance(value, Enum):
+      value = value.name
+      current = current.name
+      
+    if value != current:
+      setattr(formula, attr, value)
+      db.flush()
+      updated_columns.append(f"{attr}")
+      
+  if len(updated_columns) == 0:
+    message = "Nothin to update"
+  else:
+    db.commit()
+    db.refresh(formula)
+    
+    message = f"Updated {", ".join(updated_columns)}"
 
   db.commit()
-  db.refresh(formula_model)
+  db.refresh(formula)
+  
   return FormulaUpdatePayload(
-    formula=FormulaType.from_model(formula_model),
+    formula=FormulaType.from_model(formula),
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
-      message=None
+      message=message
     )
   )
