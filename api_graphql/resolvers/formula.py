@@ -28,15 +28,10 @@ def get_all_formulas(db: Session) -> list[models.Formula]:
   )
   
 def get_formula(db: Session, identifier: "FormulaIdentifierInput") -> models.Formula:
-  attr, value = next((a, v) for a, v in vars(identifier).items() if v is not strawberry.UNSET)
+  return (
+    db.scalar(select(models.Formula).where(identifier.query_condition))
+  )
 
-  if attr == "id":
-      condition = models.Formula.id == value.node_id
-  else:
-      condition = getattr(models.Formula, attr) == value
-
-  return db.scalar(select(models.Formula).where(condition))
-  
 
 # Mutations
 def create_formula(db: Session, input: "FormulaCreateInput") -> FormulaCreatePayload:
@@ -54,10 +49,10 @@ def create_formula(db: Session, input: "FormulaCreateInput") -> FormulaCreatePay
 
   formula = models.Formula(
     slug=slug,
-    name=formula.name,
-    brand=formula.brand,
-    chill_type=models.ChillType[formula.chill_type.name],
-    nic_type=models.NicType[formula.nic_type.name],
+    name=input.name,
+    brand=input.brand,
+    chill_type=models.ChillType[input.chill_type.name],
+    nic_type=models.NicType[input.nic_type.name],
   )
 
   db.add(formula)
@@ -71,19 +66,15 @@ def create_formula(db: Session, input: "FormulaCreateInput") -> FormulaCreatePay
     )
   )
 
-def delete_formula(db: Session, input: "FormulaDeleteInput") -> FormulaDeletePayload:
-  formula = get_formula(
-    db=db,
-    formula_slug=input.slug
-  )
-
+def delete_formula(db: Session, identifier: "FormulaIdentifierInput") -> FormulaDeletePayload:
+  formula = get_formula(db=db, identifier=identifier)
   if not formula:
     return FormulaDeletePayload(
       deleted_slug=None,
       deleted_name=None,
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
-        message=f"Formula {input.slug} not found."
+        status=FeedbackStatus.FAILED,
+        message=f"Formula not found."
       )
     )
 
@@ -91,7 +82,7 @@ def delete_formula(db: Session, input: "FormulaDeleteInput") -> FormulaDeletePay
   db.commit()
 
   return FormulaDeletePayload(
-    deleted_slug=input.slug,
+    deleted_slug=formula.slug,
     deleted_name=formula.name,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
