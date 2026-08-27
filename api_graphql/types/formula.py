@@ -95,10 +95,6 @@ class FormulaCreatePayload:
   formula: FormulaType
   feedback: Feedback
 
-@strawberry.input
-class FormulaDeleteInput:
-  slug: str
-
 @strawberry.type
 class FormulaDeletePayload:
   deleted_slug: str | None
@@ -106,16 +102,12 @@ class FormulaDeletePayload:
   feedback: Feedback
 
 @strawberry.input
-class FormulaUpdateIdentifier:
-  slug: str
-
-@strawberry.input
 class FormulaUpdateInput:
-  slug: str | None = None
-  name: str | None = None
-  brand: str | None = None
-  chill_type: ChillType | None = None
-  nic_type: NicType | None = None
+  slug: Optional[str] = strawberry.UNSET
+  name: Optional[str] = strawberry.UNSET
+  brand: Optional[str] = strawberry.UNSET
+  chill_type: Optional[ChillType] = strawberry.UNSET
+  nic_type: Optional[NicType] = strawberry.UNSET
 
 @strawberry.type
 class FormulaUpdatePayload:
