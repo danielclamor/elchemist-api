@@ -69,8 +69,20 @@ class FormulaIdentifierInput:
           f"Expected {expected_name} ID, got {type_name} ID",
           extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
         )
-        
+  
+  @property
+  def provided(self):
+    return next((a, v) for a, v in vars(self).items() if v is not strawberry.UNSET)
 
+  @property
+  def query_condition(self):
+    attr, value = self.provided
+    
+    if attr == "id":
+      return models.Formula.id == value.node_id
+    else:
+      return getattr(models.Formula, attr) == value
+  
 @strawberry.input
 class FormulaCreateInput:
   name: str
