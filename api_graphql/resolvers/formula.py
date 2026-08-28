@@ -132,7 +132,6 @@ def update_formula(db: Session, identifier: "FormulaIdentifierInput", input: "Fo
   else:
     db.commit()
     db.refresh(formula)
-    
     message = f"Updated {", ".join(updated_columns)}"
 
   db.commit()
