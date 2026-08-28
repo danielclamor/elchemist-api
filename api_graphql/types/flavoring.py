@@ -75,20 +75,3 @@ class FlavoringOptionCreateInput:
 class FlavoringOptionCreatePayload:
   flavoring_option: FlavoringOptionType | None
   feedback: Feedback
-
-@strawberry.type
-class FlavoringType:
-  ratio: float
-
-  _model: strawberry.Private[models.Flavoring]
-
-  @classmethod
-  def from_model(cls, f: models.Flavoring) -> "FlavoringType":
-    return cls(
-      ratio=f.ratio,
-      _model=f,
-    )
-
-  @strawberry.field
-  def flavoring_option(self) -> "FlavoringOptionType":
-    return FlavoringOptionType.from_model(self._model.flavoring_option)
