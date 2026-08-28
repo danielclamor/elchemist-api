@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import Annotated, TYPE_CHECKING
+from typing import Annotated, TYPE_CHECKING, Optional
 
+from graphql import GraphQLError
 import strawberry
 from strawberry import relay
 
@@ -60,6 +61,47 @@ class NicProfileType(relay.Node):
   def flavorings(self) -> list[Annotated["FlavoringType", strawberry.lazy("api_graphql.types.flavoring")]]:
     from api_graphql.types.flavoring import FlavoringType
     return [FlavoringType.from_model(b) for b in self._model.flavorings]
+
+@strawberry.input
+class NicProfileIdentifierInput:
+  id: Optional[relay.GlobalID] = strawberry.UNSET
+  slug: Optional[str] = strawberry.UNSET
+  
+  def __post_init__(self):
+    if any(v is None for v in vars(self).values()):
+      raise GraphQLError(
+        "Identifier fields cannot be null.",
+        extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+      )
+    
+    provided = sum(1 for value in vars(self).values() if value is not strawberry.UNSET)
+    if provided != 1:
+      raise GraphQLError(
+        "Exactly one identifier must be provided.",
+        extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+      )
+    
+    if self.id is not strawberry.UNSET:
+      type_name = self.id.type_name
+      expected_name = NicProfileType.__strawberry_definition__.name
+      if type_name != expected_name:
+        raise GraphQLError(
+          f"Expected {expected_name} ID, got {type_name} ID",
+          extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+        )
+  
+  @property
+  def provided(self):
+    return next((a, v) for a, v in vars(self).items() if v is not strawberry.UNSET)
+
+  @property
+  def query_condition(self):
+    attr, value = self.provided
+    
+    if attr == "id":
+      return models.Formula.id == value.node_id
+    else:
+      return getattr(models.Formula, attr) == value
 
 @strawberry.input
 class NicProfileIdentifier:
