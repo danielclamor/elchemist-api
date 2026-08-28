@@ -1,7 +1,7 @@
 from enum import Enum
 
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import and_, select
 import strawberry
 import models
 
@@ -50,7 +50,9 @@ if TYPE_CHECKING:
 # Queries
 def get_all_nic_profiles(db: Session) -> list[models.NicProfile]:
   return (
-    db.scalars(select(models.NicProfile)).all()
+    db.scalars(select(models.NicProfile))
+    .unique()
+    .all()
   )
 
 def get_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> models.NicProfile:
@@ -231,8 +233,15 @@ def create_nic_profile(db: Session, formula_slug: str, nic_profile: "NicProfileC
   full_name = f"{formula.name} - {nic_profile.name}{suffix}"
   slug = generate_slug(full_name)
 
-  existing = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == slug,
-                                                       models.NicProfile.formula_id == formula.id))
+  existing = db.scalar(
+    select(models.NicProfile).where(
+      and_(
+        models.NicProfile.slug == slug,
+        models.NicProfile.formula_id == formula.id
+      )
+    )
+  )
+  
   if existing:
     return NicProfileCreatePayload(
       nic_profile=NicProfileType.from_model(existing),
