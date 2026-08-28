@@ -152,13 +152,13 @@ class NicProfileDeletePayload:
 
 @strawberry.input
 class NicProfileUpdateInput:
-  slug: str | None = None
-  name: str | None = None
-  nic_base_nic_str: float | None = None
-  is_old_mix: bool | None = None
-  target_nic_str: float | None = None
-  target_vg: float | None = None
-  target_pg: float | None = None
+  slug: Optional[str] = strawberry.UNSET
+  name: Optional[str] = strawberry.UNSET
+  nic_base_nic_str: Optional[float] = strawberry.UNSET
+  is_old_mix: Optional[bool] = strawberry.UNSET
+  target_nic_str: Optional[float] = strawberry.UNSET
+  target_vg: Optional[float] = strawberry.UNSET
+  target_pg: Optional[float] = strawberry.UNSET
 
 @strawberry.type
 class NicProfileUpdatePayload:
