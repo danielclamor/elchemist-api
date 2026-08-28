@@ -37,7 +37,7 @@ from api_graphql.types.nic_base import (
 from api_graphql.types.nic_profile import (
   NicProfileIdentifier,
   NicProfileType,
-  NicProfileIdentifier,
+  NicProfileIdentifierInput,
   NicProfileAddFlavoringInput,
   NicProfileAddFlavoringPayload,
   NicProfileAddNicBaseInput,
@@ -361,14 +361,14 @@ class Mutation:
 
   @strawberry.mutation
   def nicProfileDelete(
-    self, info: strawberry.Info, identifier: NicProfileIdentifier
+    self, info: strawberry.Info, identifier: NicProfileIdentifierInput
   ) -> NicProfileDeletePayload:
     db = info.context["db"]
     return delete_nic_profile(db=db, identifier=identifier)
 
   @strawberry.mutation
   def nicProfileUpdate(
-      self, info: strawberry.Info, identifier: NicProfileIdentifier, nic_profile: NicProfileUpdateInput
+      self, info: strawberry.Info, identifier: NicProfileIdentifierInput, nic_profile: NicProfileUpdateInput
   ) -> NicProfileUpdatePayload:
     db = info.context["db"]
     return update_nic_profile(db=db, identifier=identifier, nic_profile=nic_profile)

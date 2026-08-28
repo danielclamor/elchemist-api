@@ -37,7 +37,7 @@ from api_graphql.types.nic_profile import (
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from api_graphql.types.nic_profile import (
-    NicProfileIdentifier,
+    NicProfileIdentifierInput,
     NicProfileCreateInput,
     NicProfileUpdateInput,
     NicProfileAddFlavoringInput,
@@ -50,9 +50,9 @@ def get_all_nic_profiles(db: Session) -> list[models.NicProfile]:
     db.scalars(select(models.NicProfile)).all()
   )
 
-def get_nic_profile(db: Session, nic_profile_slug: str) -> models.NicProfile:
+def get_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> models.NicProfile:
   return (
-    db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_slug))
+    db.scalar(select(models.NicProfile).where(identifier.query_condition))
   )
   
   
@@ -261,11 +261,8 @@ def create_nic_profile(db: Session, formula_slug: str, nic_profile: "NicProfileC
     )
   )
 
-def delete_nic_profile(db: Session, identifier: "NicProfileIdentifier") -> NicProfileDeletePayload:
-  nic_profile = get_nic_profile(
-    db=db,
-    nic_profile_slug=identifier.slug
-  )
+def delete_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> NicProfileDeletePayload:
+  nic_profile = get_nic_profile(db=db, identifier=identifier)
 
   if not nic_profile:
     return NicProfileDeletePayload(
@@ -289,11 +286,8 @@ def delete_nic_profile(db: Session, identifier: "NicProfileIdentifier") -> NicPr
     )
   )
 
-def update_nic_profile(db: Session, identifier: "NicProfileIdentifier", nic_profile: "NicProfileUpdateInput") -> NicProfileUpdatePayload:
-  nic_profile_model = get_nic_profile(
-    db=db,
-    nic_profile_slug=identifier.slug
-  )
+def update_nic_profile(db: Session, identifier: "NicProfileIdentifierInput", nic_profile: "NicProfileUpdateInput") -> NicProfileUpdatePayload:
+  nic_profile_model = get_nic_profile(db=db, identifier=identifier)
 
   if not nic_profile_model:
     return NicProfileUpdatePayload(
