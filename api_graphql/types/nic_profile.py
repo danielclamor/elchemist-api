@@ -11,7 +11,7 @@ from api_graphql.types.feedback import Feedback
 
 if TYPE_CHECKING:
   from api_graphql.types.formula import FormulaType
-  from api_graphql.types.flavoring import FlavoringOptionType
+  from api_graphql.types.flavoring_option import FlavoringOptionType
   from api_graphql.types.nic_base import NicBaseType
 
 @strawberry.type
@@ -179,5 +179,5 @@ class NicProfileFlavoringType:
 
   @strawberry.field
   def flavoring_option(self) -> Annotated["FlavoringOptionType", strawberry.lazy("api_graphql.types.flavoring")]:
-    from api_graphql.types.flavoring import FlavoringOptionType
+    from api_graphql.types.flavoring_option import FlavoringOptionType
     return FlavoringOptionType.from_model(self._model.flavoring_option)

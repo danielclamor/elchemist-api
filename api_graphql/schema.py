@@ -15,7 +15,7 @@ from api_graphql.types.eliquid import (
   EliquidUpdateInput, 
   EliquidUpdatePayload,
 )
-from api_graphql.types.flavoring import (
+from api_graphql.types.flavoring_option import (
   FlavoringOptionType,
   FlavoringOptionCreateInput,
   FlavoringOptionCreatePayload,
@@ -90,7 +90,7 @@ from api_graphql.resolvers.nic_profile import (
   update_nic_profile,
 )
 
-from api_graphql.resolvers.flavoring import (
+from api_graphql.resolvers.flavoring_option import (
   get_all_flavoring_options,
   get_flavoring_option,
   create_flavoring_option,

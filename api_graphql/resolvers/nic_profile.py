@@ -7,7 +7,7 @@ import models
 
 from .utils import generate_slug
 
-from api_graphql.resolvers.flavoring import (
+from api_graphql.resolvers.flavoring_option import (
   get_flavoring_option,
   create_flavoring_option,
 )
@@ -20,7 +20,7 @@ from api_graphql.resolvers.nic_base import (
 from api_graphql.types.enums import FeedbackStatus
 from api_graphql.types.feedback import Feedback
 
-from api_graphql.types.flavoring import (
+from api_graphql.types.flavoring_option import (
   FlavoringOptionCreateInput,
 )
 

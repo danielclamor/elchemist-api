@@ -4,7 +4,7 @@ import models
 
 from api_graphql.resolvers.utils import generate_slug
 
-from api_graphql.types.flavoring import FlavoringOptionCreateInput
+from api_graphql.types.flavoring_option import FlavoringOptionCreateInput
 
 # Queries
 def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
