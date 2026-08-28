@@ -178,6 +178,6 @@ class NicProfileFlavoringType:
     )
 
   @strawberry.field
-  def flavoring_option(self) -> Annotated["FlavoringOptionType", strawberry.lazy("api_graphql.types.flavoring")]:
+  def flavoring_option(self) -> Annotated["FlavoringOptionType", strawberry.lazy("api_graphql.types.flavoring_option")]:
     from api_graphql.types.flavoring_option import FlavoringOptionType
     return FlavoringOptionType.from_model(self._model.flavoring_option)

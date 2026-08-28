@@ -13,7 +13,7 @@ from api_graphql.types.feedback import Feedback
 
 if TYPE_CHECKING:
   from api_graphql.types.nic_profile import NicProfileType
-  from api_graphql.types.flavoring import FlavoringOptionType
+  from api_graphql.types.flavoring_option import FlavoringOptionType
 
 @strawberry.type
 class FormulaType(relay.Node):
@@ -43,9 +43,9 @@ class FormulaType(relay.Node):
     from api_graphql.types.nic_profile import NicProfileType
     return [NicProfileType.from_model(p) for p in self._model.nic_profiles]
 
-  @relay.connection(relay.ListConnection[Annotated["FlavoringOptionType", strawberry.lazy("api_graphql.types.flavoring")]])
-  def flavoring_options(self) -> list[Annotated["FlavoringOptionType", strawberry.lazy("api_graphql.types.flavoring")]]:
-    from api_graphql.types.flavoring import FlavoringOptionType
+  @relay.connection(relay.ListConnection[Annotated["FlavoringOptionType", strawberry.lazy("api_graphql.types.flavoring_option")]])
+  def flavoring_options(self) -> list[Annotated["FlavoringOptionType", strawberry.lazy("api_graphql.types.flavoring_option")]]:
+    from api_graphql.types.flavoring_option import FlavoringOptionType
     flavoring_options = []
     for p in self._model.nic_profiles:
       flavoring_options = [f.flavoring_option for f in p.flavorings]
