@@ -45,6 +45,7 @@ def create_formula(db: Session, input: "FormulaCreateInput") -> FormulaCreatePay
   slug = generate_slug(string=input.name)
 
   existing = db.scalar(select(models.Formula).where(models.Formula.slug == slug))
+  
   if existing:
     return FormulaCreatePayload(
       formula=FormulaType.from_model(existing),
@@ -118,6 +119,7 @@ def update_formula(db: Session, identifier: "FormulaIdentifierInput", input: "Fo
     
     if value is strawberry.UNSET:
       continue
+    
     if isinstance(value, Enum):
       value = value.name
       current = current.name
