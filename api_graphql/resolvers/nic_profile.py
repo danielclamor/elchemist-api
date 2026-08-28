@@ -1,5 +1,8 @@
+from enum import Enum
+
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+import strawberry
 import models
 
 from .utils import generate_slug
@@ -269,7 +272,7 @@ def delete_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> 
       deleted_slug=None,
       deleted_full_name=None,
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatus.FAILED,
         message=f"Nic profile {identifier.slug} not found."
       )
     )
@@ -278,7 +281,7 @@ def delete_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> 
   db.commit()
 
   return NicProfileDeletePayload(
-    deleted_slug=identifier.slug,
+    deleted_slug=nic_profile.slug,
     deleted_full_name=nic_profile.full_name,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
@@ -286,45 +289,48 @@ def delete_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> 
     )
   )
 
-def update_nic_profile(db: Session, identifier: "NicProfileIdentifierInput", nic_profile: "NicProfileUpdateInput") -> NicProfileUpdatePayload:
-  nic_profile_model = get_nic_profile(db=db, identifier=identifier)
+def update_nic_profile(db: Session, identifier: "NicProfileIdentifierInput", input: "NicProfileUpdateInput") -> NicProfileUpdatePayload:
+  nic_profile = get_nic_profile(db=db, identifier=identifier)
 
-  if not nic_profile_model:
+  if not nic_profile:
     return NicProfileUpdatePayload(
       nic_profile=None,
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
-        message=f"Nic profile {identifier.slug} not found."
+        status=FeedbackStatus.FAILED,
+        message=f"Nic profile not found."
       )
     )
 
-  if nic_profile.slug:
-    nic_profile_model.slug = nic_profile.slug
-
-  if nic_profile.name:
-    nic_profile_model.name = nic_profile.name
-
-  if nic_profile.is_old_mix is not None:
-    nic_profile_model.is_old_mix = nic_profile.is_old_mix
-
-  if nic_profile.nic_base_nic_str is not None:
-    nic_profile_model.nic_base_nic_str = nic_profile.nic_base_nic_str
-
-  if nic_profile.target_nic_str is not None:
-    nic_profile_model.target_nic_str = nic_profile.target_nic_str
-
-  if nic_profile.target_vg is not None:
-    nic_profile_model.target_vg = nic_profile.target_vg
-
-  if nic_profile.target_pg is not None:
-    nic_profile_model.target_pg = nic_profile.target_pg
-
+  updated_columns = []
+  
+  for attr, value in vars(input).items():
+    current = getattr(nic_profile, attr, None)
+    
+    if value is strawberry.UNSET:
+      continue
+    if isinstance(value, Enum):
+      value = value.name
+      current = current.name
+      
+    if value != current:
+      setattr(nic_profile, attr, value)
+      db.flush()
+      updated_columns.append(f"{attr}")
+  
+  if len(updated_columns) == 0:
+    message = "Nothing to update"
+  else:
+    db.commit()
+    db.refresh(nic_profile)
+    message = f"Updated {", ".join(updated_columns)}"
+  
   db.commit()
-  db.refresh(nic_profile_model)
+  db.refresh(nic_profile)
+  
   return NicProfileUpdatePayload(
-    nic_profile=NicProfileType.from_model(nic_profile_model),
+    nic_profile=NicProfileType.from_model(nic_profile),
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
-      message=None
+      message=message
     )
   )
