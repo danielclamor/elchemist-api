@@ -8,8 +8,7 @@ from zoneinfo import ZoneInfo
 
 import models
 
-from api_graphql.types.enums import FeedbackStatus
-from api_graphql.types.feedback import Feedback
+from api_graphql.types.feedback import Feedback, FeedbackStatus
 from api_graphql.types.production_order import (
   ProductionOrderType,
   ProductionOrderCreatePayload,

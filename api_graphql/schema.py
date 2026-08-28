@@ -3,8 +3,7 @@ import strawberry
 from strawberry import relay
 from typing import List, Optional
 
-from api_graphql.types.enums import FeedbackStatus
-from api_graphql.types.feedback import Feedback
+from api_graphql.types.feedback import Feedback, FeedbackStatus
 from api_graphql.types.brand import BrandEdge, BrandConnection
 from api_graphql.types.eliquid import (
   EliquidType,

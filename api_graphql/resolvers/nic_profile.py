@@ -17,8 +17,7 @@ from api_graphql.resolvers.nic_base import (
   create_nic_base_option,
 )
 
-from api_graphql.types.enums import FeedbackStatus
-from api_graphql.types.feedback import Feedback
+from api_graphql.types.feedback import Feedback, FeedbackStatus
 
 from api_graphql.types.flavoring_option import (
   FlavoringOptionCreateInput,

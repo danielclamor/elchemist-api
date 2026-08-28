@@ -11,8 +11,7 @@ from api_graphql.types.eliquid import (
   EliquidDeletePayload,
   EliquidUpdatePayload,
 )
-from api_graphql.types.enums import FeedbackStatus
-from api_graphql.types.feedback import Feedback
+from api_graphql.types.feedback import Feedback, FeedbackStatus
 from api_graphql.types.nic_profile import NicProfileType
 import models
 

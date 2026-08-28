@@ -39,12 +39,6 @@ class BottleColor(enum.Enum):
   WHITE = "white"
   
 @strawberry.enum
-class FeedbackStatus(enum.Enum):
-  SUCCESS = "success"
-  FAILED = "failed"
-  CANCELLED = "cancelled"
-  
-@strawberry.enum
 class ProductionOrderStatus(enum.Enum):
   CANCELLED = "cancelled"
   DELIVERED = "delivered"

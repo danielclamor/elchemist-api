@@ -4,8 +4,7 @@ import models
 
 from api_graphql.resolvers.utils import generate_slug
 
-from api_graphql.types.feedback import Feedback
-from api_graphql.types.enums import FeedbackStatus
+from api_graphql.types.feedback import Feedback, FeedbackStatus
 
 from api_graphql.types.flavoring_option import (
   FlavoringOptionType,

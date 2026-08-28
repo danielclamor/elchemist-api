@@ -7,9 +7,7 @@ import models
 
 from .utils import generate_slug
 
-from api_graphql.types.enums import FeedbackStatus
-
-from api_graphql.types.feedback import Feedback
+from api_graphql.types.feedback import Feedback, FeedbackStatus
 
 from api_graphql.types.formula import (
   FormulaType, 
