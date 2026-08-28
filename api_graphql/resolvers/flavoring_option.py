@@ -6,15 +6,19 @@ from api_graphql.resolvers.utils import generate_slug
 
 from api_graphql.types.flavoring_option import FlavoringOptionCreateInput
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+  from api_graphql.types.flavoring_option import FlavoringOptionIdentifierInput
+
 # Queries
 def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
   return (
     db.scalars(select(models.FlavoringOption)).all()
   )
   
-def get_flavoring_option(db: Session, flavoring_option_slug: str) -> models.FlavoringOption:
+def get_flavoring_option(db: Session, identifier: "FlavoringOptionIdentifierInput") -> models.FlavoringOption:
   return (
-    db.scalar(select(models.FlavoringOption).where(models.FlavoringOption.slug == flavoring_option_slug))
+    db.scalar(select(models.FlavoringOption).where(identifier.query_condition))
   )
   
   
