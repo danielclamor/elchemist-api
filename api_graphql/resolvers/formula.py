@@ -128,7 +128,7 @@ def update_formula(db: Session, identifier: "FormulaIdentifierInput", input: "Fo
       updated_columns.append(f"{attr}")
       
   if len(updated_columns) == 0:
-    message = "Nothin to update"
+    message = "Nothing to update"
   else:
     db.commit()
     db.refresh(formula)
