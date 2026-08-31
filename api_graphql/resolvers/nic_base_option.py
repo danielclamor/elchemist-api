@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 import models
 
-from api_graphql.types.nic_base import NicBaseOptionCreateInput
+from api_graphql.types.nic_base_option import NicBaseOptionCreateInput
 
 # Queries
 def get_all_nic_base_options(db: Session) -> list[models.NicBaseOption]:

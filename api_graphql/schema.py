@@ -32,7 +32,7 @@ from api_graphql.types.formula import (
   FormulaUpdateInput,
   FormulaUpdatePayload,
 )
-from api_graphql.types.nic_base import (
+from api_graphql.types.nic_base_option import (
   NicBaseOptionType,
   NicBaseOptionCreateInput,
   NicBaseOptionCreatePayload,
@@ -89,7 +89,7 @@ from api_graphql.resolvers.nic_profile import (
   bulk_remove_nic_profile_flavorings,
   get_all_nic_profiles,
   bulk_add_nic_profile_flavorings,
-  bulk_add_nic_profile_nic_bases,
+  bulk_add_nic_profile_nic_bases_old,
   create_nic_profile,
   delete_nic_profile,
   get_nic_profile,
@@ -105,7 +105,7 @@ from api_graphql.resolvers.flavoring_option import (
   bulk_create_flavoring_options,
 )
 
-from api_graphql.resolvers.nic_base import (
+from api_graphql.resolvers.nic_base_option import (
   get_all_nic_base_options,
   get_nic_base_option,
   create_nic_base_option,
@@ -403,7 +403,7 @@ class Mutation:
     self, info: strawberry.Info, nic_profile_slug: str, nic_bases: List[NicProfileAddNicBaseInput]
   ) -> NicProfileAddNicBasePayload:
     db = info.context["db"]
-    return bulk_add_nic_profile_nic_bases(
+    return bulk_add_nic_profile_nic_bases_old(
       db=db, nic_profile_slug=nic_profile_slug, nic_bases=nic_bases
     )
     
