@@ -16,6 +16,7 @@ from api_graphql.types.eliquid import (
 )
 from api_graphql.types.flavoring_option import (
   FlavoringOptionType,
+  FlavoringOptionIdentifierInput,
   FlavoringOptionCreateInput,
   FlavoringOptionCreatePayload,
 )
@@ -34,11 +35,8 @@ from api_graphql.types.nic_base import (
   NicBaseOptionCreatePayload,
 )
 from api_graphql.types.nic_profile import (
-  NicProfileIdentifier,
   NicProfileType,
   NicProfileIdentifierInput,
-  NicProfileAddFlavoringInput,
-  NicProfileAddFlavoringPayload,
   NicProfileAddNicBaseInput,
   NicProfileAddNicBasePayload,
   NicProfileCreateInput,
@@ -46,6 +44,8 @@ from api_graphql.types.nic_profile import (
   NicProfileDeletePayload,
   NicProfileUpdateInput,
   NicProfileUpdatePayload,
+  NicProfileFlavoringBulkAddInput,
+  NicProfileFlavoringBulkAddPayload,
 )
 from api_graphql.types.production_order import (
   ProductionOrderType,
@@ -86,6 +86,7 @@ from api_graphql.resolvers.nic_profile import (
   bulk_add_nic_profile_nic_bases,
   create_nic_profile,
   delete_nic_profile,
+  get_nic_profile,
   update_nic_profile,
 )
 
@@ -176,6 +177,14 @@ class Query:
   ) -> List[EliquidType]:
     db = info.context["db"]
     return [EliquidType.from_model(e) for e in get_all_eliquids(db)]
+  
+  @strawberry.field
+  def flavoringOption(
+    self, info: strawberry.Info, identifier: FlavoringOptionIdentifierInput
+  ) -> Optional[FlavoringOptionType]:
+    db = info.context["db"]
+    o = get_flavoring_option(db=db, identifier=identifier)
+    return FlavoringOptionType.from_model(o) if o else None
 
   @relay.connection(relay.ListConnection[FlavoringOptionType])
   def flavoringOptions(
@@ -206,6 +215,14 @@ class Query:
     db = info.context["db"]
     return [NicBaseOptionType.from_model(o) for o in get_all_nic_base_options(db)]
 
+  @strawberry.field
+  def nicProfile(
+    self, info: strawberry.Info, identifier: NicProfileIdentifierInput
+  ) -> Optional[NicProfileType]:
+    db = info.context["db"]
+    p = get_nic_profile(db=db, identifier=identifier)
+    return NicProfileType.from_model(p) if p else None
+  
   @relay.connection(relay.ListConnection[NicProfileType])
   def nicProfiles(
     self, info: strawberry.Info
@@ -333,11 +350,11 @@ class Mutation:
 
   @strawberry.mutation
   def nicProfileFlavoringsBulkAdd(
-      self, info: strawberry.Info, nic_profile_slug: str, flavorings: List[NicProfileAddFlavoringInput]
-  ) -> NicProfileAddFlavoringPayload:
+      self, info: strawberry.Info, identifier: "NicProfileIdentifierInput", flavorings: "NicProfileFlavoringBulkAddInput"
+  ) -> NicProfileFlavoringBulkAddPayload:
     db = info.context["db"]
     return bulk_add_nic_profile_flavorings(
-      db=db, nic_profile_slug=nic_profile_slug, flavorings=flavorings
+      db=db, identifier=identifier, input=flavorings
     )
 
   @strawberry.mutation

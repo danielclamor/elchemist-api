@@ -1,4 +1,5 @@
 from enum import Enum
+import uuid
 
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, select
@@ -9,7 +10,6 @@ from .utils import generate_slug
 
 from api_graphql.resolvers.flavoring_option import (
   get_flavoring_option,
-  create_flavoring_option,
 )
 
 from api_graphql.resolvers.nic_base import (
@@ -18,10 +18,6 @@ from api_graphql.resolvers.nic_base import (
 )
 
 from api_graphql.types.feedback import Feedback, FeedbackStatus
-
-from api_graphql.types.flavoring_option import (
-  FlavoringOptionCreateInput,
-)
 
 from api_graphql.types.nic_base import (
   NicBaseOptionCreateInput,
@@ -32,18 +28,21 @@ from api_graphql.types.nic_profile import (
   NicProfileCreatePayload,
   NicProfileDeletePayload,
   NicProfileUpdatePayload,
-  NicProfileAddFlavoringPayload,
   NicProfileAddNicBasePayload,
+  NicProfileFlavoringType,
+  NicProfileFlavoringAddPayload,
+  NicProfileFlavoringBulkAddPayload,
 )
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from api_graphql.types.nic_profile import (
     NicProfileIdentifierInput,
+    NicProfileFlavoringBulkAddInput,
     NicProfileCreateInput,
     NicProfileUpdateInput,
-    NicProfileAddFlavoringInput,
     NicProfileAddNicBaseInput,
+    NicProfileFlavoringInput,
   )
   
 # Queries
@@ -61,52 +60,76 @@ def get_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> mod
   
   
 # Mutations
-def add_nic_profile_flavoring(db: Session, nic_profile: models.NicProfile, flavoring: "NicProfileAddFlavoringInput") -> NicProfileAddFlavoringPayload:
-  flavoring_option_slug = generate_slug(flavoring.flavoring_option_name)
-  existing_flavoring_option = get_flavoring_option(db=db, flavoring_option_slug=flavoring_option_slug)
-  if not existing_flavoring_option:
-    if flavoring.flavoring_option_is_vg is None:
-      feedback = Feedback(
-        status=FeedbackStatus.CANCELLED,
-        message=f"No flavoring option {flavoring_option_slug} found. Can't create flavoring option {flavoring_option_slug} without isVg"
-      )
-      return NicProfileAddFlavoringPayload(
-        nic_profile=NicProfileType.from_model(nic_profile),
-        feedback=feedback,
-      )
-
-    existing_flavoring_option = create_flavoring_option(
-      db=db,
-      flavoring_option=FlavoringOptionCreateInput(
-        name=flavoring.flavoring_option_name,
-        is_vg=flavoring.flavoring_option_is_vg
+def add_nic_profile_flavoring(db: Session, id: uuid.UUID, input: "NicProfileFlavoringInput") -> NicProfileFlavoringAddPayload:
+  flavoring_option = get_flavoring_option(db=db, identifier=input.flavoring_option_identifier)
+  
+  if not flavoring_option:
+    return NicProfileFlavoringAddPayload(
+      nic_profile_flavoring=None,
+      feedback=Feedback(
+        status=FeedbackStatus.FAILED,
+        message=f"FlavoringOption {input.flavoring_option_identifier.provided[1]} not found."
       )
     )
-
-  existing_flavoring = db.scalar(select(models.Flavoring).where(models.Flavoring.flavoring_option_id == existing_flavoring_option.id, models.Flavoring.nic_profile_id == nic_profile.id))
-  if existing_flavoring:
-    return NicProfileAddFlavoringPayload(
-      nic_profile=NicProfileType.from_model(nic_profile),
+    
+  existing = db.scalar(
+    select(models.Flavoring).where(
+      and_(
+        models.Flavoring.flavoring_option_id == flavoring_option.id,
+        models.Flavoring.nic_profile_id == id,
+      )
+    )
+  )
+  
+  if existing:
+    return NicProfileFlavoringAddPayload(
+      nic_profile_flavoring=NicProfileFlavoringType.from_model(existing),
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
-        message=f"Flavoring {existing_flavoring_option.name} is already connected"
+        message=f"Flavoring {existing.name} is already connected with ratio {existing.ratio}"
       )
     )
 
   flavoring = models.Flavoring(
-    nic_profile_id=nic_profile.id,
-    flavoring_option_id=existing_flavoring_option.id,
-    ratio=flavoring.ratio
+    nic_profile_id=id,
+    flavoring_option_id=flavoring_option.id,
+    ratio=input.ratio,
   )
-
+  print(flavoring)
   db.add(flavoring)
   db.commit()
   db.refresh(flavoring)
-  return NicProfileAddFlavoringPayload(
-    nic_profile=NicProfileType.from_model(nic_profile),
+  
+  return NicProfileFlavoringAddPayload(
+    nic_profile_flavoring=NicProfileFlavoringType.from_model(flavoring),
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
-      message=f"Flavoring {existing_flavoring_option.name} added to {nic_profile.full_name}"
+      message=None,
+    )
+  )
+
+def bulk_add_nic_profile_flavorings(db: Session, identifier: "NicProfileIdentifierInput", input: "NicProfileFlavoringBulkAddInput") -> NicProfileFlavoringBulkAddPayload:
+  nic_profile = get_nic_profile(db=db, identifier=identifier)
+  
+  if not nic_profile:
+    return NicProfileFlavoringBulkAddPayload(
+      nic_profile_flavorings=[],
+      feedback=Feedback(
+        status=FeedbackStatus.FAILED,
+        message=f"NicProfile {identifier.provided[1]} not found."
+      )
+    )
+  
+  flavorings = []
+  
+  for flavoring in input.flavorings:
+    flavorings.append(add_nic_profile_flavoring(db=db, id=nic_profile.id, input=flavoring))
+    
+  return NicProfileFlavoringBulkAddPayload(
+    nic_profile_flavorings=flavorings,
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=None,
     )
   )
   
@@ -170,28 +193,6 @@ def add_nic_profile_nic_base(db: Session, nic_profile: models.NicProfile, nic_ba
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=f"Nic base {existing_nic_base_option.name} ({existing_nic_base_option.code}) added to {nic_profile.full_name}"
-    )
-  )
-
-def bulk_add_nic_profile_flavorings(db: Session, nic_profile_slug: str, flavorings: "list[NicProfileAddFlavoringInput]") -> NicProfileAddFlavoringPayload:
-  nic_profile = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_slug))
-  if not nic_profile:
-    return NicProfileAddFlavoringPayload(
-      nic_profile=None,
-      feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
-        message=f"Nic profile {nic_profile_slug} not found",
-      )
-    )
-
-  for flavoring in flavorings:
-    add_nic_profile_flavoring(db=db, nic_profile=nic_profile, flavoring=flavoring)
-
-  return NicProfileAddFlavoringPayload(
-    nic_profile=NicProfileType.from_model(nic_profile),
-    feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
-      message=f"Flavorings added to {nic_profile.full_name}"
     )
   )
 
