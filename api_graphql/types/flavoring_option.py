@@ -77,7 +77,7 @@ class FlavoringOptionCreatePayload:
   feedback: Feedback
   
 @strawberry.type
-class FlavoringOptionBulkCreatePayload:
+class FlavoringOptionsBulkCreatePayload:
   flavoring_options: list[FlavoringOptionCreatePayload]
   feedback: Feedback
 
@@ -88,6 +88,6 @@ class FlavoringOptionDeletePayload:
   feedback: Feedback
 
 @strawberry.type
-class FlavoringOptionBulkDeletePayload:
+class FlavoringOptionsBulkDeletePayload:
   deleted: list[FlavoringOptionDeletePayload]
   feedback: Feedback

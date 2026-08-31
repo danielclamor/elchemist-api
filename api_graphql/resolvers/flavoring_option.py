@@ -9,9 +9,9 @@ from api_graphql.types.feedback import Feedback, FeedbackStatus
 from api_graphql.types.flavoring_option import (
   FlavoringOptionType,
   FlavoringOptionCreatePayload,
-  FlavoringOptionBulkCreatePayload,
+  FlavoringOptionsBulkCreatePayload,
   FlavoringOptionDeletePayload,
-  FlavoringOptionBulkDeletePayload
+  FlavoringOptionsBulkDeletePayload
 )
 
 from typing import TYPE_CHECKING
@@ -67,9 +67,9 @@ def create_flavoring_option(db: Session, input: "FlavoringOptionCreateInput") ->
     )
   )
 
-def bulk_create_flavoring_option(db: Session, inputs: list["FlavoringOptionCreateInput"]) -> FlavoringOptionBulkCreatePayload:
+def bulk_create_flavoring_options(db: Session, inputs: list["FlavoringOptionCreateInput"]) -> FlavoringOptionsBulkCreatePayload:
   if len(inputs) == 0:
-    return FlavoringOptionBulkCreatePayload(
+    return FlavoringOptionsBulkCreatePayload(
       flavoring_options=[],
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
@@ -82,7 +82,7 @@ def bulk_create_flavoring_option(db: Session, inputs: list["FlavoringOptionCreat
   for input in inputs:
     flavoring_options.append(create_flavoring_option(db=db, input=input))
   
-  return FlavoringOptionBulkCreatePayload(
+  return FlavoringOptionsBulkCreatePayload(
     flavoring_options=flavoring_options,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
@@ -115,9 +115,9 @@ def delete_flavoring_option(db: Session, identifier: "FlavoringOptionIdentifierI
     )
   )
 
-def bulk_delete_flavoring_option(db: Session, identifiers: list["FlavoringOptionIdentifierInput"]) -> FlavoringOptionBulkDeletePayload:  
+def bulk_delete_flavoring_options(db: Session, identifiers: list["FlavoringOptionIdentifierInput"]) -> FlavoringOptionsBulkDeletePayload:  
   if len(identifiers) == 0:
-    return FlavoringOptionBulkDeletePayload(
+    return FlavoringOptionsBulkDeletePayload(
       deleted=[],
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
@@ -130,7 +130,7 @@ def bulk_delete_flavoring_option(db: Session, identifiers: list["FlavoringOption
   for identifier in identifiers:
     deleted.append(delete_flavoring_option(db=db, identifier=identifier))
   
-  return FlavoringOptionBulkDeletePayload(
+  return FlavoringOptionsBulkDeletePayload(
     deleted=deleted,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
