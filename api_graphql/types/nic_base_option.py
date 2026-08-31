@@ -5,7 +5,7 @@ from graphql import GraphQLError
 import strawberry
 from strawberry import relay
 
-from models import NicBase, NicBaseOption
+from models import NicBaseOption
 from api_graphql.types.feedback import Feedback
 
 
@@ -92,20 +92,3 @@ class NicBaseOptionDeletePayload:
 class NicBaseOptionsBulkDeletePayload:
   deleted: list[NicBaseOptionDeletePayload]
   feedback: Feedback
-
-@strawberry.type
-class NicBaseType:
-  ratio: float
-
-  _model: strawberry.Private[NicBase]
-
-  @classmethod
-  def from_model(cls, f: NicBase) -> "NicBaseType":
-    return cls(
-      ratio=f.ratio,
-      _model=f,
-    )
-
-  @strawberry.field
-  def nic_base_option(self) -> "NicBaseOptionType":
-    return NicBaseOptionType.from_model(self._model.nic_base_option)
