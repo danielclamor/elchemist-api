@@ -78,6 +78,22 @@ class NicBaseOptionCreatePayload:
   feedback: Feedback
 
 @strawberry.type
+class NicBaseOptionsBulkCreatePayload:
+  flavoring_options: list[NicBaseOptionCreatePayload]
+  feedback: Feedback
+  
+@strawberry.type
+class NicBaseOptionDeletePayload:
+  deleted_code: str | None
+  deleted_name: str | None
+  feedback: Feedback
+  
+@strawberry.type
+class NicBaseOptionsBulkDeletePayload:
+  deleted: list[NicBaseOptionDeletePayload]
+  feedback: Feedback
+
+@strawberry.type
 class NicBaseType:
   ratio: float
 
