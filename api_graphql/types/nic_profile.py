@@ -8,6 +8,7 @@ from strawberry import relay
 
 import models
 from api_graphql.types.feedback import Feedback
+from api_graphql.types.flavoring_option import FlavoringOptionIdentifierInput
 
 if TYPE_CHECKING:
   from api_graphql.types.formula import FormulaType
@@ -98,9 +99,9 @@ class NicProfileIdentifierInput:
     attr, value = self.provided
     
     if attr == "id":
-      return models.Formula.id == value.node_id
+      return models.NicProfile.id == value.node_id
     else:
-      return getattr(models.Formula, attr) == value
+      return getattr(models.NicProfile, attr) == value
 
 @strawberry.input
 class NicProfileIdentifier:
@@ -181,3 +182,22 @@ class NicProfileFlavoringType:
   def flavoring_option(self) -> Annotated["FlavoringOptionType", strawberry.lazy("api_graphql.types.flavoring_option")]:
     from api_graphql.types.flavoring_option import FlavoringOptionType
     return FlavoringOptionType.from_model(self._model.flavoring_option)
+
+@strawberry.input
+class NicProfileFlavoringInput:
+  flavoring_option_identifier: FlavoringOptionIdentifierInput
+  ratio: float
+
+@strawberry.input
+class NicProfileFlavoringBulkAddInput:
+  flavorings: list[NicProfileFlavoringInput]
+
+@strawberry.type
+class NicProfileFlavoringAddPayload:
+  nic_profile_flavoring: NicProfileFlavoringType | None
+  feedback: Feedback
+
+@strawberry.type
+class NicProfileFlavoringBulkAddPayload:
+  nic_profile_flavorings: list[NicProfileFlavoringAddPayload]
+  feedback: Feedback
