@@ -5,7 +5,7 @@ from graphql import GraphQLError
 import strawberry
 from strawberry import relay
 
-import models
+from models import FlavoringOption
 from api_graphql.types.feedback import Feedback
 
 
@@ -17,7 +17,7 @@ class FlavoringOptionType(relay.Node):
   is_vg: bool
 
   @classmethod
-  def from_model(cls, o: models.FlavoringOption) -> "FlavoringOptionType":
+  def from_model(cls, o: FlavoringOption) -> "FlavoringOptionType":
     return cls(
       id=o.id,
       slug=o.slug,
@@ -62,9 +62,9 @@ class FlavoringOptionIdentifierInput:
     attr, value = self.provided
     
     if attr == "id":
-      return models.FlavoringOption.id == value.node_id
+      return FlavoringOption.id == value.node_id
     else:
-      return getattr(models.FlavoringOption, attr) == value
+      return getattr(FlavoringOption, attr) == value
 
 @strawberry.input
 class FlavoringOptionCreateInput:
