@@ -6,14 +6,19 @@ from graphql import GraphQLError
 import strawberry
 from strawberry import relay
 
-import models
+from models import (
+  NicProfile, 
+  Flavoring, 
+  NicBase
+)
+
 from api_graphql.types.feedback import Feedback
 from api_graphql.types.flavoring_option import FlavoringOptionIdentifierInput
 
 if TYPE_CHECKING:
   from api_graphql.types.formula import FormulaType
   from api_graphql.types.flavoring_option import FlavoringOptionType
-  from api_graphql.types.nic_base import NicBaseType
+  from api_graphql.types.nic_base_option import NicBaseOptionType
 
 @strawberry.type
 class NicProfileType(relay.Node):
@@ -27,10 +32,10 @@ class NicProfileType(relay.Node):
   target_pg: float
   nic_base_nic_str: float
 
-  _model: strawberry.Private[models.NicProfile]
+  _model: strawberry.Private[NicProfile]
 
   @classmethod
-  def from_model(cls, p: models.NicProfile) -> "NicProfileType":
+  def from_model(cls, p: NicProfile) -> "NicProfileType":
     return cls(
       id=p.id,
       slug=p.slug,
@@ -57,10 +62,9 @@ class NicProfileType(relay.Node):
   def flavorings(self) -> list["NicProfileFlavoringType"]:
     return [NicProfileFlavoringType.from_model(b) for b in self._model.flavorings]
 
-  @relay.connection(relay.ListConnection[Annotated["NicBaseType", strawberry.lazy("api_graphql.types.nic_base")]])
-  def nic_bases(self) -> list[Annotated["NicBaseType", strawberry.lazy("api_graphql.types.nic_base")]]:
-    from api_graphql.types.nic_base import NicBaseType
-    return [NicBaseType.from_model(b) for b in self._model.nic_bases]
+  @relay.connection(relay.ListConnection["NicProfileNicBaseType"])
+  def nic_bases(self) -> list["NicProfileNicBaseType"]:
+    return [NicProfileNicBaseType.from_model(b) for b in self._model.nic_bases]
 
 @strawberry.input
 class NicProfileIdentifierInput:
@@ -99,9 +103,9 @@ class NicProfileIdentifierInput:
     attr, value = self.provided
     
     if attr == "id":
-      return models.NicProfile.id == value.node_id
+      return NicProfile.id == value.node_id
     else:
-      return getattr(models.NicProfile, attr) == value
+      return getattr(NicProfile, attr) == value
 
 @strawberry.input
 class NicProfileIdentifier:
@@ -170,10 +174,10 @@ class NicProfileFlavoringType(relay.Node):
   id: relay.NodeID[str]
   ratio: float
 
-  _model: strawberry.Private[models.Flavoring]
+  _model: strawberry.Private[Flavoring]
 
   @classmethod
-  def from_model(cls, f: models.Flavoring) -> "NicProfileFlavoringType":
+  def from_model(cls, f: Flavoring) -> "NicProfileFlavoringType":
     return cls(
       id=f.id,
       ratio=f.ratio,
@@ -191,7 +195,7 @@ class NicProfileFlavoringIdentifierInput:
   
   @property
   def query_condition(self):
-    return models.Flavoring.id == self.id.node_id
+    return Flavoring.id == self.id.node_id
 
 @strawberry.input
 class NicProfileFlavoringInput:
@@ -218,4 +222,53 @@ class NicProfileFlavoringRemovePayload:
 @strawberry.type
 class NicProfileFlavoringsBulkRemovePayload:
   nic_profile_flavorings: list[NicProfileFlavoringRemovePayload]
+  feedback: Feedback
+  
+@strawberry.type
+class NicProfileNicBaseType:
+  id: relay.NodeID[str]
+  ratio: float
+
+  _model: strawberry.Private[NicBase]
+
+  @classmethod
+  def from_model(cls, f: NicBase) -> "NicProfileNicBaseType":
+    return cls(
+      ratio=f.ratio,
+      _model=f,
+    )
+
+  @strawberry.field
+  def nic_base_option(self) -> Annotated["NicBaseOptionType", strawberry.lazy("api_graphql.types.nic_base_option")]:
+    from api_graphql.types.nic_base_option import NicBaseOptionType
+    return NicBaseOptionType.from_model(self._model.nic_base_option)
+
+@strawberry.input
+class NicProfileNicBaseIdentifierInput:
+  id: relay.GlobalID
+  
+  @property
+  def query_condition(self):
+    return NicBase.id == self.id.node_id
+  
+@strawberry.input
+class NicProfileNicBaseAddPayload:
+  nic_profile_nic_base: NicProfileNicBaseType | None
+  feedback: Feedback
+  
+@strawberry.type
+class NicProfileNicBasesBulkAddPayload:
+  nic_profile_nic_bases: list[NicProfileNicBaseAddPayload]
+  feedback: Feedback
+  
+@strawberry.type
+class NicProfileNicBaseRemovePayload:
+  removed_code: str | None
+  removed_name: str | None
+  removed_ratio: float | None
+  feedback: Feedback
+  
+@strawberry.type
+class NicProfileNicBasesBulkRemovePayload:
+  nic_profile_nic_bases: list[NicProfileNicBaseRemovePayload]
   feedback: Feedback
