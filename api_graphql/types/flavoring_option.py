@@ -71,7 +71,16 @@ class FlavoringOptionCreateInput:
   name: str
   is_vg: bool
 
+@strawberry.input
+class FlavoringOptionBulkCreateInput:
+  flavoring_options: list[FlavoringOptionCreateInput]
+
 @strawberry.type
 class FlavoringOptionCreatePayload:
   flavoring_option: FlavoringOptionType | None
+  feedback: Feedback
+  
+@strawberry.type
+class FlavoringOptionBulkCreatePayload:
+  flavoring_options: list[FlavoringOptionCreatePayload]
   feedback: Feedback

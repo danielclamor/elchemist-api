@@ -8,8 +8,10 @@ from api_graphql.types.feedback import Feedback, FeedbackStatus
 
 from api_graphql.types.flavoring_option import (
   FlavoringOptionType,
-  FlavoringOptionCreateInput, 
-  FlavoringOptionCreatePayload
+  FlavoringOptionCreateInput,
+  FlavoringOptionCreatePayload,
+  FlavoringOptionBulkCreateInput,
+  FlavoringOptionBulkCreatePayload,
 )
 
 from typing import TYPE_CHECKING
@@ -29,7 +31,7 @@ def get_flavoring_option(db: Session, identifier: "FlavoringOptionIdentifierInpu
   
   
 # Mutations
-def create_flavoring_option(db: Session, input: FlavoringOptionCreateInput) -> FlavoringOptionCreatePayload:
+def create_flavoring_option(db: Session, input: "FlavoringOptionCreateInput") -> FlavoringOptionCreatePayload:
   slug = generate_slug(input.name)
   
   existing = db.scalar(select(models.FlavoringOption).where(models.FlavoringOption.slug == slug))
@@ -56,7 +58,21 @@ def create_flavoring_option(db: Session, input: FlavoringOptionCreateInput) -> F
   return FlavoringOptionCreatePayload(
     flavoring_option=FlavoringOptionType.from_model(flavoring_option),
     feedback=Feedback(
-      status=FeedbackStatus.SUCESS,
+      status=FeedbackStatus.SUCCESS,
+      message=None,
+    )
+  )
+
+def bulk_create_flavoring_option(db: Session, input: "FlavoringOptionBulkCreateInput") -> FlavoringOptionBulkCreatePayload:
+  flavoring_options = []
+  
+  for flavoring_option in input.flavoring_options:
+    flavoring_options.append(create_flavoring_option(db=db, input=flavoring_option))
+  
+  return FlavoringOptionBulkCreatePayload(
+    flavoring_options=flavoring_options,
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
       message=None,
     )
   )
