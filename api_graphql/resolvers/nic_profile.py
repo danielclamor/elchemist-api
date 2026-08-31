@@ -1,3 +1,4 @@
+from __future__ import annotations
 from enum import Enum
 import uuid
 
@@ -24,6 +25,7 @@ from api_graphql.types.nic_base import (
 )
 
 from api_graphql.types.nic_profile import (
+  NicProfileFlavoringRemovePayload,
   NicProfileType,
   NicProfileCreatePayload,
   NicProfileDeletePayload,
@@ -31,7 +33,8 @@ from api_graphql.types.nic_profile import (
   NicProfileAddNicBasePayload,
   NicProfileFlavoringType,
   NicProfileFlavoringAddPayload,
-  NicProfileFlavoringBulkAddPayload,
+  NicProfileFlavoringsBulkAddPayload,
+  NicProfileFlavoringsBulkRemovePayload,
 )
 
 from typing import TYPE_CHECKING
@@ -41,8 +44,10 @@ if TYPE_CHECKING:
     NicProfileCreateInput,
     NicProfileUpdateInput,
     NicProfileAddNicBaseInput,
+    NicProfileFlavoringIdentifierInput,
     NicProfileFlavoringInput,
   )
+  
   
 # Queries
 def get_all_nic_profiles(db: Session) -> list[models.NicProfile]:
@@ -94,7 +99,7 @@ def add_nic_profile_flavoring(db: Session, id: uuid.UUID, input: "NicProfileFlav
     flavoring_option_id=flavoring_option.id,
     ratio=input.ratio,
   )
-  print(flavoring)
+
   db.add(flavoring)
   db.commit()
   db.refresh(flavoring)
@@ -107,11 +112,11 @@ def add_nic_profile_flavoring(db: Session, id: uuid.UUID, input: "NicProfileFlav
     )
   )
 
-def bulk_add_nic_profile_flavorings(db: Session, identifier: "NicProfileIdentifierInput", inputs: list["NicProfileFlavoringInput"]) -> NicProfileFlavoringBulkAddPayload:
+def bulk_add_nic_profile_flavorings(db: Session, identifier: "NicProfileIdentifierInput", inputs: list["NicProfileFlavoringInput"]) -> NicProfileFlavoringsBulkAddPayload:
   nic_profile = get_nic_profile(db=db, identifier=identifier)
   
   if not nic_profile:
-    return NicProfileFlavoringBulkAddPayload(
+    return NicProfileFlavoringsBulkAddPayload(
       nic_profile_flavorings=[],
       feedback=Feedback(
         status=FeedbackStatus.FAILED,
@@ -120,7 +125,7 @@ def bulk_add_nic_profile_flavorings(db: Session, identifier: "NicProfileIdentifi
     )
   
   if len(inputs) == 0:
-    return NicProfileFlavoringBulkAddPayload(
+    return NicProfileFlavoringsBulkAddPayload(
       nic_profile_flavorings=[],
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
@@ -133,7 +138,7 @@ def bulk_add_nic_profile_flavorings(db: Session, identifier: "NicProfileIdentifi
   for input in inputs:
     flavorings.append(add_nic_profile_flavoring(db=db, id=nic_profile.id, input=input))
     
-  return NicProfileFlavoringBulkAddPayload(
+  return NicProfileFlavoringsBulkAddPayload(
     nic_profile_flavorings=flavorings,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
@@ -178,6 +183,7 @@ def add_nic_profile_nic_base(db: Session, nic_profile: models.NicProfile, nic_ba
     )
 
   existing_nic_base = db.scalar(select(models.NicBase).where(models.NicBase.nic_base_option_id == existing_nic_base_option.id, models.NicBase.nic_profile_id == nic_profile.id))
+  
   if existing_nic_base:
     return NicProfileAddNicBasePayload(
       nic_profile=NicProfileType.from_model(nic_profile),
@@ -206,6 +212,7 @@ def add_nic_profile_nic_base(db: Session, nic_profile: models.NicProfile, nic_ba
 
 def bulk_add_nic_profile_nic_bases(db: Session, nic_profile_slug: str, nic_bases: "list[NicProfileAddNicBaseInput]") -> NicProfileAddNicBasePayload:
   nic_profile = db.scalar(select(models.NicProfile).where(models.NicProfile.slug == nic_profile_slug))
+  
   if not nic_profile:
     return NicProfileAddNicBasePayload(
       nic_profile=None,
@@ -225,9 +232,33 @@ def bulk_add_nic_profile_nic_bases(db: Session, nic_profile_slug: str, nic_bases
       message=f"Nic bases added to {nic_profile.full_name}"
     )
   )
+
+def bulk_remove_nic_profile_flavorings(db: Session, identifiers: list[NicProfileFlavoringIdentifierInput]) -> NicProfileFlavoringsBulkRemovePayload:
+  removed = []
+  
+  if len(identifiers) == 0:
+    return NicProfileFlavoringsBulkRemovePayload(
+      nic_profile_flavorings=[],
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message="Nothing to remove",
+      )
+    )
+  
+  for identifier in identifiers:
+    removed.append(remove_nic_profile_flavoring(db=db, identifier=identifier))
+    
+  return NicProfileFlavoringsBulkRemovePayload(
+    nic_profile_flavorings=removed,
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=None,
+    )
+  )
   
 def create_nic_profile(db: Session, formula_slug: str, nic_profile: "NicProfileCreateInput") -> NicProfileCreatePayload:
   formula = db.scalar(select(models.Formula).where(models.Formula.slug == formula_slug))
+  
   if not formula:
     return NicProfileCreatePayload(
       nic_profile=None,
@@ -303,6 +334,36 @@ def delete_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> 
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=None
+    )
+  )
+
+def remove_nic_profile_flavoring(db: Session, identifier: "NicProfileFlavoringIdentifierInput") -> NicProfileFlavoringRemovePayload:
+  flavoring = db.scalar(select(models.Flavoring).where(identifier.query_condition))
+  
+  if not flavoring:
+    return NicProfileFlavoringRemovePayload(
+      removed_slug=None,
+      removed_name=None,
+      removed_ratio=None,
+      feedback=Feedback(
+        status=FeedbackStatus.FAILED,
+        message="Flavoring not found."
+      )
+    )
+  
+  slug = flavoring.slug
+  name = flavoring.name
+  
+  db.delete(flavoring)
+  db.commit()
+  
+  return NicProfileFlavoringRemovePayload(
+    removed_slug=slug,
+    removed_name=name,
+    removed_ratio=flavoring.ratio,
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=None,
     )
   )
 

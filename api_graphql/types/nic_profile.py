@@ -166,7 +166,8 @@ class NicProfileUpdatePayload:
   feedback: Feedback
   
 @strawberry.type
-class NicProfileFlavoringType:
+class NicProfileFlavoringType(relay.Node):
+  id: relay.NodeID[str]
   ratio: float
 
   _model: strawberry.Private[models.Flavoring]
@@ -174,6 +175,7 @@ class NicProfileFlavoringType:
   @classmethod
   def from_model(cls, f: models.Flavoring) -> "NicProfileFlavoringType":
     return cls(
+      id=f.id,
       ratio=f.ratio,
       _model=f,
     )
@@ -182,6 +184,14 @@ class NicProfileFlavoringType:
   def flavoring_option(self) -> Annotated["FlavoringOptionType", strawberry.lazy("api_graphql.types.flavoring_option")]:
     from api_graphql.types.flavoring_option import FlavoringOptionType
     return FlavoringOptionType.from_model(self._model.flavoring_option)
+
+@strawberry.input
+class NicProfileFlavoringIdentifierInput:
+  id: relay.GlobalID
+  
+  @property
+  def query_condition(self):
+    return models.Flavoring.id == self.id.node_id
 
 @strawberry.input
 class NicProfileFlavoringInput:
@@ -194,6 +204,18 @@ class NicProfileFlavoringAddPayload:
   feedback: Feedback
 
 @strawberry.type
-class NicProfileFlavoringBulkAddPayload:
+class NicProfileFlavoringsBulkAddPayload:
   nic_profile_flavorings: list[NicProfileFlavoringAddPayload]
+  feedback: Feedback
+  
+@strawberry.type
+class NicProfileFlavoringRemovePayload:
+  removed_slug: str | None
+  removed_name: str | None
+  removed_ratio: float | None
+  feedback: Feedback
+
+@strawberry.type
+class NicProfileFlavoringsBulkRemovePayload:
+  nic_profile_flavorings: list[NicProfileFlavoringRemovePayload]
   feedback: Feedback

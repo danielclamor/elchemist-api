@@ -15,13 +15,13 @@ from api_graphql.types.eliquid import (
   EliquidUpdatePayload,
 )
 from api_graphql.types.flavoring_option import (
-  FlavoringOptionBulkDeletePayload,
+  FlavoringOptionsBulkDeletePayload,
   FlavoringOptionDeletePayload,
   FlavoringOptionType,
   FlavoringOptionIdentifierInput,
   FlavoringOptionCreateInput,
   FlavoringOptionCreatePayload,
-  FlavoringOptionBulkCreatePayload,
+  FlavoringOptionsBulkCreatePayload,
 )
 from api_graphql.types.formula import (
   FormulaType,
@@ -48,7 +48,9 @@ from api_graphql.types.nic_profile import (
   NicProfileUpdateInput,
   NicProfileUpdatePayload,
   NicProfileFlavoringInput,
-  NicProfileFlavoringBulkAddPayload,
+  NicProfileFlavoringIdentifierInput,
+  NicProfileFlavoringsBulkAddPayload,
+  NicProfileFlavoringsBulkRemovePayload,
 )
 from api_graphql.types.production_order import (
   ProductionOrderType,
@@ -84,6 +86,7 @@ from api_graphql.resolvers.formula import (
 )
 
 from api_graphql.resolvers.nic_profile import (
+  bulk_remove_nic_profile_flavorings,
   get_all_nic_profiles,
   bulk_add_nic_profile_flavorings,
   bulk_add_nic_profile_nic_bases,
@@ -94,12 +97,12 @@ from api_graphql.resolvers.nic_profile import (
 )
 
 from api_graphql.resolvers.flavoring_option import (
-  bulk_delete_flavoring_option,
+  bulk_delete_flavoring_options,
   delete_flavoring_option,
   get_all_flavoring_options,
   get_flavoring_option,
   create_flavoring_option,
-  bulk_create_flavoring_option,
+  bulk_create_flavoring_options,
 )
 
 from api_graphql.resolvers.nic_base import (
@@ -301,9 +304,9 @@ class Mutation:
   @strawberry.mutation
   def flavoringOptionBulkCreate(
     self, info: strawberry.Info, flavoring_options: list[FlavoringOptionCreateInput]
-  ) -> FlavoringOptionBulkCreatePayload:
+  ) -> FlavoringOptionsBulkCreatePayload:
     db = info.context["db"]
-    return bulk_create_flavoring_option(
+    return bulk_create_flavoring_options(
       db=db, inputs=flavoring_options
     )
   
@@ -319,9 +322,9 @@ class Mutation:
   @strawberry.mutation
   def flavoringOptionBulkDelete(
     self, info: strawberry.Info, identifiers: list[FlavoringOptionIdentifierInput]
-  ) -> FlavoringOptionBulkDeletePayload:
+  ) -> FlavoringOptionsBulkDeletePayload:
     db = info.context["db"]
-    return bulk_delete_flavoring_option(
+    return bulk_delete_flavoring_options(
       db=db, identifiers=identifiers
     )
 
@@ -379,16 +382,25 @@ class Mutation:
 
   @strawberry.mutation
   def nicProfileFlavoringsBulkAdd(
-      self, info: strawberry.Info, identifier: "NicProfileIdentifierInput", flavorings: list["NicProfileFlavoringInput"]
-  ) -> NicProfileFlavoringBulkAddPayload:
+    self, info: strawberry.Info, identifier: NicProfileIdentifierInput, flavorings: list[NicProfileFlavoringInput]
+  ) -> NicProfileFlavoringsBulkAddPayload:
     db = info.context["db"]
     return bulk_add_nic_profile_flavorings(
-      db=db, identifier=identifier, input=flavorings
+      db=db, identifier=identifier, inputs=flavorings
+    )
+  
+  @strawberry.mutation
+  def nicProfileFlavoringsBulkRemove(
+    self, info: strawberry.Info, flavorings: list[NicProfileFlavoringIdentifierInput]
+  ) -> NicProfileFlavoringsBulkRemovePayload:
+    db = info.context["db"]
+    return bulk_remove_nic_profile_flavorings(
+      db=db, identifiers=flavorings
     )
 
   @strawberry.mutation
   def nicProfileNicBasesBulkAdd(
-      self, info: strawberry.Info, nic_profile_slug: str, nic_bases: List[NicProfileAddNicBaseInput]
+    self, info: strawberry.Info, nic_profile_slug: str, nic_bases: List[NicProfileAddNicBaseInput]
   ) -> NicProfileAddNicBasePayload:
     db = info.context["db"]
     return bulk_add_nic_profile_nic_bases(
@@ -397,7 +409,7 @@ class Mutation:
     
   @strawberry.mutation
   def nicProfileCreate(
-      self, info: strawberry.Info, formula_slug: str, nic_profile: NicProfileCreateInput
+    self, info: strawberry.Info, formula_slug: str, nic_profile: NicProfileCreateInput
   ) -> NicProfileCreatePayload:
     db = info.context["db"]
     return create_nic_profile(
@@ -415,7 +427,7 @@ class Mutation:
 
   @strawberry.mutation
   def nicProfileUpdate(
-      self, info: strawberry.Info, identifier: NicProfileIdentifierInput, nic_profile: NicProfileUpdateInput
+    self, info: strawberry.Info, identifier: NicProfileIdentifierInput, nic_profile: NicProfileUpdateInput
   ) -> NicProfileUpdatePayload:
     db = info.context["db"]
     return update_nic_profile(
