@@ -28,7 +28,7 @@ class NicBaseOptionType(relay.Node):
 @strawberry.input
 class NicBaseOptionIdentifierInput:
   id: Optional[relay.GlobalID] = strawberry.UNSET
-  slug: Optional[str] = strawberry.UNSET
+  code: Optional[str] = strawberry.UNSET
   
   def __post_init__(self):
     if any(v is None for v in vars(self).values()):
