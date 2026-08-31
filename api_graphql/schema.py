@@ -15,11 +15,12 @@ from api_graphql.types.eliquid import (
   EliquidUpdatePayload,
 )
 from api_graphql.types.flavoring_option import (
+  FlavoringOptionBulkDeletePayload,
+  FlavoringOptionDeletePayload,
   FlavoringOptionType,
   FlavoringOptionIdentifierInput,
   FlavoringOptionCreateInput,
   FlavoringOptionCreatePayload,
-  FlavoringOptionBulkCreateInput,
   FlavoringOptionBulkCreatePayload,
 )
 from api_graphql.types.formula import (
@@ -93,6 +94,8 @@ from api_graphql.resolvers.nic_profile import (
 )
 
 from api_graphql.resolvers.flavoring_option import (
+  bulk_delete_flavoring_option,
+  delete_flavoring_option,
   get_all_flavoring_options,
   get_flavoring_option,
   create_flavoring_option,
@@ -297,11 +300,29 @@ class Mutation:
   
   @strawberry.mutation
   def flavoringOptionBulkCreate(
-    self, info: strawberry.Info, flavoring_options: FlavoringOptionBulkCreateInput
+    self, info: strawberry.Info, flavoring_options: list[FlavoringOptionCreateInput]
   ) -> FlavoringOptionBulkCreatePayload:
     db = info.context["db"]
     return bulk_create_flavoring_option(
-      db=db, input=flavoring_options
+      db=db, inputs=flavoring_options
+    )
+  
+  @strawberry.mutation
+  def flavoringOptionDelete(
+    self, info: strawberry.Info, identifier: FlavoringOptionIdentifierInput
+  ) -> FlavoringOptionDeletePayload:
+    db = info.context["db"]
+    return delete_flavoring_option(
+      db=db, identifier=identifier
+    )
+  
+  @strawberry.mutation
+  def flavoringOptionBulkDelete(
+    self, info: strawberry.Info, identifiers: list[FlavoringOptionIdentifierInput]
+  ) -> FlavoringOptionBulkDeletePayload:
+    db = info.context["db"]
+    return bulk_delete_flavoring_option(
+      db=db, identifiers=identifiers
     )
 
   @strawberry.mutation

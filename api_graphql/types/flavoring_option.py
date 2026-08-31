@@ -71,10 +71,6 @@ class FlavoringOptionCreateInput:
   name: str
   is_vg: bool
 
-@strawberry.input
-class FlavoringOptionBulkCreateInput:
-  flavoring_options: list[FlavoringOptionCreateInput]
-
 @strawberry.type
 class FlavoringOptionCreatePayload:
   flavoring_option: FlavoringOptionType | None
@@ -83,4 +79,15 @@ class FlavoringOptionCreatePayload:
 @strawberry.type
 class FlavoringOptionBulkCreatePayload:
   flavoring_options: list[FlavoringOptionCreatePayload]
+  feedback: Feedback
+
+@strawberry.type
+class FlavoringOptionDeletePayload:
+  deleted_slug: str | None
+  deleted_name: str | None
+  feedback: Feedback
+
+@strawberry.type
+class FlavoringOptionBulkDeletePayload:
+  deleted: list[FlavoringOptionDeletePayload]
   feedback: Feedback

@@ -8,15 +8,19 @@ from api_graphql.types.feedback import Feedback, FeedbackStatus
 
 from api_graphql.types.flavoring_option import (
   FlavoringOptionType,
-  FlavoringOptionCreateInput,
   FlavoringOptionCreatePayload,
-  FlavoringOptionBulkCreateInput,
   FlavoringOptionBulkCreatePayload,
+  FlavoringOptionDeletePayload,
+  FlavoringOptionBulkDeletePayload
 )
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from api_graphql.types.flavoring_option import FlavoringOptionIdentifierInput
+  from api_graphql.types.flavoring_option import (
+    FlavoringOptionIdentifierInput,
+    FlavoringOptionCreateInput,
+  )
+
 
 # Queries
 def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
@@ -29,7 +33,7 @@ def get_flavoring_option(db: Session, identifier: "FlavoringOptionIdentifierInpu
     db.scalar(select(models.FlavoringOption).where(identifier.query_condition))
   )
   
-  
+
 # Mutations
 def create_flavoring_option(db: Session, input: "FlavoringOptionCreateInput") -> FlavoringOptionCreatePayload:
   slug = generate_slug(input.name)
@@ -63,14 +67,71 @@ def create_flavoring_option(db: Session, input: "FlavoringOptionCreateInput") ->
     )
   )
 
-def bulk_create_flavoring_option(db: Session, input: "FlavoringOptionBulkCreateInput") -> FlavoringOptionBulkCreatePayload:
+def bulk_create_flavoring_option(db: Session, inputs: list["FlavoringOptionCreateInput"]) -> FlavoringOptionBulkCreatePayload:
+  if len(inputs) == 0:
+    return FlavoringOptionBulkCreatePayload(
+      flavoring_options=[],
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message="Nothing to add",
+      )
+    )
+  
   flavoring_options = []
   
-  for flavoring_option in input.flavoring_options:
-    flavoring_options.append(create_flavoring_option(db=db, input=flavoring_option))
+  for input in inputs:
+    flavoring_options.append(create_flavoring_option(db=db, input=input))
   
   return FlavoringOptionBulkCreatePayload(
     flavoring_options=flavoring_options,
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=None,
+    )
+  )
+
+def delete_flavoring_option(db: Session, identifier: "FlavoringOptionIdentifierInput") -> FlavoringOptionDeletePayload:
+  flavoring_option = get_flavoring_option(db=db, identifier=identifier)
+  
+  if not flavoring_option:
+    return FlavoringOptionDeletePayload(
+      deleted_slug=None,
+      deleted_name=None,
+      feedback=Feedback(
+        status=FeedbackStatus.FAILED,
+        message=f"FlavoringOption {identifier.provided} not found."
+      )
+    )
+  
+  db.delete(flavoring_option)
+  db.commit()
+  
+  return FlavoringOptionDeletePayload(
+    deleted_slug=flavoring_option.slug,
+    deleted_name=flavoring_option.name,
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=None,
+    )
+  )
+
+def bulk_delete_flavoring_option(db: Session, identifiers: list["FlavoringOptionIdentifierInput"]) -> FlavoringOptionBulkDeletePayload:  
+  if len(identifiers) == 0:
+    return FlavoringOptionBulkDeletePayload(
+      deleted=[],
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message="Nothing to delete",
+      )
+    )
+  
+  deleted = []
+  
+  for identifier in identifiers:
+    deleted.append(delete_flavoring_option(db=db, identifier=identifier))
+  
+  return FlavoringOptionBulkDeletePayload(
+    deleted=deleted,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=None,
