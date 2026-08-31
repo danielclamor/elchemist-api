@@ -147,6 +147,10 @@ class Flavoring(Base):
     return float(self.ratio) * 100
 
   @property
+  def slug(self) -> str:
+    return self.flavoring_option.slug
+  
+  @property
   def name(self) -> str:
     return self.flavoring_option.name
   
