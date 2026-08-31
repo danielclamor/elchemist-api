@@ -302,7 +302,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def flavoringOptionBulkCreate(
+  def flavoringOptionsBulkCreate(
     self, info: strawberry.Info, flavoring_options: list[FlavoringOptionCreateInput]
   ) -> FlavoringOptionsBulkCreatePayload:
     db = info.context["db"]
@@ -320,7 +320,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def flavoringOptionBulkDelete(
+  def flavoringOptionsBulkDelete(
     self, info: strawberry.Info, identifiers: list[FlavoringOptionIdentifierInput]
   ) -> FlavoringOptionsBulkDeletePayload:
     db = info.context["db"]
