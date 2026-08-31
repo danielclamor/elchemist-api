@@ -82,7 +82,7 @@ def delete_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula
       deleted_name=None,
       feedback=Feedback(
         status=FeedbackStatus.FAILED,
-        message=f"Formula not found."
+        message=f"Formula {identifier.provided} not found."
       )
     )
 
@@ -94,7 +94,7 @@ def delete_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula
     deleted_name=formula.name,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
-      message=None
+      message=None,
     )
   )
   
