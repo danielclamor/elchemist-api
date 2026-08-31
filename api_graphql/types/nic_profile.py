@@ -188,10 +188,6 @@ class NicProfileFlavoringInput:
   flavoring_option_identifier: FlavoringOptionIdentifierInput
   ratio: float
 
-@strawberry.input
-class NicProfileFlavoringBulkAddInput:
-  flavorings: list[NicProfileFlavoringInput]
-
 @strawberry.type
 class NicProfileFlavoringAddPayload:
   nic_profile_flavoring: NicProfileFlavoringType | None

@@ -38,7 +38,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from api_graphql.types.nic_profile import (
     NicProfileIdentifierInput,
-    NicProfileFlavoringBulkAddInput,
     NicProfileCreateInput,
     NicProfileUpdateInput,
     NicProfileAddNicBaseInput,
@@ -108,7 +107,7 @@ def add_nic_profile_flavoring(db: Session, id: uuid.UUID, input: "NicProfileFlav
     )
   )
 
-def bulk_add_nic_profile_flavorings(db: Session, identifier: "NicProfileIdentifierInput", input: "NicProfileFlavoringBulkAddInput") -> NicProfileFlavoringBulkAddPayload:
+def bulk_add_nic_profile_flavorings(db: Session, identifier: "NicProfileIdentifierInput", inputs: list["NicProfileFlavoringInput"]) -> NicProfileFlavoringBulkAddPayload:
   nic_profile = get_nic_profile(db=db, identifier=identifier)
   
   if not nic_profile:
@@ -120,10 +119,19 @@ def bulk_add_nic_profile_flavorings(db: Session, identifier: "NicProfileIdentifi
       )
     )
   
+  if len(inputs) == 0:
+    return NicProfileFlavoringBulkAddPayload(
+      nic_profile_flavorings=[],
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message="Nothing to add"
+      )
+    )
+  
   flavorings = []
   
-  for flavoring in input.flavorings:
-    flavorings.append(add_nic_profile_flavoring(db=db, id=nic_profile.id, input=flavoring))
+  for input in inputs:
+    flavorings.append(add_nic_profile_flavoring(db=db, id=nic_profile.id, input=input))
     
   return NicProfileFlavoringBulkAddPayload(
     nic_profile_flavorings=flavorings,

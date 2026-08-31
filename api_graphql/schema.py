@@ -47,7 +47,7 @@ from api_graphql.types.nic_profile import (
   NicProfileDeletePayload,
   NicProfileUpdateInput,
   NicProfileUpdatePayload,
-  NicProfileFlavoringBulkAddInput,
+  NicProfileFlavoringInput,
   NicProfileFlavoringBulkAddPayload,
 )
 from api_graphql.types.production_order import (
@@ -379,7 +379,7 @@ class Mutation:
 
   @strawberry.mutation
   def nicProfileFlavoringsBulkAdd(
-      self, info: strawberry.Info, identifier: "NicProfileIdentifierInput", flavorings: "NicProfileFlavoringBulkAddInput"
+      self, info: strawberry.Info, identifier: "NicProfileIdentifierInput", flavorings: list["NicProfileFlavoringInput"]
   ) -> NicProfileFlavoringBulkAddPayload:
     db = info.context["db"]
     return bulk_add_nic_profile_flavorings(
