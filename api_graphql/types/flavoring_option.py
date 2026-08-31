@@ -62,9 +62,9 @@ class FlavoringOptionIdentifierInput:
     attr, value = self.provided
     
     if attr == "id":
-      return models.Formula.id == value.node_id
+      return models.FlavoringOption.id == value.node_id
     else:
-      return getattr(models.Formula, attr) == value
+      return getattr(models.FlavoringOption, attr) == value
 
 @strawberry.input
 class FlavoringOptionCreateInput:
