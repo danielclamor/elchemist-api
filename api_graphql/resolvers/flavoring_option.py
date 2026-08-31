@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-import models
+from models import FlavoringOption
 
 from api_graphql.resolvers.utils import generate_slug
 
@@ -23,14 +23,14 @@ if TYPE_CHECKING:
 
 
 # Queries
-def get_all_flavoring_options(db: Session) -> list[models.FlavoringOption]:
+def get_all_flavoring_options(db: Session) -> list[FlavoringOption]:
   return (
-    db.scalars(select(models.FlavoringOption)).all()
+    db.scalars(select(FlavoringOption)).all()
   )
   
-def get_flavoring_option(db: Session, identifier: "FlavoringOptionIdentifierInput") -> models.FlavoringOption:
+def get_flavoring_option(db: Session, identifier: "FlavoringOptionIdentifierInput") -> FlavoringOption:
   return (
-    db.scalar(select(models.FlavoringOption).where(identifier.query_condition))
+    db.scalar(select(FlavoringOption).where(identifier.query_condition))
   )
   
 
@@ -38,18 +38,18 @@ def get_flavoring_option(db: Session, identifier: "FlavoringOptionIdentifierInpu
 def create_flavoring_option(db: Session, input: "FlavoringOptionCreateInput") -> FlavoringOptionCreatePayload:
   slug = generate_slug(input.name)
   
-  existing = db.scalar(select(models.FlavoringOption).where(models.FlavoringOption.slug == slug))
+  existing = db.scalar(select(FlavoringOption).where(FlavoringOption.slug == slug))
   
   if existing:
     return FlavoringOptionCreatePayload(
       flavoring_option=FlavoringOptionType.from_model(existing),
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
-        message=f"FlavoringOption already exists",
+        message=f"FlavoringOption {existing.slug} already exists.",
       )
     )
 
-  flavoring_option = models.FlavoringOption(
+  flavoring_option = FlavoringOption(
     slug=slug,
     name=input.name,
     is_vg=input.is_vg,
@@ -73,7 +73,7 @@ def bulk_create_flavoring_options(db: Session, inputs: list["FlavoringOptionCrea
       flavoring_options=[],
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
-        message="Nothing to add",
+        message="Nothing to add.",
       )
     )
   
@@ -99,7 +99,7 @@ def delete_flavoring_option(db: Session, identifier: "FlavoringOptionIdentifierI
       deleted_name=None,
       feedback=Feedback(
         status=FeedbackStatus.FAILED,
-        message=f"FlavoringOption {identifier.provided} not found."
+        message=f"FlavoringOption {identifier.provided[1]} not found."
       )
     )
   
@@ -121,7 +121,7 @@ def bulk_delete_flavoring_options(db: Session, identifiers: list["FlavoringOptio
       deleted=[],
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
-        message="Nothing to delete",
+        message="Nothing to delete.",
       )
     )
   
