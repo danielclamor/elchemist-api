@@ -79,7 +79,7 @@ class NicBaseOptionCreatePayload:
 
 @strawberry.type
 class NicBaseOptionsBulkCreatePayload:
-  flavoring_options: list[NicBaseOptionCreatePayload]
+  nic_base_options: list[NicBaseOptionCreatePayload]
   feedback: Feedback
   
 @strawberry.type
