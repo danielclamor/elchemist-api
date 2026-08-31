@@ -14,6 +14,7 @@ from models import (
 
 from api_graphql.types.feedback import Feedback
 from api_graphql.types.flavoring_option import FlavoringOptionIdentifierInput
+from api_graphql.types.nic_base_option import NicBaseOptionIdentifierInput
 
 if TYPE_CHECKING:
   from api_graphql.types.formula import FormulaType
@@ -251,6 +252,11 @@ class NicProfileNicBaseIdentifierInput:
   def query_condition(self):
     return NicBase.id == self.id.node_id
   
+@strawberry.input
+class NicProfileNicBaseInput:
+  nic_base_option_identifier: NicBaseOptionIdentifierInput
+  ratio: float
+
 @strawberry.input
 class NicProfileNicBaseAddPayload:
   nic_profile_nic_base: NicProfileNicBaseType | None
