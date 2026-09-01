@@ -110,7 +110,7 @@ def delete_nic_base_option(db: Session, identifier: "NicBaseOptionIdentifierInpu
     )
   )
 
-def bulk_delete_flavoring_options(db: Session, identifiers: list["NicBaseOptionIdentifierInput"]) -> NicBaseOptionsBulkDeletePayload:
+def bulk_delete_nic_base_options(db: Session, identifiers: list["NicBaseOptionIdentifierInput"]) -> NicBaseOptionsBulkDeletePayload:
   if len(identifiers) == 0:
     return NicBaseOptionsBulkDeletePayload(
       deleted=[],
