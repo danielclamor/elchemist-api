@@ -257,7 +257,7 @@ class NicProfileNicBaseInput:
   nic_base_option_identifier: NicBaseOptionIdentifierInput
   ratio: float
 
-@strawberry.input
+@strawberry.type
 class NicProfileNicBaseAddPayload:
   nic_profile_nic_base: NicProfileNicBaseType | None
   feedback: Feedback
