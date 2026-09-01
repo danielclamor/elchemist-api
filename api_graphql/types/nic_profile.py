@@ -66,7 +66,7 @@ class NicProfileType(relay.Node):
   @relay.connection(relay.ListConnection["NicProfileNicBaseType"])
   def nic_bases(self) -> list["NicProfileNicBaseType"]:
     return [NicProfileNicBaseType.from_model(b) for b in self._model.nic_bases]
-
+  
 @strawberry.input
 class NicProfileIdentifierInput:
   id: Optional[relay.GlobalID] = strawberry.UNSET
