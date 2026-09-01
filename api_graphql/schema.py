@@ -34,14 +34,16 @@ from api_graphql.types.formula import (
 )
 from api_graphql.types.nic_base_option import (
   NicBaseOptionType,
+  NicBaseOptionIdentifierInput,
   NicBaseOptionCreateInput,
   NicBaseOptionCreatePayload,
+  NicBaseOptionsBulkCreatePayload,
+  NicBaseOptionDeletePayload,
+  NicBaseOptionsBulkDeletePayload,
 )
 from api_graphql.types.nic_profile import (
   NicProfileType,
   NicProfileIdentifierInput,
-  NicProfileAddNicBaseInput,
-  NicProfileAddNicBasePayload,
   NicProfileCreateInput,
   NicProfileCreatePayload,
   NicProfileDeletePayload,
@@ -51,7 +53,12 @@ from api_graphql.types.nic_profile import (
   NicProfileFlavoringIdentifierInput,
   NicProfileFlavoringsBulkAddPayload,
   NicProfileFlavoringsBulkRemovePayload,
+  NicProfileNicBaseInput,
+  NicProfileNicBaseIdentifierInput,
+  NicProfileNicBasesBulkAddPayload,
+  NicProfileNicBasesBulkRemovePayload,
 )
+
 from api_graphql.types.production_order import (
   ProductionOrderType,
   ProductionOrderCreateInput,
@@ -63,59 +70,61 @@ from api_graphql.types.production_order import (
   ProductionOrderUpdatePayload,
 )
 
-from api_graphql.resolvers.utils import generate_slug
-
 from api_graphql.resolvers.brand import (
   get_all_brands,
 )
 
 from api_graphql.resolvers.eliquid import (
-  get_all_eliquids,
   create_eliquid,
   delete_eliquid,
+  get_all_eliquids,
   set_eliquid_nic_profile,
   update_eliquid,
 )
 
 from api_graphql.resolvers.formula import (
-  get_all_formulas,
-  get_formula,
   create_formula,
   delete_formula,
+  get_all_formulas,
+  get_formula,
   update_formula,
 )
 
 from api_graphql.resolvers.nic_profile import (
-  bulk_remove_nic_profile_flavorings,
-  get_all_nic_profiles,
   bulk_add_nic_profile_flavorings,
-  bulk_add_nic_profile_nic_bases_old,
+  bulk_add_nic_profile_nic_bases,
+  bulk_remove_nic_profile_flavorings,
+  bulk_remove_nic_profile_nic_bases,
   create_nic_profile,
   delete_nic_profile,
+  get_all_nic_profiles,
   get_nic_profile,
   update_nic_profile,
 )
 
 from api_graphql.resolvers.flavoring_option import (
+  bulk_create_flavoring_options,
   bulk_delete_flavoring_options,
+  create_flavoring_option,
   delete_flavoring_option,
   get_all_flavoring_options,
   get_flavoring_option,
-  create_flavoring_option,
-  bulk_create_flavoring_options,
 )
 
 from api_graphql.resolvers.nic_base_option import (
+  bulk_create_nic_base_options,
+  create_nic_base_option,
+  delete_nic_base_option,
+  bulk_delete_nic_base_options,
   get_all_nic_base_options,
   get_nic_base_option,
-  create_nic_base_option,
 )
 
 from api_graphql.resolvers.production_order import (
-  get_all_production_orders,
-  get_production_order,
   create_production_order,
   delete_production_order,
+  get_all_production_orders,
+  get_production_order,
   update_production_order,
 )
 
@@ -216,6 +225,14 @@ class Query:
   ) -> List[FormulaType]:
     db = info.context["db"]
     return [FormulaType.from_model(f) for f in get_all_formulas(db)]
+  
+  @strawberry.field
+  def nicBaseOption(
+    self, info: strawberry.Info, identifier: NicBaseOptionIdentifierInput
+  ) -> Optional[NicBaseOptionType]:
+    db = info.context["db"]
+    o = get_nic_base_option(db=db, identifier=identifier)
+    return NicBaseOptionType.from_model(o) if o else None
 
   @relay.connection(relay.ListConnection[NicBaseOptionType])
   def nicBaseOptions(
@@ -360,24 +377,53 @@ class Mutation:
     self, info: strawberry.Info, nic_base_option: NicBaseOptionCreateInput
   ) -> NicBaseOptionCreatePayload:
     db = info.context["db"]
-    existing = get_nic_base_option(
-      db=db, nic_base_option_code=nic_base_option.code
+    return create_nic_base_option(
+      db=db, input=nic_base_option
+    )
+  
+  @strawberry.mutation
+  def nicBaseOptionsBulkCreate(
+    self, info: strawberry.Info, nic_base_options: list[NicBaseOptionCreateInput]
+  ) -> NicBaseOptionsBulkCreatePayload:
+    db = info.context["db"]
+    return bulk_create_nic_base_options(
+      db=db, inputs=nic_base_options
+    )
+  
+  @strawberry.mutation
+  def nicBaseOptionDelete(
+    self, info: strawberry.Info, identifier: NicBaseOptionIdentifierInput
+  ) -> NicBaseOptionDeletePayload:
+    db = info.context["db"]
+    return delete_nic_base_option(
+      db=db, identifier=identifier
+    )
+  
+  @strawberry.mutation
+  def nicBaseOptionsBulkDelete(
+    self, info: strawberry.Info, identifiers: list[NicBaseOptionIdentifierInput]
+  ) -> NicBaseOptionsBulkDeletePayload:
+    db = info.context["db"]
+    return bulk_delete_nic_base_options(
+      db=db, identifiers=identifiers
+    )
+    
+  @strawberry.mutation
+  def nicProfileCreate(
+    self, info: strawberry.Info, formula_slug: str, nic_profile: NicProfileCreateInput
+  ) -> NicProfileCreatePayload:
+    db = info.context["db"]
+    return create_nic_profile(
+      db=db, formula_slug=formula_slug, nic_profile=nic_profile
     )
 
-    if existing:
-      return NicBaseOptionCreatePayload(
-        nic_base_option=NicBaseOptionType.from_model(existing),
-        feedback=Feedback(
-          status=FeedbackStatus.CANCELLED,
-          message=f"Nic base option {nic_base_option.code} already exists",
-        ),
-      )
-
-    created = create_nic_base_option(db=db, nic_base_option=nic_base_option)
-
-    return NicBaseOptionCreatePayload(
-      nic_base_option=NicBaseOptionType.from_model(created),
-      feedback=Feedback(status=FeedbackStatus.SUCCESS, message=None),
+  @strawberry.mutation
+  def nicProfileDelete(
+    self, info: strawberry.Info, identifier: NicProfileIdentifierInput
+  ) -> NicProfileDeletePayload:
+    db = info.context["db"]
+    return delete_nic_profile(
+      db=db, identifier=identifier
     )
 
   @strawberry.mutation
@@ -400,29 +446,20 @@ class Mutation:
 
   @strawberry.mutation
   def nicProfileNicBasesBulkAdd(
-    self, info: strawberry.Info, nic_profile_slug: str, nic_bases: List[NicProfileAddNicBaseInput]
-  ) -> NicProfileAddNicBasePayload:
+   self, info: strawberry.Info, identifier: NicProfileIdentifierInput, nic_bases: list[NicProfileNicBaseInput]
+  ) -> NicProfileNicBasesBulkAddPayload:
     db = info.context["db"]
-    return bulk_add_nic_profile_nic_bases_old(
-      db=db, nic_profile_slug=nic_profile_slug, nic_bases=nic_bases
+    return bulk_add_nic_profile_nic_bases(
+      db=db, identifier=identifier, inputs=nic_bases
     )
-    
+  
   @strawberry.mutation
-  def nicProfileCreate(
-    self, info: strawberry.Info, formula_slug: str, nic_profile: NicProfileCreateInput
-  ) -> NicProfileCreatePayload:
+  def nicProfileNicBasesBulkRemove(
+    self, info: strawberry.Info, nic_bases: list[NicProfileNicBaseIdentifierInput]
+  ) -> NicProfileNicBasesBulkRemovePayload:
     db = info.context["db"]
-    return create_nic_profile(
-      db=db, formula_slug=formula_slug, nic_profile=nic_profile
-    )
-
-  @strawberry.mutation
-  def nicProfileDelete(
-    self, info: strawberry.Info, identifier: NicProfileIdentifierInput
-  ) -> NicProfileDeletePayload:
-    db = info.context["db"]
-    return delete_nic_profile(
-      db=db, identifier=identifier
+    return bulk_remove_nic_profile_nic_bases(
+      db=db, identifiers=nic_bases
     )
 
   @strawberry.mutation
