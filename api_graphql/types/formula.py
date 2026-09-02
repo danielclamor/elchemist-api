@@ -7,7 +7,8 @@ from typing import Annotated, TYPE_CHECKING, Optional
 import strawberry
 from strawberry import relay
 
-import models
+from models import Formula, ChillType, NicType
+
 from api_graphql.types.enums import ChillType, NicType
 from api_graphql.types.feedback import Feedback
 
@@ -24,10 +25,10 @@ class FormulaType(relay.Node):
   chill_type: ChillType
   nic_type: NicType
 
-  _model: strawberry.Private[models.Formula]
+  _model: strawberry.Private[Formula]
 
   @classmethod
-  def from_model(cls, f: models.Formula) -> "FormulaType":
+  def from_model(cls, f: Formula) -> "FormulaType":
     return cls(
       id=f.id,
       slug=f.slug,
@@ -89,9 +90,9 @@ class FormulaIdentifierInput:
     attr, value = self.provided
     
     if attr == "id":
-      return models.Formula.id == value.node_id
+      return Formula.id == value.node_id
     else:
-      return getattr(models.Formula, attr) == value
+      return getattr(Formula, attr) == value
   
 @strawberry.input
 class FormulaCreateInput:

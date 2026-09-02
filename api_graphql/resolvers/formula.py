@@ -3,9 +3,10 @@ from enum import Enum
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
 import strawberry
-import models
 
 from .utils import generate_slug
+
+from models import Formula, ChillType, NicType
 
 from api_graphql.types.feedback import Feedback, FeedbackStatus
 
@@ -25,16 +26,16 @@ if TYPE_CHECKING:
   )
 
 # Queries
-def get_all_formulas(db: Session) -> list[models.Formula]:
+def get_all_formulas(db: Session) -> list[Formula]:
   return (
-    db.scalars(select(models.Formula))
+    db.scalars(select(Formula))
     .unique()
     .all()
   )
   
-def get_formula(db: Session, identifier: "FormulaIdentifierInput") -> models.Formula:
+def get_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula:
   return (
-    db.scalar(select(models.Formula).where(identifier.query_condition))
+    db.scalar(select(Formula).where(identifier.query_condition))
   )
 
 
@@ -42,7 +43,7 @@ def get_formula(db: Session, identifier: "FormulaIdentifierInput") -> models.For
 def create_formula(db: Session, input: "FormulaCreateInput") -> FormulaCreatePayload:
   slug = generate_slug(string=input.name)
 
-  existing = db.scalar(select(models.Formula).where(models.Formula.slug == slug))
+  existing = db.scalar(select(Formula).where(Formula.slug == slug))
   
   if existing:
     return FormulaCreatePayload(
@@ -53,12 +54,12 @@ def create_formula(db: Session, input: "FormulaCreateInput") -> FormulaCreatePay
       )
     )
 
-  formula = models.Formula(
+  formula = Formula(
     slug=slug,
     name=input.name,
     brand=input.brand,
-    chill_type=models.ChillType[input.chill_type.name],
-    nic_type=models.NicType[input.nic_type.name],
+    chill_type=ChillType[input.chill_type.name],
+    nic_type=NicType[input.nic_type.name],
   )
 
   db.add(formula)
