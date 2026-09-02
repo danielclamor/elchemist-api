@@ -44,6 +44,8 @@ from api_graphql.types.nic_profile import (
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+  from api_graphql.types.formula import FormulaIdentifierInput
+  
   from api_graphql.types.nic_profile import (
     NicProfileIdentifierInput,
     NicProfileCreateInput,
@@ -280,15 +282,15 @@ def bulk_remove_nic_profile_nic_bases(db: Session, identifiers: list[NicProfileN
     )
   )
   
-def create_nic_profile(db: Session, formula_slug: str, nic_profile: "NicProfileCreateInput") -> NicProfileCreatePayload:
-  formula = db.scalar(select(Formula).where(Formula.slug == formula_slug))
+def create_nic_profile(db: Session, formula_identifier: "FormulaIdentifierInput", nic_profile: "NicProfileCreateInput") -> NicProfileCreatePayload:
+  formula = db.scalar(select(Formula).where(formula_identifier.query_condition))
   
   if not formula:
     return NicProfileCreatePayload(
       nic_profile=None,
       feedback=Feedback(
         status=FeedbackStatus.FAILED,
-        message=f"Formula {formula_slug} not found",
+        message=f"Formula {formula_identifier.provided[1]} not found.",
       )
     )
 
@@ -318,6 +320,7 @@ def create_nic_profile(db: Session, formula_slug: str, nic_profile: "NicProfileC
     formula_id=formula.id,
     slug=slug,
     name=nic_profile.name,
+    is_pre_mix=nic_profile.is_pre_mix,
     is_old_mix=nic_profile.is_old_mix,
     nic_base_nic_str=nic_profile.nic_base_nic_str,
     target_nic_str=nic_profile.target_nic_str,
@@ -328,6 +331,7 @@ def create_nic_profile(db: Session, formula_slug: str, nic_profile: "NicProfileC
   db.add(nic_profile)
   db.commit()
   db.refresh(nic_profile)
+  
   return NicProfileCreatePayload(
     nic_profile=NicProfileType.from_model(nic_profile),
     feedback=Feedback(

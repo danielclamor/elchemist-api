@@ -410,11 +410,11 @@ class Mutation:
     
   @strawberry.mutation
   def nicProfileCreate(
-    self, info: strawberry.Info, formula_slug: str, nic_profile: NicProfileCreateInput
+    self, info: strawberry.Info, formula_identifier: FormulaIdentifierInput, nic_profile: NicProfileCreateInput
   ) -> NicProfileCreatePayload:
     db = info.context["db"]
     return create_nic_profile(
-      db=db, formula_slug=formula_slug, nic_profile=nic_profile
+      db=db, formula_identifier=formula_identifier, nic_profile=nic_profile
     )
 
   @strawberry.mutation
