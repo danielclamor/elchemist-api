@@ -45,7 +45,7 @@ def create_formula(db: Session, input: "FormulaCreateInput") -> FormulaCreatePay
 
   existing = db.scalar(select(Formula).where(Formula.slug == slug))
   
-  if existing:
+  if existing is not None:
     return FormulaCreatePayload(
       formula=FormulaType.from_model(existing),
       feedback=Feedback(
@@ -77,7 +77,7 @@ def create_formula(db: Session, input: "FormulaCreateInput") -> FormulaCreatePay
 def delete_formula(db: Session, identifier: "FormulaIdentifierInput") -> FormulaDeletePayload:
   formula = get_formula(db=db, identifier=identifier)
   
-  if not formula:
+  if formula is None:
     return FormulaDeletePayload(
       deleted_slug=None,
       deleted_name=None,
@@ -86,13 +86,16 @@ def delete_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula
         message=f"Formula {identifier.provided} not found."
       )
     )
+  
+  slug = formula.slug
+  name = formula.name
 
   db.delete(formula)
   db.commit()
 
   return FormulaDeletePayload(
-    deleted_slug=formula.slug,
-    deleted_name=formula.name,
+    deleted_slug=slug,
+    deleted_name=name,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=None,
@@ -102,7 +105,7 @@ def delete_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula
 def update_formula(db: Session, identifier: "FormulaIdentifierInput", input: "FormulaUpdateInput") -> FormulaUpdatePayload:
   formula = get_formula(db=db, identifier=identifier)
   
-  if not formula:
+  if formula is None:
     return FormulaUpdatePayload(
       formula=None,
       feedback=Feedback(
