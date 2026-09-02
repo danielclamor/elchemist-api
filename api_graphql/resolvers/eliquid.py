@@ -107,12 +107,15 @@ def delete_eliquid(db: Session, identifier: "EliquidIdentifierInput") -> Eliquid
       )
     )
   
+  upc = eliquid.upc
+  description = eliquid.description
+  
   db.delete(eliquid)
   db.commit()
   
   return EliquidDeletePayload(
-    deleted_upc=eliquid.upc,
-    deleted_description=eliquid.description,
+    deleted_upc=upc,
+    deleted_description=description,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=None
