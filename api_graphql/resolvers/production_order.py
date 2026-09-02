@@ -53,7 +53,7 @@ def get_production_order(db: Session, identifier: ProductionOrderIdentifierInput
   )
 
 
-# Mutations  
+# Mutations
 def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierInput", input: "ProductionOrderCreateInput") -> ProductionOrderCreatePayload: 
   eliquid = db.scalar(select(Eliquid).where(eliquid_identifier.query_condition))
   
@@ -168,6 +168,55 @@ def delete_production_order(db: Session, identifier: "ProductionOrderIdentifierI
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=None
+    )
+  )
+
+def toggle_production_order_archived(db: Session, identifier: "ProductionOrderIdentifierInput", is_archived: bool) -> ProductionOrderUpdatePayload:
+  po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
+  
+  if po is None:
+    return ProductionOrderUpdatePayload(
+      production_order=None,
+      feedback=Feedback(
+        status=FeedbackStatus.FAILED,
+        message=f"ProductionOrder {identifier.provided[1]} not found"
+      )
+    )
+  
+  if po.is_archived == is_archived:
+    return ProductionOrderUpdatePayload(
+      production_order=ProductionOrderType.from_model(po),
+      feedback=Feedback(
+        status=FeedbackStatus.SUCCESS,
+        message=f"ProductionOrder {po.order_number} is already {'archived' if is_archived else 'unarchived'}"
+      )
+    )
+    
+  old_value = f"{po.is_archived}"
+  
+  today = get_today("UTC")
+  
+  po.is_archived = is_archived
+  po.updated_at = today
+  db.flush()
+  
+  create_production_order_activity_log(
+    db=db,
+    production_order_id=po.id,
+    activity=ProductionOrderActivity.TOGGLE_ARCHIVED,
+    triggered_at=today,
+    old_value=old_value,
+    new_value=f"{po.is_archived}",
+  )
+  
+  db.commit()
+  db.refresh(po)
+    
+  return ProductionOrderUpdatePayload(
+    production_order=ProductionOrderType.from_model(po),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=f"ProductionOrder {po.order_number} {'archived' if po.is_archived else 'unarchived'}"
     )
   )
   

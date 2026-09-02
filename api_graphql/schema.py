@@ -125,6 +125,7 @@ from api_graphql.resolvers.production_order import (
   delete_production_order,
   get_all_production_orders,
   get_production_order,
+  toggle_production_order_archived,
   update_production_order,
 )
 
@@ -504,6 +505,15 @@ class Mutation:
     db = info.context["db"]
     return delete_production_order(
       db=db, identifier=identifier
+    )
+  
+  @strawberry.mutation
+  def productionOrderToggleArchived(
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, is_archived: bool
+  ) -> ProductionOrderUpdatePayload:
+    db = info.context["db"]
+    return toggle_production_order_archived(
+      db=db, identifier=identifier, is_archived=is_archived
     )
   
   @strawberry.mutation
