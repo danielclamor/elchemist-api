@@ -116,7 +116,7 @@ class EliquidCreateInput:
   size: SizeOption
   nic_level: NicLevelOption
   bottle_color: BottleColor
-  nic_profile: NicProfileIdentifierInput | None = strawberry.UNSET
+  nic_profile: Optional[NicProfileIdentifierInput] = strawberry.UNSET
   
 @strawberry.type
 class EliquidCreatePayload:
@@ -131,14 +131,14 @@ class EliquidDeletePayload:
 
 @strawberry.input
 class EliquidUpdateInput:
-  upc: str | None = strawberry.UNSET
-  description: str | None = strawberry.UNSET
-  brand: str | None = strawberry.UNSET
-  chill_type: ChillType | None = strawberry.UNSET
-  nic_type: NicType | None = strawberry.UNSET
-  size: SizeOption | None = strawberry.UNSET
-  nic_level: NicLevelOption | None = strawberry.UNSET
-  bottle_color: BottleColor | None = strawberry.UNSET
+  upc: Optional[str] = strawberry.UNSET
+  description: Optional[str] = strawberry.UNSET
+  brand: Optional[str] = strawberry.UNSET
+  chill_type: Optional[ChillType] = strawberry.UNSET
+  nic_type: Optional[NicType] = strawberry.UNSET
+  size: Optional[SizeOption] = strawberry.UNSET
+  nic_level: Optional[NicLevelOption] = strawberry.UNSET
+  bottle_color: Optional[BottleColor] = strawberry.UNSET
   
 @strawberry.type
 class EliquidUpdatePayload:
