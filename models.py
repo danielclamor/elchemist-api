@@ -291,9 +291,9 @@ class ProductionOrder(Base):
 
 class ProductionOrderActivity(enum.Enum):
   CREATED = "created"
-  ADJUST_QUANTITY = "adjust_quantity"
-  CHANGE_STATUS = "change_status"
-  SWITCH_PRIORITY = "switch_priority"
+  ADJUST_QUANTITY = "quantity"
+  CHANGE_STATUS = "status"
+  SWITCH_PRIORITY = "is_priority"
 
 
 production_order_activity_enum = Enum(ProductionOrderActivity, name="productionorderactivity")
