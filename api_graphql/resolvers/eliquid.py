@@ -60,6 +60,7 @@ def create_eliquid(db: Session, input: "EliquidCreateInput") -> EliquidCreatePay
     )
   
   nic_profile_id = None
+  feedback_message = None
   
   nic_profile_identifier = input.nic_profile
   if nic_profile_identifier is not strawberry.UNSET:
@@ -67,7 +68,7 @@ def create_eliquid(db: Session, input: "EliquidCreateInput") -> EliquidCreatePay
     if nic_profile is not None:
       nic_profile_id = nic_profile.id
     else:
-      connect_nic_profile_feedback = f"Failed to connect NicProfile. NicProfile {nic_profile_identifier.provided[1]} not found."
+      feedback_message = f"Failed to connect NicProfile. NicProfile {nic_profile_identifier.provided[1]} not found."
   
   eliquid = Eliquid(
     upc=input.upc,
@@ -89,7 +90,7 @@ def create_eliquid(db: Session, input: "EliquidCreateInput") -> EliquidCreatePay
     eliquid=EliquidType.from_model(eliquid),
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
-      message=connect_nic_profile_feedback or None
+      message=feedback_message,
     )
   )
   

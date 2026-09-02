@@ -3,14 +3,13 @@ import strawberry
 from strawberry import relay
 from typing import List, Optional
 
-from api_graphql.types.feedback import Feedback, FeedbackStatus
 from api_graphql.types.brand import BrandEdge, BrandConnection
 from api_graphql.types.eliquid import (
   EliquidType,
   EliquidCreateInput, 
   EliquidCreatePayload,
   EliquidDeletePayload,
-  EliquidIdentifier,
+  EliquidIdentifierInput,
   EliquidUpdateInput, 
   EliquidUpdatePayload,
 )
@@ -78,7 +77,9 @@ from api_graphql.resolvers.eliquid import (
   create_eliquid,
   delete_eliquid,
   get_all_eliquids,
+  get_eliquid,
   set_eliquid_nic_profile,
+  unset_eliquid_nic_profile,
   update_eliquid,
 )
 
@@ -189,6 +190,14 @@ class Query:
     db = info.context["db"]
     return _paginate_brands(get_all_brands(db=db), after, before, first, last)
 
+  @strawberry.field
+  def eliquid(
+    self, info: strawberry.Info, identifier: EliquidIdentifierInput
+  ) -> Optional[EliquidType]:
+    db = info.context["db"]
+    e = get_eliquid(db=db, identifier=identifier)
+    return EliquidType.from_model(e) if e else None
+  
   @relay.connection(relay.ListConnection[EliquidType])
   def eliquids(
     self, info: strawberry.Info
@@ -284,7 +293,7 @@ class Mutation:
   
   @strawberry.mutation
   def eliquidDelete(
-    self, info: strawberry.Info, identifier: EliquidIdentifier
+    self, info: strawberry.Info, identifier: EliquidIdentifierInput
   ) -> EliquidDeletePayload:
     db = info.context["db"]
     return delete_eliquid(
@@ -292,21 +301,30 @@ class Mutation:
     )
   
   @strawberry.mutation
+  def eliquidNicProfileSet(
+    self, info: strawberry.Info, identifier: EliquidIdentifierInput, nic_profile_identifier: NicProfileIdentifierInput
+  ) -> EliquidUpdatePayload:
+    db = info.context["db"]
+    return set_eliquid_nic_profile(
+      db=db, identifier=identifier, nic_profile_identifier=nic_profile_identifier
+    )
+  
+  @strawberry.mutation
+  def eliquidNicProfileUnset(
+    self, info: strawberry.Info, identifier: EliquidIdentifierInput
+  ) -> EliquidUpdatePayload:
+    db = info.context["db"]
+    return unset_eliquid_nic_profile(
+      db=db, identifier=identifier
+    )
+  
+  @strawberry.mutation
   def eliquidUpdate(
-    self, info: strawberry.Info, identifier: EliquidIdentifier, eliquid: EliquidUpdateInput
+    self, info: strawberry.Info, identifier: EliquidIdentifierInput, eliquid: EliquidUpdateInput
   ) -> EliquidUpdatePayload:
     db = info.context["db"]
     return update_eliquid(
       db=db, identifier=identifier, input=eliquid
-    )
-  
-  @strawberry.mutation
-  def eliquidNicProfileSet(
-    self, info: strawberry.Info, identifier: EliquidIdentifier, nic_profile_id: relay.GlobalID | None
-  ) -> EliquidUpdatePayload:
-    db = info.context["db"]
-    return set_eliquid_nic_profile(
-      db=db, identifier=identifier, nic_profile_id=nic_profile_id
     )
   
   @strawberry.mutation
