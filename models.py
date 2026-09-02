@@ -302,6 +302,7 @@ class ProductionOrderActivity(enum.Enum):
   ADJUST_QUANTITY = "quantity"
   CHANGE_STATUS = "status"
   SWITCH_PRIORITY = "is_priority"
+  TOGGLE_ARCHIVED = "is_archived"
 
 
 production_order_activity_enum = Enum(ProductionOrderActivity, name="productionorderactivity")
