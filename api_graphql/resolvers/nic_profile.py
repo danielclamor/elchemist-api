@@ -352,13 +352,16 @@ def delete_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> 
         message=f"Nic profile {identifier.slug} not found."
       )
     )
+    
+  slug = nic_profile.slug
+  full_name = nic_profile.full_name
 
   db.delete(nic_profile)
   db.commit()
 
   return NicProfileDeletePayload(
-    deleted_slug=nic_profile.slug,
-    deleted_full_name=nic_profile.full_name,
+    deleted_slug=slug,
+    deleted_full_name=full_name,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=None
