@@ -451,12 +451,12 @@ def update_nic_profile(db: Session, identifier: "NicProfileIdentifierInput", inp
       continue
     if isinstance(value, Enum):
       value = value.name
-      current = current.name
+      current = current.name if current else None
       
     if value != current:
       setattr(nic_profile, attr, value)
       db.flush()
-      updated_columns.append(f"{attr}")
+      updated_columns.append(attr)
   
   if len(updated_columns) == 0:
     message = "Nothing to update"
