@@ -35,7 +35,7 @@ def get_nic_base_option(db: Session, identifier: "NicBaseOptionIdentifierInput")
 def create_nic_base_option(db: Session, input: "NicBaseOptionCreateInput") -> NicBaseOptionCreatePayload:
   existing = db.scalar(select(NicBaseOption).where(NicBaseOption.code == input.code))
   
-  if existing:
+  if existing is not None:
     return NicBaseOptionCreatePayload(
       nic_base_option=NicBaseOptionType.from_model(existing),
       feedback=Feedback(
@@ -88,7 +88,7 @@ def bulk_create_nic_base_options(db: Session, inputs: list["NicBaseOptionCreateI
 def delete_nic_base_option(db: Session, identifier: "NicBaseOptionIdentifierInput") -> NicBaseOptionDeletePayload:
   nic_base_option = get_nic_base_option(db=db, identifier=identifier)
   
-  if not nic_base_option:
+  if nic_base_option is None:
     return NicBaseOptionDeletePayload(
       deleted_code=None,
       deleted_name=None,
