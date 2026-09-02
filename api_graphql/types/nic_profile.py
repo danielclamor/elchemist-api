@@ -139,6 +139,7 @@ class NicProfileAddNicBasePayload:
 class NicProfileCreateInput:
   name: str
   nic_base_nic_str: float
+  is_pre_mix: bool
   is_old_mix: bool
   target_nic_str: float
   target_vg: float
@@ -226,17 +227,18 @@ class NicProfileFlavoringsBulkRemovePayload:
   feedback: Feedback
   
 @strawberry.type
-class NicProfileNicBaseType:
+class NicProfileNicBaseType(relay.Node):
   id: relay.NodeID[str]
   ratio: float
 
   _model: strawberry.Private[NicBase]
 
   @classmethod
-  def from_model(cls, f: NicBase) -> "NicProfileNicBaseType":
+  def from_model(cls, b: NicBase) -> "NicProfileNicBaseType":
     return cls(
-      ratio=f.ratio,
-      _model=f,
+      id=b.id,
+      ratio=b.ratio,
+      _model=b,
     )
 
   @strawberry.field
