@@ -9,7 +9,15 @@ from strawberry import relay
 from models import Eliquid
 
 from api_graphql.types.feedback import Feedback
-from api_graphql.types.enums import ChillType, NicType, SizeOption, NicLevelOption, BottleColor
+from api_graphql.types.nic_profile import NicProfileIdentifierInput
+
+from api_graphql.types.enums import (
+  ChillType, 
+  NicType, 
+  SizeOption, 
+  NicLevelOption, 
+  BottleColor
+)
 
 if TYPE_CHECKING:
   from api_graphql.types.nic_profile import NicProfileType
@@ -108,7 +116,7 @@ class EliquidCreateInput:
   size: SizeOption
   nic_level: NicLevelOption
   bottle_color: BottleColor
-  nic_profile_slug: str | None 
+  nic_profile: NicProfileIdentifierInput | None = strawberry.UNSET
   
 @strawberry.type
 class EliquidCreatePayload:
