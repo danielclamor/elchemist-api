@@ -60,11 +60,10 @@ from api_graphql.types.nic_profile import (
 
 from api_graphql.types.production_order import (
   ProductionOrderType,
+  ProductionOrderIdentifierInput,
   ProductionOrderCreateInput,
   ProductionOrderCreatePayload,
-  ProductionOrderDeleteInput,
   ProductionOrderDeletePayload,
-  ProductionOrderUpdateIdentifier,
   ProductionOrderUpdateInput,
   ProductionOrderUpdatePayload,
 )
@@ -491,25 +490,25 @@ class Mutation:
 
   @strawberry.mutation
   def productionOrderCreate(
-    self, info: strawberry.Info, production_order: ProductionOrderCreateInput
+    self, info: strawberry.Info, eliquid_identifier: EliquidIdentifierInput, production_order: ProductionOrderCreateInput
   ) -> ProductionOrderCreatePayload:
     db = info.context["db"]
     return create_production_order(
-      db=db, input=production_order
+      db=db, eliquid_identifier=eliquid_identifier, input=production_order
     )
   
   @strawberry.mutation
   def productionOrderDelete(
-    self, info: strawberry.Info, input: ProductionOrderDeleteInput
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput
   ) -> ProductionOrderDeletePayload:
     db = info.context["db"]
     return delete_production_order(
-      db=db, input=input
+      db=db, identifier=identifier
     )
   
   @strawberry.mutation
   def productionOrderUpdate(
-    self, info: strawberry.Info, identifier: ProductionOrderUpdateIdentifier, production_order: ProductionOrderUpdateInput
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, production_order: ProductionOrderUpdateInput
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
     return update_production_order(
