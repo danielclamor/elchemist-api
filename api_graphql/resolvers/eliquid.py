@@ -235,7 +235,7 @@ def update_eliquid(db: Session, identifier: "EliquidIdentifierInput", input: "El
     db.commit()
     db.refresh(eliquid)
     
-    message = f"Updated {", ".join(updated_columns)}"
+    message = f"Updated {', '.join(updated_columns)}"
     
   return EliquidUpdatePayload(
     eliquid=EliquidType.from_model(eliquid),

@@ -463,7 +463,7 @@ def update_nic_profile(db: Session, identifier: "NicProfileIdentifierInput", inp
   else:
     db.commit()
     db.refresh(nic_profile)
-    message = f"Updated {", ".join(updated_columns)}"
+    message = f"Updated {', '.join(updated_columns)}"
   
   db.commit()
   db.refresh(nic_profile)
