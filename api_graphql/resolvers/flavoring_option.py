@@ -40,7 +40,7 @@ def create_flavoring_option(db: Session, input: "FlavoringOptionCreateInput") ->
   
   existing = db.scalar(select(FlavoringOption).where(FlavoringOption.slug == slug))
   
-  if existing:
+  if existing is not None:
     return FlavoringOptionCreatePayload(
       flavoring_option=FlavoringOptionType.from_model(existing),
       feedback=Feedback(
@@ -93,7 +93,7 @@ def bulk_create_flavoring_options(db: Session, inputs: list["FlavoringOptionCrea
 def delete_flavoring_option(db: Session, identifier: "FlavoringOptionIdentifierInput") -> FlavoringOptionDeletePayload:
   flavoring_option = get_flavoring_option(db=db, identifier=identifier)
   
-  if not flavoring_option:
+  if flavoring_option is None:
     return FlavoringOptionDeletePayload(
       deleted_slug=None,
       deleted_name=None,
