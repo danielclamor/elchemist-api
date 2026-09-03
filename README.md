@@ -29,22 +29,8 @@ source venv/bin/activate
 
 ## 3. Install dependencies
 
-If `requirements.txt` has been fixed and pushed:
-
 ```bash
 pip install -r requirements.txt
-```
-
-If not, install the real dependencies directly:
-
-```bash
-pip install fastapi uvicorn sqlalchemy psycopg2-binary alembic python-dotenv strawberry-graphql
-```
-
-Then regenerate the file so it matches what's actually installed:
-
-```bash
-pip freeze > requirements.txt
 ```
 
 ## 4. Configure your `.env`
