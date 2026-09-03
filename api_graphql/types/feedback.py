@@ -1,6 +1,12 @@
+import enum
+
 import strawberry
 
-from api_graphql.types.enums import FeedbackStatus
+@strawberry.enum
+class FeedbackStatus(enum.Enum):
+  SUCCESS = "success"
+  FAILED = "failed"
+  CANCELLED = "cancelled"
 
 @strawberry.type
 class Feedback:

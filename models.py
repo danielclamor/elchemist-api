@@ -1,6 +1,6 @@
 import enum
 import uuid
-from datetime import datetime, timezone, date
+from datetime import datetime, date
 
 from sqlalchemy import (
   Boolean,
@@ -8,10 +8,14 @@ from sqlalchemy import (
   DateTime,
   Enum,
   ForeignKey,
+  Index,
   Integer,
   Numeric,
   String,
+  func,
+  text,
 )
+
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -78,11 +82,11 @@ class Eliquid(Base):
   size: Mapped[SizeOption] = mapped_column(size_option_enum)
   nic_level: Mapped[NicLevelOption] = mapped_column(nic_level_option_enum)
   bottle_color: Mapped[BottleColor] = mapped_column(bottle_color_enum)
-  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="SET NULL"), nullable=True)
+  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="SET NULL"), nullable=True, index=True)
 
-  created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
+  created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
-    DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)
+    DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
   )
   
   nic_profile: Mapped["NicProfile"] = relationship()
@@ -103,9 +107,9 @@ class Formula(Base):
   chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
   nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
   
-  created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
+  created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
-    DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)
+    DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
   )
 
   nic_profiles: Mapped[list["NicProfile"]] = relationship(
@@ -131,10 +135,8 @@ class Flavoring(Base):
   __tablename__ = "flavorings"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="CASCADE"))
-  flavoring_option_id: Mapped[uuid.UUID] = mapped_column(
-    ForeignKey("flavoring_options.id")
-  )
+  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="CASCADE"), index=True)
+  flavoring_option_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("flavoring_options.id"), index=True)
   ratio: Mapped[float] = mapped_column(Numeric(6, 4))
   
   flavoring_option: Mapped["FlavoringOption"] = relationship()
@@ -145,6 +147,10 @@ class Flavoring(Base):
   def percentage(self) -> float:
     return float(self.ratio) * 100
 
+  @property
+  def slug(self) -> str:
+    return self.flavoring_option.slug
+  
   @property
   def name(self) -> str:
     return self.flavoring_option.name
@@ -173,10 +179,8 @@ class NicBase(Base):
   __tablename__ = "nic_bases"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="CASCADE"))
-  nic_base_option_id: Mapped[uuid.UUID] = mapped_column(
-    ForeignKey("nic_base_options.id")
-  )
+  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="CASCADE"), index=True)
+  nic_base_option_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_base_options.id"), index=True)
   ratio: Mapped[float] = mapped_column(Numeric(6, 4))
 
   nic_profile: Mapped["NicProfile"] = relationship(back_populates="nic_bases")
@@ -206,7 +210,7 @@ class NicProfile(Base):
   __tablename__ = "nic_profiles"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  formula_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("formulas.id", ondelete="CASCADE"))
+  formula_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("formulas.id", ondelete="CASCADE"), index=True)
 
   slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
   name: Mapped[str] = mapped_column(String(255))
@@ -220,9 +224,9 @@ class NicProfile(Base):
   target_pg: Mapped[float] = mapped_column(Numeric(6, 3))
   nic_base_nic_str: Mapped[float] = mapped_column(Numeric(6, 3))
 
-  created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
+  created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
-    DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)
+    DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
   )
 
   formula: Mapped["Formula"] = relationship(back_populates="nic_profiles")
@@ -236,8 +240,8 @@ class NicProfile(Base):
   
   @property
   def full_name(self) -> str:
-    is_old_mix = " - Old Mix" if self.is_old_mix else None
-    return f"{self.formula.name} - {self.name}{is_old_mix if is_old_mix else ""}"
+    suffix = " - Old Mix" if self.is_old_mix else ""
+    return f"{self.formula.name} - {self.name}{suffix}"
 
   def __repr__(self) -> str:
     return f"<NicProfile {self.slug!r}>"
@@ -262,16 +266,25 @@ production_order_status_enum = Enum(ProductionOrderStatus, name="productionorder
 
 class ProductionOrder(Base):
   __tablename__ = "production_orders"
+  
+  __table_args__ = (
+    Index(
+      "ix_production_orders_active",
+      "created_at",
+      postgresql_where=text("is_archived = false")
+    ),
+  )
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   order_number: Mapped[str] = mapped_column(String(20), unique=True, index=True)
-  eliquid_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("eliquids.id"))
+  eliquid_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("eliquids.id"), index=True)
   quantity: Mapped[int] = mapped_column()
   status: Mapped[ProductionOrderStatus] = mapped_column(production_order_status_enum, default=ProductionOrderStatus.PENDING)
   is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
-  created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
+  is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
+  created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
-    DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc)
+    DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
   )
 
   eliquid: Mapped["Eliquid"] = relationship(back_populates="production_orders")
@@ -286,9 +299,10 @@ class ProductionOrder(Base):
 
 class ProductionOrderActivity(enum.Enum):
   CREATED = "created"
-  ADJUST_QUANTITY = "adjust_quantity"
-  CHANGE_STATUS = "change_status"
-  SWITCH_PRIORITY = "switch_priority"
+  ADJUST_QUANTITY = "quantity"
+  CHANGE_STATUS = "status"
+  SWITCH_PRIORITY = "is_priority"
+  TOGGLE_ARCHIVED = "is_archived"
 
 
 production_order_activity_enum = Enum(ProductionOrderActivity, name="productionorderactivity")
@@ -298,11 +312,11 @@ class ProductionOrderActivityLog(Base):
   __tablename__ = "production_order_activity_logs"
   
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"))
+  production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
   activity: Mapped[ProductionOrderActivity] = mapped_column(production_order_activity_enum)
   old_value: Mapped[str] = mapped_column(String(255), nullable=True)
   new_value: Mapped[str] = mapped_column(String(255), nullable=True)
-  triggered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
+  triggered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   
   production_order: Mapped["ProductionOrder"] = relationship(back_populates="activity_logs")
   

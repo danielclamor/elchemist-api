@@ -39,12 +39,6 @@ class BottleColor(enum.Enum):
   WHITE = "white"
   
 @strawberry.enum
-class FeedbackStatus(enum.Enum):
-  SUCCESS = "success"
-  FAILED = "failed"
-  CANCELLED = "cancelled"
-  
-@strawberry.enum
 class ProductionOrderStatus(enum.Enum):
   CANCELLED = "cancelled"
   DELIVERED = "delivered"
@@ -54,6 +48,7 @@ class ProductionOrderStatus(enum.Enum):
 @strawberry.enum
 class ProductionOrderActivity(enum.Enum):
   CREATED = "created"
-  ADJUST_QUANTITY = "adjust_quantity"
-  CHANGE_STATUS = "change_status"
-  SWITCH_PRIORITY = "switch_priority"
+  ADJUST_QUANTITY = "quantity"
+  CHANGE_STATUS = "status"
+  SWITCH_PRIORITY = "is_priority"
+  TOGGLE_ARCHIVED = "is_archived"

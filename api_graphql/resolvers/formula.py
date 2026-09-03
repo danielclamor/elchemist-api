@@ -1,42 +1,51 @@
-from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import select
-import models
+from enum import Enum
+
+from sqlalchemy.orm import Session
+from sqlalchemy import select, and_
+import strawberry
 
 from .utils import generate_slug
 
-from api_graphql.types.enums import FeedbackStatus
-from api_graphql.types.feedback import Feedback
-from api_graphql.types.formula import FormulaType, FormulaCreatePayload, FormulaDeletePayload, FormulaUpdatePayload
+from models import Formula, ChillType, NicType
+
+from api_graphql.types.feedback import Feedback, FeedbackStatus
+
+from api_graphql.types.formula import (
+  FormulaType, 
+  FormulaCreatePayload, 
+  FormulaDeletePayload, 
+  FormulaUpdatePayload
+)
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
   from api_graphql.types.formula import (
+    FormulaIdentifierInput,
     FormulaCreateInput,
-    FormulaDeleteInput,
-    FormulaUpdateIdentifier,
     FormulaUpdateInput,
   )
 
 # Queries
-def get_all_formulas(db: Session) -> list[models.Formula]:
+def get_all_formulas(db: Session) -> list[Formula]:
   return (
-    db.scalars(select(models.Formula))
+    db.scalars(select(Formula))
     .unique()
     .all()
   )
   
-def get_formula(db: Session, formula_slug: str) -> models.Formula:
+def get_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula:
   return (
-    db.scalar(select(models.Formula).where(models.Formula.slug == formula_slug))
+    db.scalar(select(Formula).where(identifier.query_condition))
   )
-  
+
 
 # Mutations
-def create_formula(db: Session, formula: "FormulaCreateInput") -> FormulaCreatePayload:
-  slug = generate_slug(string=formula.name)
+def create_formula(db: Session, input: "FormulaCreateInput") -> FormulaCreatePayload:
+  slug = generate_slug(string=input.name)
 
-  existing = db.scalar(select(models.Formula).where(models.Formula.slug == slug))
-  if existing:
+  existing = db.scalar(select(Formula).where(Formula.slug == slug))
+  
+  if existing is not None:
     return FormulaCreatePayload(
       formula=FormulaType.from_model(existing),
       feedback=Feedback(
@@ -45,17 +54,18 @@ def create_formula(db: Session, formula: "FormulaCreateInput") -> FormulaCreateP
       )
     )
 
-  formula = models.Formula(
+  formula = Formula(
     slug=slug,
-    name=formula.name,
-    brand=formula.brand,
-    chill_type=models.ChillType[formula.chill_type.name],
-    nic_type=models.NicType[formula.nic_type.name],
+    name=input.name,
+    brand=input.brand,
+    chill_type=ChillType[input.chill_type.name],
+    nic_type=NicType[input.nic_type.name],
   )
 
   db.add(formula)
   db.commit()
   db.refresh(formula)
+  
   return FormulaCreatePayload(
     formula=FormulaType.from_model(formula),
     feedback=Feedback(
@@ -64,70 +74,77 @@ def create_formula(db: Session, formula: "FormulaCreateInput") -> FormulaCreateP
     )
   )
 
-def delete_formula(db: Session, input: "FormulaDeleteInput") -> FormulaDeletePayload:
-  formula = get_formula(
-    db=db,
-    formula_slug=input.slug
-  )
-
-  if not formula:
+def delete_formula(db: Session, identifier: "FormulaIdentifierInput") -> FormulaDeletePayload:
+  formula = get_formula(db=db, identifier=identifier)
+  
+  if formula is None:
     return FormulaDeletePayload(
       deleted_slug=None,
       deleted_name=None,
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
-        message=f"Formula {input.slug} not found."
+        status=FeedbackStatus.FAILED,
+        message=f"Formula {identifier.provided} not found."
       )
     )
+  
+  slug = formula.slug
+  name = formula.name
 
   db.delete(formula)
   db.commit()
 
   return FormulaDeletePayload(
-    deleted_slug=input.slug,
-    deleted_name=formula.name,
+    deleted_slug=slug,
+    deleted_name=name,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
-      message=None
+      message=None,
     )
   )
   
-def update_formula(db: Session, identifier: "FormulaUpdateIdentifier", formula: "FormulaUpdateInput") -> FormulaUpdatePayload:
-  formula_model = get_formula(
-    db=db,
-    formula_slug=identifier.slug
-  )
-
-  if not formula_model:
+def update_formula(db: Session, identifier: "FormulaIdentifierInput", input: "FormulaUpdateInput") -> FormulaUpdatePayload:
+  formula = get_formula(db=db, identifier=identifier)
+  
+  if formula is None:
     return FormulaUpdatePayload(
       formula=None,
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
-        message=f"Formula {identifier.slug} not found."
+        status=FeedbackStatus.FAILED,
+        message=f"Formula not found."
       )
     )
-
-  if formula.slug:
-    formula_model.slug = formula.slug
-
-  if formula.name:
-    formula_model.name = formula.name
-
-  if formula.brand:
-    formula_model.brand = formula.brand
-
-  if formula.chill_type:
-    formula_model.chill_type = models.ChillType[formula.chill_type.name]
-
-  if formula.nic_type:
-    formula_model.nic_type = models.NicType[formula.nic_type.name]
+  
+  updated_columns = []
+  
+  for attr, value in vars(input).items():
+    current = getattr(formula, attr, None)
+    
+    if value is strawberry.UNSET:
+      continue
+    
+    if isinstance(value, Enum):
+      value = value.name
+      current = current.name if current else None
+      
+    if value != current:
+      setattr(formula, attr, value)
+      db.flush()
+      updated_columns.append(attr)
+      
+  if len(updated_columns) == 0:
+    message = "Nothing to update"
+  else:
+    db.commit()
+    db.refresh(formula)
+    message = f"Updated {', '.join(updated_columns)}"
 
   db.commit()
-  db.refresh(formula_model)
+  db.refresh(formula)
+  
   return FormulaUpdatePayload(
-    formula=FormulaType.from_model(formula_model),
+    formula=FormulaType.from_model(formula),
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
-      message=None
+      message=message
     )
   )

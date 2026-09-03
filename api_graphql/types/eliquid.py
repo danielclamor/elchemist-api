@@ -1,13 +1,23 @@
 from __future__ import annotations
 
-from typing import Annotated, TYPE_CHECKING
+from typing import Annotated, TYPE_CHECKING, Optional
 
+from graphql import GraphQLError
 import strawberry
 from strawberry import relay
 
+from models import Eliquid
+
 from api_graphql.types.feedback import Feedback
-import models
-from api_graphql.types.enums import ChillType, NicType, SizeOption, NicLevelOption, BottleColor
+from api_graphql.types.nic_profile import NicProfileIdentifierInput
+
+from api_graphql.types.enums import (
+  ChillType, 
+  NicType, 
+  SizeOption, 
+  NicLevelOption, 
+  BottleColor
+)
 
 if TYPE_CHECKING:
   from api_graphql.types.nic_profile import NicProfileType
@@ -25,10 +35,10 @@ class EliquidType(relay.Node):
   nic_level: NicLevelOption
   bottle_color: BottleColor
   
-  _model: strawberry.Private["models.Eliquid"]
+  _model: strawberry.Private["Eliquid"]
   
   @classmethod
-  def from_model(cls, e: "models.Eliquid") -> "EliquidType":
+  def from_model(cls, e: "Eliquid") -> "EliquidType":
     return cls(
       id=e.id,
       upc=e.upc,
@@ -56,8 +66,45 @@ class EliquidType(relay.Node):
     return [ProductionOrderType.from_model(o) for o in self._model.production_orders]
 
 @strawberry.input
-class EliquidIdentifier:
-  upc: str
+class EliquidIdentifierInput:
+  id: Optional[relay.GlobalID] = strawberry.UNSET
+  upc: Optional[str] = strawberry.UNSET
+  
+  def __post_init__(self):
+    if any(v is None for v in vars(self).values()):
+      raise GraphQLError(
+        "Identifier fields cannot be null.",
+        extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+      )
+    
+    provided = sum(1 for value in vars(self).values() if value is not strawberry.UNSET)
+    if provided != 1:
+      raise GraphQLError(
+        "Exactly one identifier must be provided.",
+        extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+      )
+    
+    if self.id is not strawberry.UNSET:
+      type_name = self.id.type_name
+      expected_name = EliquidType.__strawberry_definition__.name
+      if type_name != expected_name:
+        raise GraphQLError(
+          f"Expected {expected_name} ID, got {type_name} ID",
+          extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+        )
+  
+  @property
+  def provided(self):
+    return next((a, v) for a, v in vars(self).items() if v is not strawberry.UNSET)
+
+  @property
+  def query_condition(self):
+    attr, value = self.provided
+    
+    if attr == "id":
+      return Eliquid.id == value.node_id
+    else:
+      return getattr(Eliquid, attr) == value
 
 @strawberry.input
 class EliquidCreateInput:
@@ -69,7 +116,7 @@ class EliquidCreateInput:
   size: SizeOption
   nic_level: NicLevelOption
   bottle_color: BottleColor
-  nic_profile_slug: str | None 
+  nic_profile: Optional[NicProfileIdentifierInput] = strawberry.UNSET
   
 @strawberry.type
 class EliquidCreatePayload:
@@ -84,14 +131,14 @@ class EliquidDeletePayload:
 
 @strawberry.input
 class EliquidUpdateInput:
-  upc: str | None = strawberry.UNSET
-  description: str | None = strawberry.UNSET
-  brand: str | None = strawberry.UNSET
-  chill_type: ChillType | None = strawberry.UNSET
-  nic_type: NicType | None = strawberry.UNSET
-  size: SizeOption | None = strawberry.UNSET
-  nic_level: NicLevelOption | None = strawberry.UNSET
-  bottle_color: BottleColor | None = strawberry.UNSET
+  upc: Optional[str] = strawberry.UNSET
+  description: Optional[str] = strawberry.UNSET
+  brand: Optional[str] = strawberry.UNSET
+  chill_type: Optional[ChillType] = strawberry.UNSET
+  nic_type: Optional[NicType] = strawberry.UNSET
+  size: Optional[SizeOption] = strawberry.UNSET
+  nic_level: Optional[NicLevelOption] = strawberry.UNSET
+  bottle_color: Optional[BottleColor] = strawberry.UNSET
   
 @strawberry.type
 class EliquidUpdatePayload:
