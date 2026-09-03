@@ -121,11 +121,14 @@ from api_graphql.resolvers.nic_base_option import (
 )
 
 from api_graphql.resolvers.production_order import (
+  mark_production_order_canceled,
   create_production_order,
   delete_production_order,
+  mark_production_order_delivered,
   get_all_production_orders,
   get_production_order,
-  toggle_production_order_archived,
+  mark_production_order_mixed,
+  set_production_order_archived,
   update_production_order,
 )
 
@@ -508,11 +511,38 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def productionOrderToggleArchived(
+  def productionOrderMarkCanceled(
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput
+  ) -> ProductionOrderUpdatePayload:
+    db = info.context["db"]
+    return mark_production_order_canceled(
+      db=db, identifier=identifier
+    )
+
+  @strawberry.mutation
+  def productionOrderMarkDelivered(
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput
+  ) -> ProductionOrderUpdatePayload:
+    db = info.context["db"]
+    return mark_production_order_delivered(
+      db=db, identifier=identifier
+    )
+  
+  @strawberry.mutation
+  def productionOrderMarkMixed(
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput
+  ) -> ProductionOrderUpdatePayload:
+    db = info.context["db"]
+    return mark_production_order_mixed(
+      db=db, identifier=identifier
+    )
+  
+  @strawberry.mutation
+  def productionOrderSetArchived(
     self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, is_archived: bool
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
-    return toggle_production_order_archived(
+    return set_production_order_archived(
       db=db, identifier=identifier, is_archived=is_archived
     )
   
