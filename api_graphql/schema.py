@@ -129,6 +129,8 @@ from api_graphql.resolvers.production_order import (
   get_production_order,
   mark_production_order_mixed,
   set_production_order_archived,
+  set_production_order_priority,
+  set_production_order_quantity,
   update_production_order,
 )
 
@@ -544,6 +546,24 @@ class Mutation:
     db = info.context["db"]
     return set_production_order_archived(
       db=db, identifier=identifier, is_archived=is_archived
+    )
+  
+  @strawberry.mutation
+  def productionOrderSetPriority(
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, is_priority: bool
+  ) -> ProductionOrderUpdatePayload:
+    db = info.context["db"]
+    return set_production_order_priority(
+      db=db, identifier=identifier, is_priority=is_priority
+    )
+  
+  @strawberry.mutation
+  def productionOrderSetQuantity(
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, quantity: int
+  ) -> ProductionOrderUpdatePayload:
+    db = info.context["db"]
+    return set_production_order_quantity(
+      db=db, identifier=identifier, quantity=quantity
     )
   
   @strawberry.mutation

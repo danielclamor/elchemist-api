@@ -366,6 +366,95 @@ def set_production_order_archived(db: Session, identifier: "ProductionOrderIdent
       message=f"ProductionOrder {po.order_number} {'archived' if po.is_archived else 'unarchived'}"
     )
   )
+
+def set_production_order_priority(db: Session, identifier: "ProductionOrderIdentifierInput", is_priority: bool) -> ProductionOrderUpdatePayload:
+  po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
+  
+  if po is None:
+    return ProductionOrderUpdatePayload(
+      production_order=None,
+      feedback=Feedback(
+        status=FeedbackStatus.FAILED,
+        message=f"ProductionOrder {identifier.provided[1]} not found"
+      )
+    )
+  
+  if po.is_priority == is_priority:
+    return ProductionOrderUpdatePayload(
+      production_order=ProductionOrderType.from_model(po),
+      feedback=Feedback(
+        status=FeedbackStatus.SUCCESS,
+        message=f"ProductionOrder {po.order_number} is already {'priority' if is_priority else 'not priority'}"
+      )
+    )
+    
+  old_value = f"{po.is_priority}"
+  
+  today = get_today("UTC")
+  
+  po.is_priority = is_priority
+  po.updated_at = today
+  db.flush()
+  
+  create_production_order_activity_log(
+    db=db,
+    production_order_id=po.id,
+    activity=ProductionOrderActivity.SWITCH_PRIORITY,
+    triggered_at=today,
+    old_value=old_value,
+    new_value=f"{po.is_priority}",
+  )
+  
+  db.commit()
+  db.refresh(po)
+    
+  return ProductionOrderUpdatePayload(
+    production_order=ProductionOrderType.from_model(po),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=f"ProductionOrder {po.order_number} {'set as priority' if po.is_priority else 'unset as priority'}"
+    )
+  )
+
+def set_production_order_quantity(db: Session, identifier: "ProductionOrderIdentifierInput", quantity: int) -> ProductionOrderUpdatePayload:
+  po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
+  
+  if po is None:
+    return ProductionOrderUpdatePayload(
+      production_order=None,
+      feedback=Feedback(
+        status=FeedbackStatus.FAILED,
+        message=f"ProductionOrder {identifier.provided[1]} not found"
+      )
+    )
+  
+  old_value = f"{po.quantity}"
+  
+  today = get_today("UTC")
+  
+  po.quantity = quantity
+  po.updated_at = today
+  db.flush()
+  
+  create_production_order_activity_log(
+    db=db,
+    production_order_id=po.id,
+    activity=ProductionOrderActivity.ADJUST_QUANTITY,
+    triggered_at=today,
+    old_value=old_value,
+    new_value=f"{po.quantity}",
+  )
+  
+  db.commit()
+  db.refresh(po)
+    
+  return ProductionOrderUpdatePayload(
+    production_order=ProductionOrderType.from_model(po),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=f"ProductionOrder {po.order_number} quantity updated to {po.quantity}"
+    )
+  )
   
 def update_production_order(db: Session, identifier: "ProductionOrderIdentifierInput", input: "ProductionOrderUpdateInput") -> ProductionOrderUpdatePayload:
   po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
