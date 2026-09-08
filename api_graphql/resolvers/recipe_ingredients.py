@@ -29,10 +29,10 @@ def get_recipe_ingredients(db: Session, nic_profile_identifier: "NicProfileIdent
   if nic_profile is None:
     raise GraphQLError(f"NicProfile not found for identifier: {nic_profile_identifier}")
   
-  target_nic_str = nic_profile.target_nic_str
-  target_vg = nic_profile.target_vg
-  target_pg = nic_profile.target_pg
-  nic_base_nic_str = nic_profile.nic_base_nic_str
+  target_nic_str = float(nic_profile.target_nic_str)
+  target_vg = float(nic_profile.target_vg)
+  target_pg = float(nic_profile.target_pg)
+  nic_base_nic_str = float(nic_profile.nic_base_nic_str)
   
   flavoring_ingredients = get_flavoring_ingredients(
     flavorings=nic_profile.flavorings, 
@@ -71,22 +71,23 @@ def get_flavoring_ingredients(flavorings: list[Flavoring], batch_volume_ml: floa
   total_pg_ratio = 0.0
   total_vg_ratio = 0.0
   
-  for flavoring in flavorings:      
-    volume_ml = flavoring.ratio * batch_volume_ml
+  for flavoring in flavorings:
+    flavoring_ratio = float(flavoring.ratio)
+    volume_ml = flavoring_ratio * batch_volume_ml
     
     flavoring_option = flavoring.flavoring_option
     
     if flavoring_option.is_vg is True:
-      total_vg_ratio += flavoring.ratio
+      total_vg_ratio += flavoring_ratio
       weight_g = volume_ml * VG_FLAVOR_DENSITY # vg flavor density
     else:
-      total_pg_ratio += flavoring.ratio
+      total_pg_ratio += flavoring_ratio
       weight_g = volume_ml * PG_FLAVOR_DENSITY # pg flavor density
     
     ingredients.append(
       RecipeIngredientType(
         name=flavoring_option.name,
-        ratio=flavoring.ratio,
+        ratio=flavoring_ratio,
         volume_ml=volume_ml,
         weight_g=weight_g
       )
@@ -112,22 +113,23 @@ def get_nic_base_ingredients(nic_bases: list[NicBase], batch_volume_ml: float, t
   
   for nic_base in nic_bases:
     nic_base_option = nic_base.nic_base_option
+    nic_base_ratio = float(nic_base.ratio)
     
-    nic_base_batch_ratio = (target_nic_str / nic_base_nic_str) * nic_base.ratio
-    nic_batch_ratio = target_nic_str * nic_base.ratio
+    nic_base_batch_ratio = (target_nic_str / nic_base_nic_str) * nic_base_ratio
+    nic_base_nic_batch_ratio = target_nic_str * nic_base_ratio
     
-    nic_base_part_volume_ml = batch_volume_ml * (nic_base_batch_ratio - nic_batch_ratio)
-    nic_base_nic_volume_ml = batch_volume_ml * nic_batch_ratio
+    nic_base_part_volume_ml = batch_volume_ml * (nic_base_batch_ratio - nic_base_nic_batch_ratio)
+    nic_base_nic_volume_ml = batch_volume_ml * nic_base_nic_batch_ratio
     nic_base_batch_volume_ml = nic_base_part_volume_ml + nic_base_nic_volume_ml
     
     nic_base_nic_weight_g = nic_base_nic_volume_ml * NIC_DENSITY
     
     if nic_base_option.is_vg is True:
-      total_vg_ratio += nic_base.ratio
+      total_vg_ratio += nic_base_ratio
       nic_base_vg_part_weight_g = nic_base_part_volume_ml * VG_DENSITY
       nic_base_batch_weight_g = nic_base_nic_weight_g + nic_base_vg_part_weight_g
     else:
-      total_pg_ratio += nic_base.ratio
+      total_pg_ratio += nic_base_ratio
       nic_base_pg_part_weight_g = nic_base_part_volume_ml * PG_DENSITY
       nic_base_batch_weight_g = nic_base_nic_weight_g + nic_base_pg_part_weight_g
     
