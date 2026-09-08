@@ -58,6 +58,11 @@ from api_graphql.types.nic_profile import (
   NicProfileNicBasesBulkRemovePayload,
 )
 
+from api_graphql.types.recipe_ingredients import (
+  RecipeIngredientType,
+  RecipeIngredientsInput,
+)
+
 from api_graphql.types.production_order import (
   ProductionOrderType,
   ProductionOrderIdentifierInput,
@@ -118,6 +123,10 @@ from api_graphql.resolvers.nic_base_option import (
   bulk_delete_nic_base_options,
   get_all_nic_base_options,
   get_nic_base_option,
+)
+
+from api_graphql.resolvers.recipe_ingredients import (
+  get_recipe_ingredients
 )
 
 from api_graphql.resolvers.production_order import (
@@ -269,6 +278,13 @@ class Query:
   ) -> List[NicProfileType]:
     db = info.context["db"]
     return [NicProfileType.from_model(p) for p in get_all_nic_profiles(db)]
+  
+  @strawberry.field
+  def recipeIngredients(
+    self, info: strawberry.Info, nic_profile_identifier: NicProfileIdentifierInput, batch_volume_ml: float
+  ) -> List[RecipeIngredientType]:
+    db = info.context["db"]
+    return get_recipe_ingredients(db=db, nic_profile_identifier=nic_profile_identifier, batch_volume_ml=batch_volume_ml)
   
   @strawberry.field
   def productionOrder(
