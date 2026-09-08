@@ -64,7 +64,7 @@ def get_recipe_ingredients(db: Session, nic_profile_identifier: "NicProfileIdent
     batch_volume_ml=batch_volume_ml
   )
   
-  return nic_base_ingredients.ingredients + flavoring_ingredients.ingredients + [pg_ingredient, vg_ingredient]
+  return nic_base_ingredients.ingredients + flavoring_ingredients.ingredients + [vg_ingredient, pg_ingredient]
 
 def get_flavoring_ingredients(flavorings: list[Flavoring], batch_volume_ml: float) -> RecipeIngredientGroup:
   ingredients = []
