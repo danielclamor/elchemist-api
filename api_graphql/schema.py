@@ -281,10 +281,10 @@ class Query:
   
   @strawberry.field
   def recipeIngredients(
-    self, info: strawberry.Info, nic_profile_identifier: NicProfileIdentifierInput, batch_volume_ml: float
+    self, info: strawberry.Info, nic_profile_identifier: NicProfileIdentifierInput, input: RecipeIngredientsInput
   ) -> List[RecipeIngredientType]:
     db = info.context["db"]
-    return get_recipe_ingredients(db=db, nic_profile_identifier=nic_profile_identifier, batch_volume_ml=batch_volume_ml)
+    return get_recipe_ingredients(db=db, nic_profile_identifier=nic_profile_identifier, input=input)
   
   @strawberry.field
   def productionOrder(
