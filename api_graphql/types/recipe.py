@@ -85,6 +85,29 @@ class RecipeIngredientsOverrideInput:
         extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
       )
 
+    target_pg_provided = self.target_pg is not strawberry.UNSET
+    target_vg_provided = self.target_vg is not strawberry.UNSET    
+    
+    if target_pg_provided != target_vg_provided:
+      raise GraphQLError(
+        "targetPg and targetVg must be provided together",
+        extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+      )
+    
+    if sum([self.target_pg, self.target_vg]) != 1:
+      raise GraphQLError(
+        "sum of targetPg and targetVg must be 1",
+        extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+      )
+      
+    if self.nic_bases is not strawberry.UNSET:
+      total_nic_base_ratio = sum(b.ratio for b in self.nic_bases)
+      if total_nic_base_ratio != 1:
+        raise GraphQLError(
+          "sum of nicBases must be 1",
+          extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+        )
+    
 @strawberry.input
 class RecipeIngredientsFlavoringInput:
   name: str
