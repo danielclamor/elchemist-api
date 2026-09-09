@@ -5,6 +5,8 @@ from typing import Optional
 from graphql import GraphQLError
 import strawberry
 
+from api_graphql.types.nic_profile import NicProfileType
+
 @strawberry.type
 class MixParametersType:
   batch_volume_ml: float
@@ -35,6 +37,7 @@ class RecipeType:
   total_ratio: float
   total_volume_ml: float
   total_weight_g: float
+  nic_profile: NicProfileType
 
 @strawberry.input
 class RecipeInput:

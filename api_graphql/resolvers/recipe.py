@@ -13,6 +13,8 @@ from api_graphql.types.recipe import (
   RecipeIngredientGroup,
 )
 
+from api_graphql.types.nic_profile import NicProfileType
+
 from api_graphql.resolvers.nic_profile import get_nic_profile
 
 from typing import TYPE_CHECKING
@@ -93,6 +95,7 @@ def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput",
     total_ratio=sum(i.ratio for i in ingredients),
     total_volume_ml=sum(i.volume_ml for i in ingredients),
     total_weight_g=sum(i.weight_g for i in ingredients),
+    nic_profile=NicProfileType.from_model(nic_profile)
   )
 
 def get_recipe_ingredients(mix_parameters: MixParametersType) -> list[RecipeIngredientType]:  
