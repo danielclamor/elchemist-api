@@ -32,6 +32,9 @@ class MixParametersNicBases:
 class RecipeType:
   mix_parameters: MixParametersType
   ingredients: list[RecipeIngredientType]
+  total_ratio: float
+  total_volume_ml: float
+  total_weight_g: float
 
 @strawberry.input
 class RecipeInput:
