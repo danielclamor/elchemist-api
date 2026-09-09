@@ -85,7 +85,7 @@ def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput",
       
       setattr(mix_parameters, attr, value)
   
-  ingredients = get_recipe_ingredients(mix_parameters=mix_parameters, input=input)
+  ingredients = get_recipe_ingredients(mix_parameters=mix_parameters)
   
   return RecipeType(
     mix_parameters=mix_parameters,
@@ -95,7 +95,7 @@ def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput",
     total_weight_g=sum(i.weight_g for i in ingredients),
   )
 
-def get_recipe_ingredients(mix_parameters: MixParametersType, input: "RecipeInput") -> list[RecipeIngredientType]:  
+def get_recipe_ingredients(mix_parameters: MixParametersType) -> list[RecipeIngredientType]:  
   flavoring_ingredients = get_flavoring_ingredients(
     flavorings=mix_parameters.flavorings,
     batch_volume_ml=mix_parameters.batch_volume_ml
