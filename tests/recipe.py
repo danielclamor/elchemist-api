@@ -267,6 +267,11 @@ class TestGetRecipeIngredients:
 class TestGetRecipe:
   def test_returns_recipe_with_real_math(self, mocker):
     nic_profile = SimpleNamespace(
+      id=mocker.MagicMock(),
+      slug="test-20mg",
+      name="20MG",
+      is_old_mix=False,
+      is_pre_mix=False,
       target_nic_str=0.02,
       target_vg=0.4,
       target_pg=0.6,
@@ -346,6 +351,11 @@ class TestGetRecipe:
 
   def test_returns_recipe_with_overrides_with_real_math(self, mocker):
     nic_profile = SimpleNamespace(
+      id=mocker.MagicMock(),
+      slug="test-20mg",
+      name="20MG",
+      is_old_mix=False,
+      is_pre_mix=False,
       target_nic_str=0.02,
       target_vg=0.4,
       target_pg=0.6,
@@ -385,11 +395,11 @@ class TestGetRecipe:
     total_vg_nic_base_ratio = sum(b.ratio for b in overrides.nic_bases if b.is_vg is True)
     total_nic_base_ratio = total_pg_nic_base_ratio + total_vg_nic_base_ratio
         
-    expected_pg_ratio = overrides.target_pg - total_pg_flavoring_ratio + (overrides.target_nic_str * (total_pg_nic_base_ratio - overrides.target_pg - (total_pg_nic_base_ratio / overrides.nic_base_nic_str)))
+    expected_pg_ratio = overrides.target_pg - total_pg_flavoring_ratio + (overrides.target_nic_str * (total_pg_nic_base_ratio - overrides.target_pg - (total_pg_nic_base_ratio / nic_profile.nic_base_nic_str)))
     expected_pg_volume = expected_pg_ratio * BATCH_VOLUME
     expected_pg_weight = expected_pg_volume * PG_DENSITY
     
-    expected_vg_ratio = overrides.target_vg - total_vg_flavoring_ratio + (overrides.target_nic_str * (total_vg_nic_base_ratio - overrides.target_vg - (total_vg_nic_base_ratio / overrides.nic_base_nic_str)))
+    expected_vg_ratio = overrides.target_vg - total_vg_flavoring_ratio + (overrides.target_nic_str * (total_vg_nic_base_ratio - overrides.target_vg - (total_vg_nic_base_ratio / nic_profile.nic_base_nic_str)))
     expected_vg_volume = expected_vg_ratio * BATCH_VOLUME
     expected_vg_weight = expected_vg_volume * VG_DENSITY
     
@@ -399,10 +409,10 @@ class TestGetRecipe:
     nic_batch_volume_ml = nic_batch_ratio * BATCH_VOLUME
     nic_batch_weight_g = nic_batch_volume_ml * NIC_DENSITY
     
-    nic_base_pg_volume_ml = (((overrides.target_nic_str / overrides.nic_base_nic_str) - nic_batch_ratio) * total_pg_nic_base_ratio) * BATCH_VOLUME
+    nic_base_pg_volume_ml = (((overrides.target_nic_str / nic_profile.nic_base_nic_str) - nic_batch_ratio) * total_pg_nic_base_ratio) * BATCH_VOLUME
     nic_base_pg_weight_g = nic_base_pg_volume_ml * PG_DENSITY
     
-    nic_base_vg_volume_ml = (((overrides.target_nic_str / overrides.nic_base_nic_str) - nic_batch_ratio) * total_vg_nic_base_ratio) * BATCH_VOLUME
+    nic_base_vg_volume_ml = (((overrides.target_nic_str / nic_profile.nic_base_nic_str) - nic_batch_ratio) * total_vg_nic_base_ratio) * BATCH_VOLUME
     nic_base_vg_weight_g = nic_base_vg_volume_ml * VG_DENSITY
     
     expected_total_nic_base_weight_g = nic_batch_weight_g + nic_base_pg_weight_g + nic_base_vg_weight_g
