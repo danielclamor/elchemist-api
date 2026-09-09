@@ -9,6 +9,7 @@ from api_graphql.types.recipe import (
   MixParametersFlavorings,
   MixParametersNicBases,
   RecipeType,
+  RecipeDiyType,
   RecipeIngredientType,
   RecipeIngredientGroup,
 )
@@ -20,14 +21,14 @@ from api_graphql.resolvers.nic_profile import get_nic_profile
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from api_graphql.types.recipe import RecipeInput
+  from api_graphql.types.recipe import RecipeInput, RecipeDiyInput
   from api_graphql.types.nic_profile import NicProfileIdentifierInput
 
 VG_FLAVOR_DENSITY = 1.16065
 PG_FLAVOR_DENSITY = 1.04865
 VG_DENSITY = 1.26130
 PG_DENSITY = 1.03730
-NIC_DENSITY = 1.00925
+NIC_DENSITY = 1.00925  
 
 def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput", input: "RecipeInput") -> RecipeType:
   nic_profile = get_nic_profile(db=db, identifier=nic_profile_identifier)
@@ -96,6 +97,46 @@ def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput",
     total_volume_ml=sum(i.volume_ml for i in ingredients),
     total_weight_g=sum(i.weight_g for i in ingredients),
     nic_profile=NicProfileType.from_model(nic_profile)
+  )
+
+def get_recipe_diy(input: RecipeDiyInput) -> RecipeDiyType:
+  mix_parameters = MixParametersType(
+    batch_volume_ml=input.batch_volume_ml,
+    target_nic_str=float(input.target_nic_str),
+    target_vg=float(input.target_vg),
+    target_pg=float(input.target_pg),
+    nic_base_nic_str=float(input.nic_base_nic_str),
+    flavorings=[
+      MixParametersFlavorings(
+        name=f.name,
+        is_vg=f.is_vg,
+        ratio=float(f.ratio),
+      ) for f in input.flavorings
+    ],
+    nic_bases=[
+      MixParametersNicBases(
+        code="PG",
+        name="PG",
+        is_vg=False,
+        ratio=float(input.nic_base_pg),
+      ),
+      MixParametersNicBases(
+        code="VG",
+        name="VG",
+        is_vg=True,
+        ratio=float(input.nic_base_vg),
+      ),
+    ],
+  )
+  
+  ingredients = get_recipe_ingredients(mix_parameters=mix_parameters)
+    
+  return RecipeDiyType(
+    mix_parameters=mix_parameters,
+    ingredients=ingredients,
+    total_ratio=sum(i.ratio for i in ingredients),
+    total_volume_ml=sum(i.volume_ml for i in ingredients),
+    total_weight_g=sum(i.weight_g for i in ingredients),
   )
 
 def get_recipe_ingredients(mix_parameters: MixParametersType) -> list[RecipeIngredientType]:  

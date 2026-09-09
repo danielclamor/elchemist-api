@@ -61,6 +61,8 @@ from api_graphql.types.nic_profile import (
 from api_graphql.types.recipe import (
   RecipeType,
   RecipeInput,
+  RecipeDiyType,
+  RecipeDiyInput,
 )
 
 from api_graphql.types.production_order import (
@@ -126,7 +128,8 @@ from api_graphql.resolvers.nic_base_option import (
 )
 
 from api_graphql.resolvers.recipe import (
-  get_recipe
+  get_recipe,
+  get_recipe_diy,
 )
 
 from api_graphql.resolvers.production_order import (
@@ -285,6 +288,12 @@ class Query:
   ) -> RecipeType:
     db = info.context["db"]
     return get_recipe(db=db, nic_profile_identifier=nic_profile_identifier, input=input)
+  
+  @strawberry.field
+  def recipeDiy(
+    self, input: RecipeDiyInput
+  ) -> RecipeDiyType:
+    return get_recipe_diy(input=input)
   
   @strawberry.field
   def productionOrder(

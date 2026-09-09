@@ -45,6 +45,25 @@ class RecipeInput:
   overrides: Optional[RecipeIngredientsOverrideInput] = strawberry.UNSET
 
 @strawberry.type
+class RecipeDiyType:
+  mix_parameters: MixParametersType
+  ingredients: list[RecipeIngredientType]
+  total_ratio: float
+  total_volume_ml: float
+  total_weight_g: float
+
+@strawberry.input
+class RecipeDiyInput:
+  batch_volume_ml: float
+  target_nic_str: float
+  target_pg: float
+  target_vg: float
+  nic_base_nic_str: float
+  flavorings: list[RecipeIngredientsFlavoringInput]
+  nic_base_vg: float
+  nic_base_pg: float
+
+@strawberry.type
 class RecipeIngredientType:
   name: str
   ratio: float
@@ -56,8 +75,8 @@ class RecipeIngredientsOverrideInput:
   target_nic_str: Optional[float] = strawberry.UNSET
   target_pg: Optional[float] = strawberry.UNSET
   target_vg: Optional[float] = strawberry.UNSET
-  flavorings: Optional[list[RecipeIngredientsFlavoringOverrideInput]] = strawberry.UNSET
-  nic_bases: Optional[list[RecipeIngredientsNicBaseOverrideInput]] = strawberry.UNSET
+  flavorings: Optional[list[RecipeIngredientsFlavoringInput]] = strawberry.UNSET
+  nic_bases: Optional[list[RecipeIngredientsNicBaseInput]] = strawberry.UNSET
 
   def __post_init__(self):
     if any(v is None for v in vars(self).values()):
@@ -67,13 +86,13 @@ class RecipeIngredientsOverrideInput:
       )
 
 @strawberry.input
-class RecipeIngredientsFlavoringOverrideInput:
+class RecipeIngredientsFlavoringInput:
   name: str
   is_vg: bool
   ratio: float
   
 @strawberry.input
-class RecipeIngredientsNicBaseOverrideInput:
+class RecipeIngredientsNicBaseInput:
   code: str
   name: str
   is_vg: bool
