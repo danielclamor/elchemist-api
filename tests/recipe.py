@@ -368,7 +368,6 @@ class TestGetRecipe:
       target_nic_str=0.018,
       target_vg=0.35,
       target_pg=0.65,
-      nic_base_nic_str=0.1,
       flavorings=[
         make_flavoring_parameter(ratio=0.25, is_vg=False, name="Flavour 1"),
         make_flavoring_parameter(ratio=0.25, is_vg=False, name="Flavour 2"),
