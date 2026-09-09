@@ -62,6 +62,19 @@ class RecipeDiyInput:
   flavorings: list[RecipeIngredientsFlavoringInput]
   nic_base_vg: float
   nic_base_pg: float
+  
+  def __post_init__(self):
+    if sum([self.target_pg, self.target_vg]) != 1:
+      raise GraphQLError(
+        "sum of targetPg and targetVg must be 1",
+        extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+      )
+      
+    if sum([self.nic_base_pg, self.nic_base_vg]) != 1:
+      raise GraphQLError(
+        "sum of nicBasePg and nicBaseVg must be 1",
+        extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+      )
 
 @strawberry.type
 class RecipeIngredientType:
