@@ -34,7 +34,10 @@ def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput",
   nic_profile = get_nic_profile(db=db, identifier=nic_profile_identifier)
     
   if nic_profile is None:
-    raise GraphQLError(f"NicProfile not found for identifier: {nic_profile_identifier}")
+    raise GraphQLError(
+      f"NicProfile not found for identifier: {nic_profile_identifier.provided[1]}",
+      extensions={"code": "NOT_FOUND"}
+    )
   
   mix_parameters = MixParametersType(
     batch_volume_ml=input.batch_volume_ml,
