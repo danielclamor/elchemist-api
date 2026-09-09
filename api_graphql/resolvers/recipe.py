@@ -4,10 +4,12 @@ from graphql import GraphQLError
 from sqlalchemy.orm import Session
 import strawberry
 
-from types import SimpleNamespace
-
 from api_graphql.types.recipe import (
-  RecipeIngredientType, 
+  MixParametersType,
+  MixParametersFlavorings,
+  MixParametersNicBases,
+  RecipeType,
+  RecipeIngredientType,
   RecipeIngredientGroup,
 )
 
@@ -16,7 +18,7 @@ from api_graphql.resolvers.nic_profile import get_nic_profile
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from api_graphql.types.recipe import RecipeIngredientsInput
+  from api_graphql.types.recipe import RecipeInput
   from api_graphql.types.nic_profile import NicProfileIdentifierInput
 
 VG_FLAVOR_DENSITY = 1.16065
@@ -25,30 +27,27 @@ VG_DENSITY = 1.26130
 PG_DENSITY = 1.03730
 NIC_DENSITY = 1.00925
 
-def _to_namespace(obj, fields):
-  return SimpleNamespace(**{f: getattr(obj, f) for f in fields})
-
-def get_recipe_ingredients(db: Session, nic_profile_identifier: "NicProfileIdentifierInput", input: "RecipeIngredientsInput") -> list[RecipeIngredientType]:
+def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput", input: "RecipeInput") -> RecipeType:
   nic_profile = get_nic_profile(db=db, identifier=nic_profile_identifier)
-  
+    
   if nic_profile is None:
     raise GraphQLError(f"NicProfile not found for identifier: {nic_profile_identifier}")
   
-  mix_parameters = SimpleNamespace(
+  mix_parameters = MixParametersType(
     batch_volume_ml=input.batch_volume_ml,
     target_nic_str=float(nic_profile.target_nic_str),
     target_vg=float(nic_profile.target_vg),
     target_pg=float(nic_profile.target_pg),
     nic_base_nic_str=float(nic_profile.nic_base_nic_str),
     flavorings=[
-      SimpleNamespace(
+      MixParametersFlavorings(
         name=f.flavoring_option.name,
         is_vg=f.flavoring_option.is_vg,
         ratio=float(f.ratio),
       ) for f in nic_profile.flavorings
     ],
     nic_bases=[
-      SimpleNamespace(
+      MixParametersNicBases(
         code=b.nic_base_option.code,
         name=b.nic_base_option.name,
         is_vg=b.nic_base_option.is_vg,
@@ -58,12 +57,22 @@ def get_recipe_ingredients(db: Session, nic_profile_identifier: "NicProfileIdent
   )
   
   if input.overrides is not strawberry.UNSET:
-    FLAVORING_FIELDS = ("name", "is_vg", "ratio")
-    NIC_BASE_FIELDS = ("code", "name", "is_vg", "ratio")
-    
     OVERRIDE_TRANSFORMS = {
-      "flavorings": lambda value: [_to_namespace(v, FLAVORING_FIELDS) for v in value],
-      "nic_bases": lambda value: [_to_namespace(v, NIC_BASE_FIELDS) for v in value],
+      "flavorings": lambda value: [
+        MixParametersFlavorings(
+          name=v.name,
+          is_vg=v.is_vg,
+          ratio=v.ratio
+        ) for v in value
+      ],
+      "nic_bases": lambda value: [
+        MixParametersNicBases(
+          code=v.code,
+          name=v.name,
+          is_vg=v.is_vg,
+          ratio=v.ratio
+        ) for v in value
+      ],
     }
     
     for attr, value in vars(input.overrides).items():
@@ -76,8 +85,16 @@ def get_recipe_ingredients(db: Session, nic_profile_identifier: "NicProfileIdent
       
       setattr(mix_parameters, attr, value)
   
+  ingredients = get_recipe_ingredients(mix_parameters=mix_parameters, input=input)
+  
+  return RecipeType(
+    mix_parameters=mix_parameters,
+    ingredients=ingredients
+  )
+
+def get_recipe_ingredients(mix_parameters: MixParametersType, input: "RecipeInput") -> list[RecipeIngredientType]:  
   flavoring_ingredients = get_flavoring_ingredients(
-    flavorings=mix_parameters.flavorings, 
+    flavorings=mix_parameters.flavorings,
     batch_volume_ml=mix_parameters.batch_volume_ml
   )
   
@@ -108,7 +125,7 @@ def get_recipe_ingredients(db: Session, nic_profile_identifier: "NicProfileIdent
   
   return nic_base_ingredients.ingredients + flavoring_ingredients.ingredients + [vg_ingredient, pg_ingredient]
 
-def get_flavoring_ingredients(flavorings: list[SimpleNamespace], batch_volume_ml: float) -> RecipeIngredientGroup:
+def get_flavoring_ingredients(flavorings: list[MixParametersFlavorings], batch_volume_ml: float) -> RecipeIngredientGroup:
   ingredients = []
   total_pg_ratio = 0.0
   total_vg_ratio = 0.0
@@ -119,10 +136,10 @@ def get_flavoring_ingredients(flavorings: list[SimpleNamespace], batch_volume_ml
     
     if flavoring.is_vg is True:
       total_vg_ratio += flavoring_ratio
-      weight_g = volume_ml * VG_FLAVOR_DENSITY # vg flavor density
+      weight_g = volume_ml * VG_FLAVOR_DENSITY
     else:
       total_pg_ratio += flavoring_ratio
-      weight_g = volume_ml * PG_FLAVOR_DENSITY # pg flavor density
+      weight_g = volume_ml * PG_FLAVOR_DENSITY
     
     ingredients.append(
       RecipeIngredientType(
@@ -139,7 +156,7 @@ def get_flavoring_ingredients(flavorings: list[SimpleNamespace], batch_volume_ml
     total_vg_ratio=total_vg_ratio
   )
 
-def get_nic_base_ingredients(nic_bases: list[SimpleNamespace], batch_volume_ml: float, target_nic_str: float, nic_base_nic_str: float) -> RecipeIngredientGroup:
+def get_nic_base_ingredients(nic_bases: list[MixParametersNicBases], batch_volume_ml: float, target_nic_str: float, nic_base_nic_str: float) -> RecipeIngredientGroup:
   ingredients = []
   total_pg_ratio = 0.0
   total_vg_ratio = 0.0
@@ -192,7 +209,7 @@ def get_pg_ingredient(
 ) -> RecipeIngredientType:
   pg_ratio = target_pg - total_pg_flavoring_batch_ratio + (target_nic_str * (total_pg_nic_base_batch_ratio - target_pg - (total_pg_nic_base_batch_ratio / nic_base_nic_str)))
   volume_ml = pg_ratio * batch_volume_ml
-  weight_g = volume_ml * PG_DENSITY # pg density
+  weight_g = volume_ml * PG_DENSITY
   
   return RecipeIngredientType(
     name="PG",
@@ -206,7 +223,7 @@ def get_vg_ingredient(
 ) -> RecipeIngredientType:
   vg_ratio = target_vg - total_vg_flavoring_batch_ratio + (target_nic_str * (total_vg_nic_base_batch_ratio - target_vg - (total_vg_nic_base_batch_ratio / nic_base_nic_str)))
   volume_ml = vg_ratio * batch_volume_ml
-  weight_g = volume_ml * VG_DENSITY # vg density
+  weight_g = volume_ml * VG_DENSITY
   
   return RecipeIngredientType(
     name="VG",

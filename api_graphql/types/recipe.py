@@ -6,6 +6,39 @@ from graphql import GraphQLError
 import strawberry
 
 @strawberry.type
+class MixParametersType:
+  batch_volume_ml: float
+  target_nic_str: float
+  target_pg: float
+  target_vg: float
+  nic_base_nic_str: float
+  flavorings: list[MixParametersFlavorings]
+  nic_bases: list[MixParametersNicBases]
+  
+@strawberry.type
+class MixParametersFlavorings:
+  name: str
+  is_vg: bool
+  ratio: float
+  
+@strawberry.type
+class MixParametersNicBases:
+  code: str
+  name: str
+  is_vg: bool
+  ratio: float
+
+@strawberry.type
+class RecipeType:
+  mix_parameters: MixParametersType
+  ingredients: list[RecipeIngredientType]
+
+@strawberry.input
+class RecipeInput:
+  batch_volume_ml: float
+  overrides: Optional[RecipeIngredientsOverrideInput] = strawberry.UNSET
+
+@strawberry.type
 class RecipeIngredientType:
   name: str
   ratio: float
@@ -13,17 +46,12 @@ class RecipeIngredientType:
   weight_g: float
 
 @strawberry.input
-class RecipeIngredientsInput:
-  batch_volume_ml: float
-  overrides: Optional[RecipeIngredientsOverrideInput] = strawberry.UNSET
-
-@strawberry.input
 class RecipeIngredientsOverrideInput:
   target_nic_str: Optional[float] = strawberry.UNSET
   target_pg: Optional[float] = strawberry.UNSET
   target_vg: Optional[float] = strawberry.UNSET
-  flavorings: Optional[list[RecipeIngredientsFlavoringsOverrideInput]] = strawberry.UNSET
-  nic_bases: Optional[list[RecipeIngredientsNicBasesOverrideInput]] = strawberry.UNSET
+  flavorings: Optional[list[RecipeIngredientsFlavoringOverrideInput]] = strawberry.UNSET
+  nic_bases: Optional[list[RecipeIngredientsNicBaseOverrideInput]] = strawberry.UNSET
 
   def __post_init__(self):
     if any(v is None for v in vars(self).values()):
@@ -33,13 +61,13 @@ class RecipeIngredientsOverrideInput:
       )
 
 @strawberry.input
-class RecipeIngredientsFlavoringsOverrideInput:
+class RecipeIngredientsFlavoringOverrideInput:
   name: str
   is_vg: bool
   ratio: float
   
 @strawberry.input
-class RecipeIngredientsNicBasesOverrideInput:
+class RecipeIngredientsNicBaseOverrideInput:
   code: str
   name: str
   is_vg: bool
