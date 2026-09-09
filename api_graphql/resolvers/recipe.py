@@ -6,7 +6,7 @@ import strawberry
 
 from types import SimpleNamespace
 
-from api_graphql.types.recipe_ingredients import (
+from api_graphql.types.recipe import (
   RecipeIngredientType, 
   RecipeIngredientGroup,
 )
@@ -16,7 +16,7 @@ from api_graphql.resolvers.nic_profile import get_nic_profile
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-  from api_graphql.types.recipe_ingredients import RecipeIngredientsInput
+  from api_graphql.types.recipe import RecipeIngredientsInput
   from api_graphql.types.nic_profile import NicProfileIdentifierInput
 
 VG_FLAVOR_DENSITY = 1.16065

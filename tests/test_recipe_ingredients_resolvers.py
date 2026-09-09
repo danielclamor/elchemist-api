@@ -2,7 +2,7 @@ from types import SimpleNamespace
  
 import pytest
  
-from api_graphql.resolvers.recipe_ingredients import (
+from api_graphql.resolvers.recipe import (
   get_flavoring_ingredients,
   get_nic_base_ingredients,
   get_pg_ingredient,
@@ -228,7 +228,7 @@ class TestGetRecipeIngredients:
     )
     
     mocker.patch(
-      "api_graphql.resolvers.recipe_ingredients.get_nic_profile",
+      "api_graphql.resolvers.nic_profile.get_nic_profile",
       return_value=nic_profile,
     )
     

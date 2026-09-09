@@ -58,7 +58,7 @@ from api_graphql.types.nic_profile import (
   NicProfileNicBasesBulkRemovePayload,
 )
 
-from api_graphql.types.recipe_ingredients import (
+from api_graphql.types.recipe import (
   RecipeIngredientType,
   RecipeIngredientsInput,
 )
@@ -125,7 +125,7 @@ from api_graphql.resolvers.nic_base_option import (
   get_nic_base_option,
 )
 
-from api_graphql.resolvers.recipe_ingredients import (
+from api_graphql.resolvers.recipe import (
   get_recipe_ingredients
 )
 
