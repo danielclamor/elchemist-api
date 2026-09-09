@@ -11,6 +11,7 @@ from api_graphql.resolvers.recipe import (
   get_vg_ingredient,
   get_recipe_ingredients,
   get_recipe,
+  get_recipe_diy,
 )
 
 VG_FLAVOR_DENSITY = 1.16065
@@ -462,3 +463,77 @@ class TestGetRecipe:
           overrides=strawberry.UNSET
         )
       )
+      
+class TestGetRecipeDiy:
+  def test_returns_recipe_diy_with_real_math(self, mocker):
+    input = SimpleNamespace(
+      batch_volume_ml=BATCH_VOLUME,
+      target_nic_str=0.02,
+      target_vg=0.4,
+      target_pg=0.6,
+      nic_base_nic_str=0.1,
+      flavorings=[
+        make_flavoring_parameter(ratio=0.25, is_vg=False, name="Flavour 1"),
+        make_flavoring_parameter(ratio=0.25, is_vg=False, name="Flavour 2"),
+      ],
+      nic_base_pg=0.0,
+      nic_base_vg=1.0,
+    )
+            
+    total_pg_flavoring_ratio = sum(f.ratio for f in input.flavorings if f.is_vg is False)
+    total_vg_flavoring_ratio = sum(f.ratio for f in input.flavorings if f.is_vg is True)
+    
+    total_pg_nic_base_ratio = input.nic_base_pg
+    total_vg_nic_base_ratio = input.nic_base_vg
+    total_nic_base_ratio = total_pg_nic_base_ratio + total_vg_nic_base_ratio
+        
+    expected_pg_ratio = input.target_pg - total_pg_flavoring_ratio + (input.target_nic_str * (total_pg_nic_base_ratio - input.target_pg - (total_pg_nic_base_ratio / input.nic_base_nic_str)))
+    expected_pg_volume = expected_pg_ratio * BATCH_VOLUME
+    expected_pg_weight = expected_pg_volume * PG_DENSITY
+    
+    expected_vg_ratio = input.target_vg - total_vg_flavoring_ratio + (input.target_nic_str * (total_vg_nic_base_ratio - input.target_vg - (total_vg_nic_base_ratio / input.nic_base_nic_str)))
+    expected_vg_volume = expected_vg_ratio * BATCH_VOLUME
+    expected_vg_weight = expected_vg_volume * VG_DENSITY
+    
+    expected_total_flavoring_weight_g = ((total_pg_flavoring_ratio * BATCH_VOLUME) * PG_FLAVOR_DENSITY) + ((total_vg_flavoring_ratio * BATCH_VOLUME) * VG_FLAVOR_DENSITY)
+    
+    nic_batch_ratio = input.target_nic_str * total_nic_base_ratio
+    nic_batch_volume_ml = nic_batch_ratio * BATCH_VOLUME
+    nic_batch_weight_g = nic_batch_volume_ml * NIC_DENSITY
+    print(nic_batch_weight_g)
+    
+    nic_base_pg_volume_ml = (((input.target_nic_str / input.nic_base_nic_str) - nic_batch_ratio) * total_pg_nic_base_ratio) * BATCH_VOLUME
+    nic_base_pg_weight_g = nic_base_pg_volume_ml * PG_DENSITY
+    print(nic_base_pg_weight_g)
+    
+    nic_base_vg_volume_ml = (((input.target_nic_str / input.nic_base_nic_str) - nic_batch_ratio) * total_vg_nic_base_ratio) * BATCH_VOLUME
+    nic_base_vg_weight_g = nic_base_vg_volume_ml * VG_DENSITY
+    print(nic_base_vg_weight_g)
+    
+    expected_total_nic_base_weight_g = nic_batch_weight_g + nic_base_pg_weight_g + nic_base_vg_weight_g
+    print(expected_total_nic_base_weight_g)
+    
+    result = get_recipe_diy(
+      input=input
+    )
+    
+    ingredients = result.ingredients
+    
+    assert len(ingredients) == 6
+    
+    names = [i.name for i in ingredients]
+    assert "Nic Base (VG)" in names
+    assert "Flavour 1" in names
+    assert "Flavour 2" in names
+    assert "PG" in names
+    assert "VG" in names
+    
+    pg_result = next(i for i in ingredients if i.name == "PG")
+    vg_result = next(i for i in ingredients if i.name == "VG")
+    
+    assert pg_result.weight_g == expected_pg_weight
+    assert vg_result.weight_g == expected_vg_weight
+    
+    assert result.total_ratio == pytest.approx(1)
+    assert result.total_volume_ml == pytest.approx(BATCH_VOLUME)
+    assert result.total_weight_g == expected_total_flavoring_weight_g + expected_total_nic_base_weight_g + expected_pg_weight + expected_vg_weight
