@@ -443,7 +443,7 @@ def set_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifierInpu
   
   if nic_profile is None:
     return NicProfileNicBasesSetPayload(
-      nic_profile=None,
+      nic_profile_nic_bases=None,
       feedback=Feedback(
         status=FeedbackStatus.FAILED,
         message=f"NicProfile {identifier.provided[1]} not found."
@@ -452,7 +452,7 @@ def set_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifierInpu
   
   if len(inputs) == 0:
     return NicProfileNicBasesSetPayload(
-      nic_profile=nic_profile,
+      nic_profile_nic_bases=None,
       feedback=Feedback(
         status=FeedbackStatus.CANCELLED,
         message="Nothing to set"
@@ -466,7 +466,7 @@ def set_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifierInpu
     
     if nic_base_option is None:
       return NicProfileNicBasesSetPayload(
-        nic_profile=nic_profile,
+        nic_profile_nic_bases=None,
         feedback=Feedback(
           status=FeedbackStatus.FAILED,
           message=f"NicBaseOption {input.nic_base_option_identifier.provided[1]} not found."
@@ -484,15 +484,17 @@ def set_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifierInpu
   db.execute(delete(NicBase).where(NicBase.nic_profile_id == nic_profile.id))
   db.flush()
   
+  nic_base_types: list[NicProfileNicBaseType] = []
   for nic_base in nic_bases:
     db.add(nic_base)
     db.flush()
+    nic_base_types.append(NicProfileNicBaseType.from_model(nic_base))
   
   db.commit()
   db.refresh(nic_profile)
   
   return NicProfileNicBasesSetPayload(
-    nic_profile=NicProfileType.from_model(nic_profile),
+    nic_profile_nic_bases=nic_base_types,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=None,

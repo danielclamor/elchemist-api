@@ -268,7 +268,7 @@ class NicProfileNicBaseInput:
 
 @strawberry.type
 class NicProfileNicBasesSetPayload:
-  nic_profile: NicProfileType | None
+  nic_profile_nic_bases: list[NicProfileNicBaseType] | None
   feedback: Feedback
 
 @strawberry.type
