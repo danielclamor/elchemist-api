@@ -144,6 +144,13 @@ class NicProfileCreateInput:
   target_nic_str: float
   target_vg: float
   target_pg: float
+  
+  def __post_init__(self):
+    if sum([self.target_pg, self.target_vg]) != 1:
+      raise GraphQLError(
+        "sum of targetPg and targetVg must be 1",
+        extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+      )
 
 @strawberry.type
 class NicProfileCreatePayload:
