@@ -171,7 +171,7 @@ def delete_production_order(db: Session, identifier: "ProductionOrderIdentifierI
     )
   )
   
-def mark_production_order_canceled(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrderUpdatePayload:
+def mark_production_order_cancelled(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrderUpdatePayload:
   po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
   
   if po is None:

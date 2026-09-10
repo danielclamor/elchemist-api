@@ -135,7 +135,7 @@ from api_graphql.resolvers.recipe import (
 )
 
 from api_graphql.resolvers.production_order import (
-  mark_production_order_canceled,
+  mark_production_order_cancelled,
   create_production_order,
   delete_production_order,
   mark_production_order_delivered,
@@ -549,11 +549,11 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def productionOrderMarkCanceled(
+  def productionOrderMarkCancelled(
     self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
-    return mark_production_order_canceled(
+    return mark_production_order_cancelled(
       db=db, identifier=identifier
     )
 
