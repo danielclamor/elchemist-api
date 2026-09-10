@@ -41,6 +41,7 @@ from api_graphql.types.nic_base_option import (
   NicBaseOptionsBulkDeletePayload,
 )
 from api_graphql.types.nic_profile import (
+  NicProfileNicBasesSetPayload,
   NicProfileType,
   NicProfileIdentifierInput,
   NicProfileCreateInput,
@@ -56,6 +57,13 @@ from api_graphql.types.nic_profile import (
   NicProfileNicBaseIdentifierInput,
   NicProfileNicBasesBulkAddPayload,
   NicProfileNicBasesBulkRemovePayload,
+)
+
+from api_graphql.types.recipe import (
+  RecipeType,
+  RecipeInput,
+  RecipeDiyType,
+  RecipeDiyInput,
 )
 
 from api_graphql.types.production_order import (
@@ -99,6 +107,7 @@ from api_graphql.resolvers.nic_profile import (
   delete_nic_profile,
   get_all_nic_profiles,
   get_nic_profile,
+  set_nic_profile_nic_bases,
   update_nic_profile,
 )
 
@@ -118,6 +127,11 @@ from api_graphql.resolvers.nic_base_option import (
   bulk_delete_nic_base_options,
   get_all_nic_base_options,
   get_nic_base_option,
+)
+
+from api_graphql.resolvers.recipe import (
+  get_recipe,
+  get_recipe_diy,
 )
 
 from api_graphql.resolvers.production_order import (
@@ -269,6 +283,19 @@ class Query:
   ) -> List[NicProfileType]:
     db = info.context["db"]
     return [NicProfileType.from_model(p) for p in get_all_nic_profiles(db)]
+  
+  @strawberry.field
+  def recipe(
+    self, info: strawberry.Info, nic_profile_identifier: NicProfileIdentifierInput, input: RecipeInput
+  ) -> RecipeType:
+    db = info.context["db"]
+    return get_recipe(db=db, nic_profile_identifier=nic_profile_identifier, input=input)
+  
+  @strawberry.field
+  def recipeDiy(
+    self, input: RecipeDiyInput
+  ) -> RecipeDiyType:
+    return get_recipe_diy(input=input)
   
   @strawberry.field
   def productionOrder(
@@ -473,6 +500,15 @@ class Mutation:
   ) -> NicProfileNicBasesBulkAddPayload:
     db = info.context["db"]
     return bulk_add_nic_profile_nic_bases(
+      db=db, identifier=identifier, inputs=nic_bases
+    )
+  
+  @strawberry.mutation
+  def nicProfileNicBasesSet(
+    self, info: strawberry.Info, identifier: NicProfileIdentifierInput, nic_bases: list[NicProfileNicBaseInput]
+  ) -> NicProfileNicBasesSetPayload:
+    db = info.context["db"]
+    return set_nic_profile_nic_bases(
       db=db, identifier=identifier, inputs=nic_bases
     )
   

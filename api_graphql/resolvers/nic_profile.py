@@ -2,8 +2,9 @@ from __future__ import annotations
 from enum import Enum
 import uuid
 
+from graphql import GraphQLError
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, select
+from sqlalchemy import and_, delete, select
 import strawberry
 
 from .utils import generate_slug
@@ -40,6 +41,7 @@ from api_graphql.types.nic_profile import (
   NicProfileNicBasesBulkAddPayload,
   NicProfileNicBasesBulkRemovePayload,
   NicProfileNicBaseRemovePayload,
+  NicProfileNicBasesSetPayload,
 )
 
 from typing import TYPE_CHECKING
@@ -424,6 +426,75 @@ def remove_nic_profile_nic_base(db: Session, identifier: "NicProfileNicBaseIdent
     removed_code=code,
     removed_name=name,
     removed_ratio=ratio,
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=None,
+    )
+  )
+
+def set_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifierInput", inputs: list["NicProfileNicBaseInput"]) -> NicProfileNicBasesSetPayload:
+  if sum(i.ratio for i in inputs) != 1:
+    raise GraphQLError(
+      "sum of nicBases must be 1",
+      extensions={"code": "INPUT_ERROR", "inputObjectType": "[NicProfileNicBaseInput]"}
+    )
+  
+  nic_profile = get_nic_profile(db=db, identifier=identifier)
+  
+  if nic_profile is None:
+    return NicProfileNicBasesSetPayload(
+      nic_profile_nic_bases=None,
+      feedback=Feedback(
+        status=FeedbackStatus.FAILED,
+        message=f"NicProfile {identifier.provided[1]} not found."
+      )
+    )
+  
+  if len(inputs) == 0:
+    return NicProfileNicBasesSetPayload(
+      nic_profile_nic_bases=None,
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message="Nothing to set"
+      )
+    )
+  
+  nic_bases: list[NicBase] = []
+  
+  for input in inputs:
+    nic_base_option = get_nic_base_option(db=db, identifier=input.nic_base_option_identifier)
+    
+    if nic_base_option is None:
+      return NicProfileNicBasesSetPayload(
+        nic_profile_nic_bases=None,
+        feedback=Feedback(
+          status=FeedbackStatus.FAILED,
+          message=f"NicBaseOption {input.nic_base_option_identifier.provided[1]} not found."
+        )
+      )
+    
+    nic_bases.append(
+      NicBase(
+        nic_profile_id=nic_profile.id,
+        nic_base_option_id=nic_base_option.id,
+        ratio=input.ratio,
+      )
+    )
+  
+  db.execute(delete(NicBase).where(NicBase.nic_profile_id == nic_profile.id))
+  db.flush()
+  
+  nic_base_types: list[NicProfileNicBaseType] = []
+  for nic_base in nic_bases:
+    db.add(nic_base)
+    db.flush()
+    nic_base_types.append(NicProfileNicBaseType.from_model(nic_base))
+  
+  db.commit()
+  db.refresh(nic_profile)
+  
+  return NicProfileNicBasesSetPayload(
+    nic_profile_nic_bases=nic_base_types,
     feedback=Feedback(
       status=FeedbackStatus.SUCCESS,
       message=None,

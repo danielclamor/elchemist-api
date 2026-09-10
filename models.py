@@ -137,7 +137,7 @@ class Flavoring(Base):
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="CASCADE"), index=True)
   flavoring_option_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("flavoring_options.id"), index=True)
-  ratio: Mapped[float] = mapped_column(Numeric(6, 4))
+  ratio: Mapped[float] = mapped_column(Numeric(7, 6))
   
   flavoring_option: Mapped["FlavoringOption"] = relationship()
 
@@ -181,7 +181,7 @@ class NicBase(Base):
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="CASCADE"), index=True)
   nic_base_option_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_base_options.id"), index=True)
-  ratio: Mapped[float] = mapped_column(Numeric(6, 4))
+  ratio: Mapped[float] = mapped_column(Numeric(7, 6))
 
   nic_profile: Mapped["NicProfile"] = relationship(back_populates="nic_bases")
   nic_base_option: Mapped["NicBaseOption"] = relationship()
@@ -219,10 +219,10 @@ class NicProfile(Base):
 
   is_old_mix: Mapped[bool] = mapped_column(Boolean, default=False)
 
-  target_nic_str: Mapped[float] = mapped_column(Numeric(6, 3))
-  target_vg: Mapped[float] = mapped_column(Numeric(6, 3))
-  target_pg: Mapped[float] = mapped_column(Numeric(6, 3))
-  nic_base_nic_str: Mapped[float] = mapped_column(Numeric(6, 3))
+  target_nic_str: Mapped[float] = mapped_column(Numeric(7, 6))
+  target_vg: Mapped[float] = mapped_column(Numeric(7, 6))
+  target_pg: Mapped[float] = mapped_column(Numeric(7, 6))
+  nic_base_nic_str: Mapped[float] = mapped_column(Numeric(7, 6))
 
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
