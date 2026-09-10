@@ -37,7 +37,7 @@ class ProductionOrderActivityLogType(relay.Node):
 class ProductionOrderType(relay.Node):
   id: relay.NodeID[str]
   order_number: str
-  quantity: int
+  quantity: int | None
   status: ProductionOrderStatus
   is_priority: bool
   created_at: datetime

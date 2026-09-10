@@ -278,7 +278,7 @@ class ProductionOrder(Base):
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   order_number: Mapped[str] = mapped_column(String(20), unique=True, index=True)
   eliquid_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("eliquids.id"), index=True)
-  quantity: Mapped[int] = mapped_column()
+  quantity: Mapped[int] = mapped_column(nullable=True)
   status: Mapped[ProductionOrderStatus] = mapped_column(production_order_status_enum, default=ProductionOrderStatus.PENDING)
   is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
   is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
