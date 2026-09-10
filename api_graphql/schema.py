@@ -41,6 +41,7 @@ from api_graphql.types.nic_base_option import (
   NicBaseOptionsBulkDeletePayload,
 )
 from api_graphql.types.nic_profile import (
+  NicProfileNicBasesSetPayload,
   NicProfileType,
   NicProfileIdentifierInput,
   NicProfileCreateInput,
@@ -106,6 +107,7 @@ from api_graphql.resolvers.nic_profile import (
   delete_nic_profile,
   get_all_nic_profiles,
   get_nic_profile,
+  set_nic_profile_nic_bases,
   update_nic_profile,
 )
 
@@ -498,6 +500,15 @@ class Mutation:
   ) -> NicProfileNicBasesBulkAddPayload:
     db = info.context["db"]
     return bulk_add_nic_profile_nic_bases(
+      db=db, identifier=identifier, inputs=nic_bases
+    )
+  
+  @strawberry.mutation
+  def nicProfileNicBasesSet(
+    self, info: strawberry.Info, identifier: NicProfileIdentifierInput, nic_bases: list[NicProfileNicBaseInput]
+  ) -> NicProfileNicBasesSetPayload:
+    db = info.context["db"]
+    return set_nic_profile_nic_bases(
       db=db, identifier=identifier, inputs=nic_bases
     )
   
