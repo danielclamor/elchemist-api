@@ -1,6 +1,7 @@
 import enum
 import uuid
 from datetime import datetime, date
+from decimal import Decimal
 
 from sqlalchemy import (
   Boolean,
@@ -15,6 +16,8 @@ from sqlalchemy import (
   func,
   text,
 )
+
+from sqlalchemy.dialects.postgresql import JSONB
 
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -264,6 +267,14 @@ class ProductionOrderStatus(enum.Enum):
 production_order_status_enum = Enum(ProductionOrderStatus, name="productionorderstatus")
 
 
+class ProductionOrderJob(enum.Enum):
+  MIX = "mix"
+  REPAT = "repat"
+
+
+production_order_job_enum = Enum(ProductionOrderJob, name="productionorderjob")
+
+
 class ProductionOrder(Base):
   __tablename__ = "production_orders"
   
@@ -280,6 +291,7 @@ class ProductionOrder(Base):
   eliquid_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("eliquids.id"), index=True)
   quantity: Mapped[int] = mapped_column(nullable=True)
   status: Mapped[ProductionOrderStatus] = mapped_column(production_order_status_enum, default=ProductionOrderStatus.PENDING)
+  job: Mapped[ProductionOrderJob] = mapped_column(production_order_job_enum, nullable=True)
   is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
   is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -290,6 +302,14 @@ class ProductionOrder(Base):
   eliquid: Mapped["Eliquid"] = relationship(back_populates="production_orders")
   
   activity_logs: Mapped[list["ProductionOrderActivityLog"]] = relationship(
+    back_populates="production_order", cascade="all, delete-orphan"
+  )
+  
+  production_order_repat_jobs: Mapped[list["ProductionOrderRepatJob"]] = relationship(
+    back_populates="production_order", cascade="all, delete-orphan"
+  )
+  
+  production_order_mix_jobs: Mapped[list["ProductionOrderMixJob"]] = relationship(
     back_populates="production_order", cascade="all, delete-orphan"
   )
 
@@ -303,6 +323,7 @@ class ProductionOrderActivity(enum.Enum):
   CHANGE_STATUS = "status"
   SWITCH_PRIORITY = "is_priority"
   TOGGLE_ARCHIVED = "is_archived"
+  ASSIGN_JOB = "job"
 
 
 production_order_activity_enum = Enum(ProductionOrderActivity, name="productionorderactivity")
@@ -321,4 +342,94 @@ class ProductionOrderActivityLog(Base):
   production_order: Mapped["ProductionOrder"] = relationship(back_populates="activity_logs")
   
   def __repr__(self) -> str:
-    return f"<ProductionOrderActivityLog {self.order_number!r} production_order={self.production_order.order_number!r} activity={self.activity} old_value={self.old_value} new_value={self.new_value}>"
+    return f"<ProductionOrderActivityLog {self.production_order.order_number!r} activity={self.activity} old_value={self.old_value} new_value={self.new_value}>"
+  
+
+class ProductionOrderRepatJobStatus(enum.Enum):
+  CANCELLED = "cancelled"
+  COMPLETED = "completed"
+  IN_PROGRESS = "in_progress"
+  REASSIGNED = "reassigned"
+
+
+production_order_repat_job_status_enum = Enum(ProductionOrderRepatJobStatus, name="productionorderjobstatus")
+
+
+class ProductionOrderRepatJob(Base):
+  __tablename__ = "production_order_repat_jobs"
+  
+  __table_args__ = (
+    Index(
+      "ix_production_order_repat_jobs_one_active_per_order",
+      "production_order_id",
+      unique=True,
+      postgresql_where=text("status = 'IN_PROGRESS'")
+    ),
+  )
+  
+  id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+  production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
+  ordered_quantity: Mapped[int] = mapped_column(nullable=True)
+  incoming_quantity: Mapped[int] = mapped_column(nullable=True)
+  status: Mapped[ProductionOrderRepatJobStatus] = mapped_column(production_order_repat_job_status_enum, default=ProductionOrderRepatJobStatus.IN_PROGRESS)
+  created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+  updated_at: Mapped[datetime] = mapped_column(
+    DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+  )
+  
+  production_order: Mapped["ProductionOrder"] = relationship(back_populates="production_order_repat_jobs")
+  
+  @property
+  def production_order_number(self):
+    return self.production_order.order_number
+  
+  def __repr__(self):
+    return f"<ProductionOrderRepatriation {self.production_order_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
+
+
+class ProductionOrderMixJobStatus(enum.Enum):
+  CANCELLED = "cancelled"
+  COMPLETED = "completed"
+  IN_PROGRESS = "in_progress"
+  MIXED = "mixed"
+  REASSIGNED = "reassigned"
+  
+  
+production_order_mix_job_status_enum = Enum(ProductionOrderMixJobStatus, name="productionordermixjobstatus")
+
+
+class ProductionOrderMixJob(Base):
+  __tablename__ = "production_order_mix_jobs"
+  
+  __table_args__ = (
+    Index(
+      "ix_production_order_mix_jobs_one_active_per_order",
+      "production_order_id",
+      unique=True,
+      postgresql_where=text("status = 'IN_PROGRESS'")
+    ),
+  )
+  
+  id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+  production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
+  ordered_quantity: Mapped[int] = mapped_column()
+  produced_quantity: Mapped[int] = mapped_column(nullable=True)
+  batch_number: Mapped[str] = mapped_column(nullable=True)
+  recipe_snapshot: Mapped[dict] = mapped_column(JSONB)
+  total_volume_ml: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+  total_weight_g: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+  status: Mapped[ProductionOrderMixJobStatus] = mapped_column(production_order_mix_job_status_enum, default=ProductionOrderMixJobStatus.IN_PROGRESS)
+  is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
+  created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+  updated_at: Mapped[datetime] = mapped_column(
+    DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+  )
+  
+  production_order: Mapped["ProductionOrder"] = relationship(back_populates="production_order_mix_jobs")
+  
+  @property
+  def production_order_number(self):
+    return self.production_order.order_number
+  
+  def __repr__(self):
+    return f"<ProductionOrderMix {self.production_order_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
