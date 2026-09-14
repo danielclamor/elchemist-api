@@ -53,3 +53,4 @@ class ProductionOrderActivity(enum.Enum):
   CHANGE_STATUS = "status"
   SWITCH_PRIORITY = "is_priority"
   TOGGLE_ARCHIVED = "is_archived"
+  ASSIGN_JOB = "job"
