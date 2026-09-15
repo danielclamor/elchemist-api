@@ -40,12 +40,14 @@ class ChillType(enum.Enum):
   NON_CHILLED = "non-chilled"
 
 
+chill_type_enum = Enum(ChillType, name="chilltype")
+
+
 class NicType(enum.Enum):
   FREEBASE = "freebase"
   SALT = "salt"
 
 
-chill_type_enum = Enum(ChillType, name="chilltype")
 nic_type_enum = Enum(NicType, name="nictype")
 
 
@@ -53,6 +55,9 @@ class SizeOption(enum.Enum):
   ML_30 = "30ml"
   ML_60 = "60ml"
   ML_120 = "120ml"
+
+
+size_option_enum = Enum(SizeOption, name="sizeoption")
 
 
 class NicLevelOption(enum.Enum):
@@ -69,7 +74,6 @@ class NicLevelOption(enum.Enum):
   HIT_50 = "hit50"
 
 
-size_option_enum = Enum(SizeOption, name="sizeoption")
 nic_level_option_enum = Enum(NicLevelOption, name="nicleveloption")
 
 
