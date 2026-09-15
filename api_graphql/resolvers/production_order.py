@@ -108,8 +108,10 @@ def assign_production_order_to_repat_job(db: Session, production_order: Producti
   return ProductionOrderRepatJobType.from_model(po_job)
     
 def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentifierInput", job: "ProductionOrderJob") -> ProductionOrderUpdatePayload:
-  po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
+  job = ProductionOrderJob[job.name]
   
+  po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
+
   if po is None:
     return ProductionOrderUpdatePayload(
       production_order=None,
@@ -119,43 +121,61 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
       )
     )
   
-  today = get_today()
-  created_at_utc = today.astimezone(ZoneInfo("UTC"))
-  
-  old_job = f"{po.job.name}" if po.job.name is not None else None
-  
-  if job == ProductionOrderJob.MIX:
-    assign_production_order_to_mix_job(
-      db=db,
-      production_order=po,
-      created_at=created_at_utc,
-    )
-    new_job = f"{ProductionOrderJob.MIX.name}"
-  elif job == ProductionOrderJob.REPAT:
-    assign_production_order_to_repat_job(
-      db=db,
-      production_order=po,
-      created_at=created_at_utc,
-    )
-    new_job = f"{ProductionOrderJob.REPAT.name}"
-  else:
+  if po.job == job:
     return ProductionOrderUpdatePayload(
-      production_order=None,
+      production_order=po,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
-        message="Job type not supported"
+        status=FeedbackStatus.CANCELLED,
+        message=f"ProductionOrder {identifier.provided[1]} is already assigned to {job.name}"
       )
     )
   
-  po.job = new_job
+  today = get_today()
+  created_at_utc = today.astimezone(ZoneInfo("UTC"))
+  
+  new_job = job.name
+  
+  if po.job is None:
+    old_job = None
+
+    if job == ProductionOrderJob.MIX:
+      assign_production_order_to_mix_job(
+        db=db,
+        production_order=po,
+        created_at=created_at_utc,
+      )
+    elif job == ProductionOrderJob.REPAT:
+      assign_production_order_to_repat_job(
+        db=db,
+        production_order=po,
+        created_at=created_at_utc,
+      )
+    else:
+      return ProductionOrderUpdatePayload(
+        production_order=None,
+        feedback=Feedback(
+          status=FeedbackStatus.FAILED,
+          message="Job type not supported"
+        )
+      )      
+  else:
+    return ProductionOrderUpdatePayload(
+      production_order=po,
+      feedback=Feedback(
+        status=FeedbackStatus.CANCELLED,
+        message=f"ProductionOrder {identifier.provided[1]} is already assigned to {po.job.name}"
+      )
+    )
+    
+  po.job = job
   
   create_production_order_activity_log(
     db=db, 
     production_order_id=po.id,
     activity=ProductionOrderActivity.ASSIGN_JOB,
     triggered_at=created_at_utc,
-    old_value=old_job,
-    new_value=new_job
+    old_value=f"{old_job}",
+    new_value=f"{new_job}"
   )
   
   db.commit()

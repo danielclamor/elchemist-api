@@ -13,6 +13,7 @@ from api_graphql.types.eliquid import (
   EliquidUpdateInput, 
   EliquidUpdatePayload,
 )
+from api_graphql.types.enums import ProductionOrderJob
 from api_graphql.types.flavoring_option import (
   FlavoringOptionsBulkDeletePayload,
   FlavoringOptionDeletePayload,
@@ -139,16 +140,17 @@ from api_graphql.resolvers.recipe import (
 )
 
 from api_graphql.resolvers.production_order import (
+  assign_production_order_job,
+  create_production_order,
+  delete_production_order,
+  get_all_production_orders,
   get_all_production_order_mix_jobs,
   get_all_production_order_repat_jobs,
+  get_production_order,
   get_production_order_mix_job,
   get_production_order_repat_job,
   mark_production_order_cancelled,
-  create_production_order,
-  delete_production_order,
   mark_production_order_delivered,
-  get_all_production_orders,
-  get_production_order,
   mark_production_order_mixed,
   set_production_order_archived,
   set_production_order_priority,
@@ -566,6 +568,15 @@ class Mutation:
     db = info.context["db"]
     return update_nic_profile(
       db=db, identifier=identifier, nic_profile=nic_profile
+    )
+    
+  @strawberry.mutation
+  def productionOrderAssignJob(
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, job: ProductionOrderJob
+  ) -> ProductionOrderUpdatePayload:
+    db = info.context["db"]
+    return assign_production_order_job(
+      db=db, identifier=identifier, job=job
     )
 
   @strawberry.mutation
