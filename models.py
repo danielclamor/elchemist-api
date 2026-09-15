@@ -370,6 +370,7 @@ class ProductionOrderRepatJob(Base):
   
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
+  production_order_number: Mapped[str] = mapped_column(String(20), index=True)
   ordered_quantity: Mapped[int] = mapped_column(nullable=True)
   incoming_quantity: Mapped[int] = mapped_column(nullable=True)
   status: Mapped[ProductionOrderRepatJobStatus] = mapped_column(production_order_repat_job_status_enum, default=ProductionOrderRepatJobStatus.IN_PROGRESS)
@@ -379,10 +380,6 @@ class ProductionOrderRepatJob(Base):
   )
   
   production_order: Mapped["ProductionOrder"] = relationship(back_populates="production_order_repat_jobs")
-  
-  @property
-  def production_order_number(self):
-    return self.production_order.order_number
   
   def __repr__(self):
     return f"<ProductionOrderRepatriation {self.production_order_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
@@ -413,6 +410,7 @@ class ProductionOrderMixJob(Base):
   
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
+  production_order_number: Mapped[str] = mapped_column(String(20), index=True)
   ordered_quantity: Mapped[int] = mapped_column()
   produced_quantity: Mapped[int] = mapped_column(nullable=True)
   batch_number: Mapped[str] = mapped_column(nullable=True)
@@ -427,10 +425,6 @@ class ProductionOrderMixJob(Base):
   )
   
   production_order: Mapped["ProductionOrder"] = relationship(back_populates="production_order_mix_jobs")
-  
-  @property
-  def production_order_number(self):
-    return self.production_order.order_number
   
   def __repr__(self):
     return f"<ProductionOrderMix {self.production_order_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
