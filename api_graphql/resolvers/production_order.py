@@ -14,6 +14,9 @@ from zoneinfo import ZoneInfo
 from models import (
   Eliquid,
   ProductionOrder,
+  ProductionOrderJob,
+  ProductionOrderMixJob,
+  ProductionOrderRepatJob,
   ProductionOrderStatus,
   ProductionOrderActivityLog,
   ProductionOrderActivity,
@@ -25,6 +28,8 @@ from api_graphql.types.feedback import Feedback, FeedbackStatus
 from api_graphql.types.eliquid import EliquidIdentifierInput
 
 from api_graphql.types.production_order import (
+  ProductionOrderMixJobType,
+  ProductionOrderRepatJobType,
   ProductionOrderType,
   ProductionOrderCreatePayload,
   ProductionOrderDeletePayload,
@@ -35,6 +40,8 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
   from api_graphql.types.production_order import (
     ProductionOrderIdentifierInput,
+    ProductionOrderMixJobIdentifierInput,
+    ProductionOrderRepatJobIdentifierInput,
     ProductionOrderCreateInput,
     ProductionOrderUpdateInput,
   )
@@ -47,13 +54,122 @@ def get_all_production_orders(db: Session) -> list[ProductionOrder]:
     db.scalars(select(ProductionOrder)).unique().all()
   )
 
-def get_production_order(db: Session, identifier: ProductionOrderIdentifierInput) -> ProductionOrder:
+def get_all_production_order_mix_jobs(db: Session) -> list[ProductionOrderMixJob]:
+  return (
+    db.scalars(select(ProductionOrderMixJob)).unique().all()
+  )
+  
+def get_all_production_order_repat_jobs(db: Session) -> list[ProductionOrderRepatJob]:
+  return (
+    db.scalars(select(ProductionOrderRepatJob)).unique().all()
+  )
+
+def get_production_order(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrder:
   return (
     db.scalar(select(ProductionOrder).where(identifier.query_condition))
   )
+  
+def get_production_order_mix_job(db: Session, identifier: "ProductionOrderMixJobIdentifierInput") -> ProductionOrderMixJob:
+  return (
+    db.scalar(select(ProductionOrderMixJob).where(identifier.query_condition))
+  )
 
+def get_production_order_repat_job(db: Session, identifier: "ProductionOrderRepatJobIdentifierInput") -> ProductionOrderRepatJob:
+  return (
+    db.scalar(select(ProductionOrderRepatJob).where(identifier.query_condition))
+  )
 
 # Mutations
+def assign_production_order_to_mix_job(db: Session, production_order: ProductionOrder, created_at: datetime) -> ProductionOrderMixJobType:
+  po_job = ProductionOrderMixJob(
+    production_order_id=production_order.id,
+    ordered_quantity=production_order.quantity,
+    is_priority=production_order.is_priority,
+    created_at=created_at,
+    updated_at=created_at,
+  )
+  
+  db.add(po_job)
+  db.flush()
+  
+  return ProductionOrderMixJobType.from_model(po_job)
+
+def assign_production_order_to_repat_job(db: Session, production_order: ProductionOrder, created_at: datetime) -> ProductionOrderRepatJobType:
+  po_job = ProductionOrderRepatJob(
+    production_order_id=production_order.id,
+    ordered_quantity=production_order.quantity,
+    created_at=created_at,
+    updated_at=created_at,
+  )
+  
+  db.add(po_job)
+  db.flush()
+  
+  return ProductionOrderRepatJobType.from_model(po_job)
+    
+def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentifierInput", job: "ProductionOrderJob") -> ProductionOrderUpdatePayload:
+  po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
+  
+  if po is None:
+    return ProductionOrderUpdatePayload(
+      production_order=None,
+      feedback=Feedback(
+        status=FeedbackStatus.FAILED,
+        message=f"ProductionOrder {identifier.provided[1]} not found"
+      )
+    )
+  
+  today = get_today()
+  created_at_utc = today.astimezone(ZoneInfo("UTC"))
+  
+  old_job = f"{po.job.name}" if po.job.name is not None else None
+  
+  if job == ProductionOrderJob.MIX:
+    assign_production_order_to_mix_job(
+      db=db,
+      production_order=po,
+      created_at=created_at_utc,
+    )
+    new_job = f"{ProductionOrderJob.MIX.name}"
+  elif job == ProductionOrderJob.REPAT:
+    assign_production_order_to_repat_job(
+      db=db,
+      production_order=po,
+      created_at=created_at_utc,
+    )
+    new_job = f"{ProductionOrderJob.REPAT.name}"
+  else:
+    return ProductionOrderUpdatePayload(
+      production_order=None,
+      feedback=Feedback(
+        status=FeedbackStatus.FAILED,
+        message="Job type not supported"
+      )
+    )
+  
+  po.job = new_job
+  
+  create_production_order_activity_log(
+    db=db, 
+    production_order_id=po.id,
+    activity=ProductionOrderActivity.ASSIGN_JOB,
+    triggered_at=created_at_utc,
+    old_value=old_job,
+    new_value=new_job
+  )
+  
+  db.commit()
+  db.refresh(po)
+  
+  return ProductionOrderUpdatePayload(
+    production_order=ProductionOrderType.from_model(po),
+    feedback=Feedback(
+      status=FeedbackStatus.SUCCESS,
+      message=f"Assigned to {new_job.name}"
+    )
+  )
+
+
 def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierInput", input: "ProductionOrderCreateInput") -> ProductionOrderCreatePayload: 
   eliquid = db.scalar(select(Eliquid).where(eliquid_identifier.query_condition))
   

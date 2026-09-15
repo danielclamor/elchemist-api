@@ -67,6 +67,10 @@ from api_graphql.types.recipe import (
 )
 
 from api_graphql.types.production_order import (
+  ProductionOrderMixJobIdentifierInput,
+  ProductionOrderMixJobType,
+  ProductionOrderRepatJobIdentifierInput,
+  ProductionOrderRepatJobType,
   ProductionOrderType,
   ProductionOrderIdentifierInput,
   ProductionOrderCreateInput,
@@ -135,6 +139,10 @@ from api_graphql.resolvers.recipe import (
 )
 
 from api_graphql.resolvers.production_order import (
+  get_all_production_order_mix_jobs,
+  get_all_production_order_repat_jobs,
+  get_production_order_mix_job,
+  get_production_order_repat_job,
   mark_production_order_cancelled,
   create_production_order,
   delete_production_order,
@@ -299,10 +307,11 @@ class Query:
   
   @strawberry.field
   def productionOrder(
-    self, info: strawberry.Info, order_number: str,
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput
   ) -> ProductionOrderType:
     db = info.context["db"]
-    return ProductionOrderType.from_model(get_production_order(db, order_number=order_number))
+    o = get_production_order(db, identifier=identifier)
+    return ProductionOrderType.from_model(o) if o else None
   
   @relay.connection(relay.ListConnection[ProductionOrderType])
   def productionOrders(
@@ -311,6 +320,35 @@ class Query:
     db = info.context["db"]
     return [ProductionOrderType.from_model(po) for po in get_all_production_orders(db)]
 
+  @strawberry.field
+  def productionOrderMixJob(
+    self, info: strawberry.Info, identifier: ProductionOrderMixJobIdentifierInput
+  ) -> ProductionOrderMixJobType:
+    db = info.context["db"]
+    j = get_production_order_mix_job(db, identifier=identifier)
+    return ProductionOrderMixJobType.from_model(j) if j else None
+
+  @relay.connection(relay.ListConnection[ProductionOrderMixJobType])
+  def productionOrderMixJobs(
+    self, info: strawberry.Info,
+  ) -> List[ProductionOrderMixJobType]:
+    db = info.context["db"]
+    return [ProductionOrderMixJobType.from_model(j) for j in get_all_production_order_mix_jobs(db)]
+
+  @strawberry.field
+  def productionOrderRepatJob(
+    self, info: strawberry.Info, identifier: ProductionOrderRepatJobIdentifierInput
+  ) -> ProductionOrderRepatJobType:
+    db = info.context["db"]
+    j = get_production_order_repat_job(db, identifier=identifier)
+    return ProductionOrderRepatJobType.from_model(j) if j else None
+
+  @relay.connection(relay.ListConnection[ProductionOrderRepatJobType])
+  def productionOrderRepatJobs(
+    self, info: strawberry.Info,
+  ) -> List[ProductionOrderRepatJobType]:
+    db = info.context["db"]
+    return [ProductionOrderRepatJobType.from_model(j) for j in get_all_production_order_repat_jobs(db)]
 
 @strawberry.type
 class Mutation:

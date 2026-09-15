@@ -54,3 +54,23 @@ class ProductionOrderActivity(enum.Enum):
   SWITCH_PRIORITY = "is_priority"
   TOGGLE_ARCHIVED = "is_archived"
   ASSIGN_JOB = "job"
+  
+@strawberry.enum
+class ProductionOrderJob(enum.Enum):
+  MIX = "mix"
+  REPAT = "repat"
+ 
+@strawberry.enum
+class ProductionOrderRepatJobStatus(enum.Enum):
+  CANCELLED = "cancelled"
+  COMPLETED = "completed"
+  IN_PROGRESS = "in_progress"
+  REASSIGNED = "reassigned" 
+
+@strawberry.enum
+class ProductionOrderMixJobStatus(enum.Enum):
+  CANCELLED = "cancelled"
+  COMPLETED = "completed"
+  IN_PROGRESS = "in_progress"
+  MIXED = "mixed"
+  REASSIGNED = "reassigned"
