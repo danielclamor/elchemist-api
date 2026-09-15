@@ -4,7 +4,7 @@ from models import FlavoringOption
 
 from api_graphql.resolvers.utils import generate_slug
 
-from api_graphql.types.feedback import Feedback, FeedbackStatus
+from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 
 from api_graphql.types.flavoring_option import (
   FlavoringOptionType,
@@ -44,7 +44,7 @@ def create_flavoring_option(db: Session, input: "FlavoringOptionCreateInput") ->
     return FlavoringOptionCreatePayload(
       flavoring_option=FlavoringOptionType.from_model(existing),
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message=f"FlavoringOption {existing.slug} already exists.",
       )
     )
@@ -62,7 +62,7 @@ def create_flavoring_option(db: Session, input: "FlavoringOptionCreateInput") ->
   return FlavoringOptionCreatePayload(
     flavoring_option=FlavoringOptionType.from_model(flavoring_option),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -72,7 +72,7 @@ def bulk_create_flavoring_options(db: Session, inputs: list["FlavoringOptionCrea
     return FlavoringOptionsBulkCreatePayload(
       flavoring_options=[],
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message="Nothing to add.",
       )
     )
@@ -85,7 +85,7 @@ def bulk_create_flavoring_options(db: Session, inputs: list["FlavoringOptionCrea
   return FlavoringOptionsBulkCreatePayload(
     flavoring_options=flavoring_options,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -98,7 +98,7 @@ def delete_flavoring_option(db: Session, identifier: "FlavoringOptionIdentifierI
       deleted_slug=None,
       deleted_name=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"FlavoringOption {identifier.provided[1]} not found."
       )
     )
@@ -110,7 +110,7 @@ def delete_flavoring_option(db: Session, identifier: "FlavoringOptionIdentifierI
     deleted_slug=flavoring_option.slug,
     deleted_name=flavoring_option.name,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -120,7 +120,7 @@ def bulk_delete_flavoring_options(db: Session, identifiers: list["FlavoringOptio
     return FlavoringOptionsBulkDeletePayload(
       deleted=[],
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message="Nothing to delete.",
       )
     )
@@ -133,7 +133,7 @@ def bulk_delete_flavoring_options(db: Session, identifiers: list["FlavoringOptio
   return FlavoringOptionsBulkDeletePayload(
     deleted=deleted,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )

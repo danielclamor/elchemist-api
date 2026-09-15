@@ -3,12 +3,12 @@ import enum
 import strawberry
 
 @strawberry.enum
-class FeedbackStatus(enum.Enum):
+class FeedbackStatusEnum(enum.Enum):
   SUCCESS = "success"
   FAILED = "failed"
   CANCELLED = "cancelled"
 
 @strawberry.type
 class Feedback:
-  status: FeedbackStatus
+  status: FeedbackStatusEnum
   message: str | None = None

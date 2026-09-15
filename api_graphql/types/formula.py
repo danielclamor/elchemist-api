@@ -9,7 +9,7 @@ from strawberry import relay
 
 from models import Formula, ChillType, NicType
 
-from api_graphql.types.enums import ChillType, NicType
+from api_graphql.types.enums import ChillTypeEnum, NicTypeEnum
 from api_graphql.types.feedback import Feedback
 
 if TYPE_CHECKING:
@@ -22,8 +22,8 @@ class FormulaType(relay.Node):
   slug: str
   name: str
   brand: str
-  chill_type: ChillType
-  nic_type: NicType
+  chill_type: ChillTypeEnum
+  nic_type: NicTypeEnum
 
   _model: strawberry.Private[Formula]
 
@@ -34,8 +34,8 @@ class FormulaType(relay.Node):
       slug=f.slug,
       name=f.name,
       brand=f.brand,
-      chill_type=ChillType[f.chill_type.name],
-      nic_type=NicType[f.nic_type.name],
+      chill_type=ChillTypeEnum[f.chill_type.name],
+      nic_type=NicTypeEnum[f.nic_type.name],
       _model=f,
     )
 
@@ -98,8 +98,8 @@ class FormulaIdentifierInput:
 class FormulaCreateInput:
   name: str
   brand: str
-  chill_type: ChillType
-  nic_type: NicType
+  chill_type: ChillTypeEnum
+  nic_type: NicTypeEnum
 
 @strawberry.type
 class FormulaCreatePayload:
@@ -117,8 +117,8 @@ class FormulaUpdateInput:
   slug: Optional[str] = strawberry.UNSET
   name: Optional[str] = strawberry.UNSET
   brand: Optional[str] = strawberry.UNSET
-  chill_type: Optional[ChillType] = strawberry.UNSET
-  nic_type: Optional[NicType] = strawberry.UNSET
+  chill_type: Optional[ChillTypeEnum] = strawberry.UNSET
+  nic_type: Optional[NicTypeEnum] = strawberry.UNSET
 
 @strawberry.type
 class FormulaUpdatePayload:

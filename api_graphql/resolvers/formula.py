@@ -8,7 +8,7 @@ from .utils import generate_slug
 
 from models import Formula, ChillType, NicType
 
-from api_graphql.types.feedback import Feedback, FeedbackStatus
+from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 
 from api_graphql.types.formula import (
   FormulaType, 
@@ -49,7 +49,7 @@ def create_formula(db: Session, input: "FormulaCreateInput") -> FormulaCreatePay
     return FormulaCreatePayload(
       formula=FormulaType.from_model(existing),
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message=f"Formula {slug} already exists",
       )
     )
@@ -69,7 +69,7 @@ def create_formula(db: Session, input: "FormulaCreateInput") -> FormulaCreatePay
   return FormulaCreatePayload(
     formula=FormulaType.from_model(formula),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -82,7 +82,7 @@ def delete_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula
       deleted_slug=None,
       deleted_name=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"Formula {identifier.provided} not found."
       )
     )
@@ -97,7 +97,7 @@ def delete_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula
     deleted_slug=slug,
     deleted_name=name,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -109,7 +109,7 @@ def update_formula(db: Session, identifier: "FormulaIdentifierInput", input: "Fo
     return FormulaUpdatePayload(
       formula=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"Formula not found."
       )
     )
@@ -144,7 +144,7 @@ def update_formula(db: Session, identifier: "FormulaIdentifierInput", input: "Fo
   return FormulaUpdatePayload(
     formula=FormulaType.from_model(formula),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=message
     )
   )

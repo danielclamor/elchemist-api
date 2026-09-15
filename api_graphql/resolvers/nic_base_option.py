@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from models import NicBaseOption
 
-from api_graphql.types.feedback import Feedback, FeedbackStatus
+from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 
 from api_graphql.types.nic_base_option import (
   NicBaseOptionType,
@@ -39,7 +39,7 @@ def create_nic_base_option(db: Session, input: "NicBaseOptionCreateInput") -> Ni
     return NicBaseOptionCreatePayload(
       nic_base_option=NicBaseOptionType.from_model(existing),
       feedback=Feedback(
-        status=FeedbackStatus.SUCCESS,
+        status=FeedbackStatusEnum.SUCCESS,
         message=f"NicBaseOption {existing.code} already exists."
       )
     )
@@ -57,7 +57,7 @@ def create_nic_base_option(db: Session, input: "NicBaseOptionCreateInput") -> Ni
   return NicBaseOptionCreatePayload(
     nic_base_option=NicBaseOptionType.from_model(nic_base_option),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -67,7 +67,7 @@ def bulk_create_nic_base_options(db: Session, inputs: list["NicBaseOptionCreateI
     return NicBaseOptionsBulkCreatePayload(
       nic_base_options=[],
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message="Nothing to add.",
       )
     )
@@ -80,7 +80,7 @@ def bulk_create_nic_base_options(db: Session, inputs: list["NicBaseOptionCreateI
   return NicBaseOptionsBulkCreatePayload(
     nic_base_option=nic_base_options,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -93,7 +93,7 @@ def delete_nic_base_option(db: Session, identifier: "NicBaseOptionIdentifierInpu
       deleted_code=None,
       deleted_name=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"NicBaseOption {identifier.provided[1]} not found."
       )
     )
@@ -105,7 +105,7 @@ def delete_nic_base_option(db: Session, identifier: "NicBaseOptionIdentifierInpu
     deleted_code=nic_base_option.code,
     deleted_name=nic_base_option.name,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -115,7 +115,7 @@ def bulk_delete_nic_base_options(db: Session, identifiers: list["NicBaseOptionId
     return NicBaseOptionsBulkDeletePayload(
       deleted=[],
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message="Nothing to delete.",
       )
     )
@@ -128,7 +128,7 @@ def bulk_delete_nic_base_options(db: Session, identifiers: list["NicBaseOptionId
   return NicBaseOptionsBulkDeletePayload(
     deleted=deleted,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )

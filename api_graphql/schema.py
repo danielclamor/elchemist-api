@@ -13,7 +13,7 @@ from api_graphql.types.eliquid import (
   EliquidUpdateInput, 
   EliquidUpdatePayload,
 )
-from api_graphql.types.enums import ProductionOrderJob
+from api_graphql.types.enums import ProductionOrderJobEnum
 from api_graphql.types.flavoring_option import (
   FlavoringOptionsBulkDeletePayload,
   FlavoringOptionDeletePayload,
@@ -572,7 +572,7 @@ class Mutation:
     
   @strawberry.mutation
   def productionOrderAssignJob(
-    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, job: ProductionOrderJob
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, job: ProductionOrderJobEnum
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
     return assign_production_order_job(

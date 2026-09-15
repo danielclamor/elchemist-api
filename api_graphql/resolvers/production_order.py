@@ -23,7 +23,7 @@ from models import (
   ProductionOrderCounter,
 )
 
-from api_graphql.types.feedback import Feedback, FeedbackStatus
+from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 
 from api_graphql.types.eliquid import EliquidIdentifierInput
 
@@ -116,7 +116,7 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
     return ProductionOrderUpdatePayload(
       production_order=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"ProductionOrder {identifier.provided[1]} not found"
       )
     )
@@ -125,7 +125,7 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
     return ProductionOrderUpdatePayload(
       production_order=po,
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message=f"ProductionOrder {identifier.provided[1]} is already assigned to {job.name}"
       )
     )
@@ -154,7 +154,7 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
       return ProductionOrderUpdatePayload(
         production_order=None,
         feedback=Feedback(
-          status=FeedbackStatus.FAILED,
+          status=FeedbackStatusEnum.FAILED,
           message="Job type not supported"
         )
       )      
@@ -162,7 +162,7 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
     return ProductionOrderUpdatePayload(
       production_order=po,
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message=f"ProductionOrder {identifier.provided[1]} is already assigned to {po.job.name}"
       )
     )
@@ -184,7 +184,7 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
   return ProductionOrderUpdatePayload(
     production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=f"Assigned to {new_job.name}"
     )
   )
@@ -197,7 +197,7 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
     return ProductionOrderCreatePayload(
       production_order=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"Eliquid {eliquid_identifier.provided[1]} not found"
       )
     )
@@ -253,7 +253,7 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
   return ProductionOrderCreatePayload(
     production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=f"ProductionOrder {po_number} for {eliquid.description} created"
     )
   )
@@ -289,7 +289,7 @@ def delete_production_order(db: Session, identifier: "ProductionOrderIdentifierI
     return ProductionOrderDeletePayload(
       deleted_order_number=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"ProductionOrder {identifier.provided[1]} not found."
       )
     )
@@ -302,7 +302,7 @@ def delete_production_order(db: Session, identifier: "ProductionOrderIdentifierI
   return ProductionOrderDeletePayload(
     deleted_order_number=order_number,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None
     )
   )
@@ -314,7 +314,7 @@ def mark_production_order_cancelled(db: Session, identifier: "ProductionOrderIde
     return ProductionOrderUpdatePayload(
       production_order=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"ProductionOrder {identifier.provided[1]} not found"
       )
     )
@@ -323,7 +323,7 @@ def mark_production_order_cancelled(db: Session, identifier: "ProductionOrderIde
     return ProductionOrderUpdatePayload(
       production_order=ProductionOrderType.from_model(po),
       feedback=Feedback(
-        status=FeedbackStatus.SUCCESS,
+        status=FeedbackStatusEnum.SUCCESS,
         message=f"ProductionOrder {po.order_number} is already cancelled"
       )
     )
@@ -351,7 +351,7 @@ def mark_production_order_cancelled(db: Session, identifier: "ProductionOrderIde
   return ProductionOrderUpdatePayload(
     production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=f"ProductionOrder {po.order_number} cancelled"
     )
   )
@@ -363,7 +363,7 @@ def mark_production_order_delivered(db: Session, identifier: "ProductionOrderIde
     return ProductionOrderUpdatePayload(
       production_order=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"ProductionOrder {identifier.provided[1]} not found"
       )
     )
@@ -372,7 +372,7 @@ def mark_production_order_delivered(db: Session, identifier: "ProductionOrderIde
     return ProductionOrderUpdatePayload(
       production_order=ProductionOrderType.from_model(po),
       feedback=Feedback(
-        status=FeedbackStatus.SUCCESS,
+        status=FeedbackStatusEnum.SUCCESS,
         message=f"ProductionOrder {po.order_number} is already delivered"
       )
     )
@@ -400,7 +400,7 @@ def mark_production_order_delivered(db: Session, identifier: "ProductionOrderIde
   return ProductionOrderUpdatePayload(
     production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=f"ProductionOrder {po.order_number} delivered"
     )
   )
@@ -412,7 +412,7 @@ def mark_production_order_mixed(db: Session, identifier: "ProductionOrderIdentif
     return ProductionOrderUpdatePayload(
       production_order=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"ProductionOrder {identifier.provided[1]} not found"
       )
     )
@@ -421,7 +421,7 @@ def mark_production_order_mixed(db: Session, identifier: "ProductionOrderIdentif
     return ProductionOrderUpdatePayload(
       production_order=ProductionOrderType.from_model(po),
       feedback=Feedback(
-        status=FeedbackStatus.SUCCESS,
+        status=FeedbackStatusEnum.SUCCESS,
         message=f"ProductionOrder {po.order_number} is already mixed"
       )
     )
@@ -449,7 +449,7 @@ def mark_production_order_mixed(db: Session, identifier: "ProductionOrderIdentif
   return ProductionOrderUpdatePayload(
     production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=f"ProductionOrder {po.order_number} mixed"
     )
   )
@@ -461,7 +461,7 @@ def set_production_order_archived(db: Session, identifier: "ProductionOrderIdent
     return ProductionOrderUpdatePayload(
       production_order=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"ProductionOrder {identifier.provided[1]} not found"
       )
     )
@@ -470,7 +470,7 @@ def set_production_order_archived(db: Session, identifier: "ProductionOrderIdent
     return ProductionOrderUpdatePayload(
       production_order=ProductionOrderType.from_model(po),
       feedback=Feedback(
-        status=FeedbackStatus.SUCCESS,
+        status=FeedbackStatusEnum.SUCCESS,
         message=f"ProductionOrder {po.order_number} is already {'archived' if is_archived else 'unarchived'}"
       )
     )
@@ -498,7 +498,7 @@ def set_production_order_archived(db: Session, identifier: "ProductionOrderIdent
   return ProductionOrderUpdatePayload(
     production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=f"ProductionOrder {po.order_number} {'archived' if po.is_archived else 'unarchived'}"
     )
   )
@@ -510,7 +510,7 @@ def set_production_order_priority(db: Session, identifier: "ProductionOrderIdent
     return ProductionOrderUpdatePayload(
       production_order=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"ProductionOrder {identifier.provided[1]} not found"
       )
     )
@@ -519,7 +519,7 @@ def set_production_order_priority(db: Session, identifier: "ProductionOrderIdent
     return ProductionOrderUpdatePayload(
       production_order=ProductionOrderType.from_model(po),
       feedback=Feedback(
-        status=FeedbackStatus.SUCCESS,
+        status=FeedbackStatusEnum.SUCCESS,
         message=f"ProductionOrder {po.order_number} is already {'priority' if is_priority else 'not priority'}"
       )
     )
@@ -547,7 +547,7 @@ def set_production_order_priority(db: Session, identifier: "ProductionOrderIdent
   return ProductionOrderUpdatePayload(
     production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=f"ProductionOrder {po.order_number} {'set as priority' if po.is_priority else 'unset as priority'}"
     )
   )
@@ -559,7 +559,7 @@ def set_production_order_quantity(db: Session, identifier: "ProductionOrderIdent
     return ProductionOrderUpdatePayload(
       production_order=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"ProductionOrder {identifier.provided[1]} not found"
       )
     )
@@ -587,7 +587,7 @@ def set_production_order_quantity(db: Session, identifier: "ProductionOrderIdent
   return ProductionOrderUpdatePayload(
     production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=f"ProductionOrder {po.order_number} quantity updated to {po.quantity}"
     )
   )
@@ -599,7 +599,7 @@ def update_production_order(db: Session, identifier: "ProductionOrderIdentifierI
     return ProductionOrderUpdatePayload(
       production_order=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"ProductionOrder {identifier.provided[1]} not found"
       )
     )
@@ -644,7 +644,7 @@ def update_production_order(db: Session, identifier: "ProductionOrderIdentifierI
   return ProductionOrderUpdatePayload(
     production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=message
     )
   )

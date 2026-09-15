@@ -19,8 +19,8 @@ from models import (
 
 from api_graphql.types.feedback import Feedback
 from api_graphql.types.enums import (
-  ProductionOrderActivity, 
-  ProductionOrderStatus
+  ProductionOrderActivityEnum, 
+  ProductionOrderStatusEnum
 )
 
 if TYPE_CHECKING:
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 @strawberry.type
 class ProductionOrderActivityLogType(relay.Node):
   id: relay.NodeID[str]
-  activity: ProductionOrderActivity
+  activity: ProductionOrderActivityEnum
   old_value: Optional[str] = None
   new_value: Optional[str] = None
   triggered_at: datetime
@@ -38,7 +38,7 @@ class ProductionOrderActivityLogType(relay.Node):
   def from_model(cls, l: ProductionOrderActivityLog) -> "ProductionOrderActivityLogType":
     return cls(
       id=l.id,
-      activity=ProductionOrderActivity[l.activity.name],
+      activity=ProductionOrderActivityEnum[l.activity.name],
       old_value=l.old_value,
       new_value=l.new_value,
       triggered_at=l.triggered_at,
@@ -198,7 +198,7 @@ class ProductionOrderType(relay.Node):
   id: relay.NodeID[str]
   order_number: str
   quantity: int | None
-  status: ProductionOrderStatus
+  status: ProductionOrderStatusEnum
   is_priority: bool
   created_at: datetime
 
@@ -210,7 +210,7 @@ class ProductionOrderType(relay.Node):
       id=o.id,
       order_number=o.order_number,
       quantity=o.quantity,
-      status=ProductionOrderStatus[o.status.name],
+      status=ProductionOrderStatusEnum[o.status.name],
       is_priority=o.is_priority,
       created_at=o.created_at,
       _model=o,
@@ -283,7 +283,7 @@ class ProductionOrderDeletePayload:
   
 @strawberry.input
 class ProductionOrderUpdateInput:
-  status: Optional[ProductionOrderStatus] = strawberry.UNSET
+  status: Optional[ProductionOrderStatusEnum] = strawberry.UNSET
   quantity: Optional[int] = strawberry.UNSET
   is_priority: Optional[bool] = strawberry.UNSET
   

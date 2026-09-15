@@ -3,23 +3,23 @@ import enum
 import strawberry
 
 @strawberry.enum
-class ChillType(enum.Enum):
+class ChillTypeEnum(enum.Enum):
   CHILLED = "chilled"
   NON_CHILLED = "non-chilled"
 
 @strawberry.enum
-class NicType(enum.Enum):
+class NicTypeEnum(enum.Enum):
   FREEBASE = "freebase"
   SALT = "salt"
   
 @strawberry.enum
-class SizeOption(enum.Enum):
+class SizeOptionEnum(enum.Enum):
   ML_30 = "30ml"
   ML_60 = "60ml"
   ML_120 = "120ml"
 
 @strawberry.enum
-class NicLevelOption(enum.Enum):
+class NicLevelOptionEnum(enum.Enum):
   MG_0 = "0mg"
   MG_3 = "3mg"
   MG_5 = "5mg"
@@ -33,13 +33,13 @@ class NicLevelOption(enum.Enum):
   HIT_50 = "hit50"
   
 @strawberry.enum
-class BottleColor(enum.Enum):
+class BottleColorEnum(enum.Enum):
   BLACK = "black"
   CLEAR = "clear"
   WHITE = "white"
   
 @strawberry.enum
-class ProductionOrderStatus(enum.Enum):
+class ProductionOrderStatusEnum(enum.Enum):
   CANCELLED = "cancelled"
   DELIVERED = "delivered"
   FULFILLED = "fulfilled"
@@ -47,7 +47,7 @@ class ProductionOrderStatus(enum.Enum):
   PENDING = "pending"
   
 @strawberry.enum
-class ProductionOrderActivity(enum.Enum):
+class ProductionOrderActivityEnum(enum.Enum):
   CREATED = "created"
   ADJUST_QUANTITY = "quantity"
   CHANGE_STATUS = "status"
@@ -56,19 +56,19 @@ class ProductionOrderActivity(enum.Enum):
   ASSIGN_JOB = "job"
   
 @strawberry.enum
-class ProductionOrderJob(enum.Enum):
+class ProductionOrderJobEnum(enum.Enum):
   MIX = "mix"
   REPAT = "repat"
  
 @strawberry.enum
-class ProductionOrderRepatJobStatus(enum.Enum):
+class ProductionOrderRepatJobStatusEnum(enum.Enum):
   CANCELLED = "cancelled"
   COMPLETED = "completed"
   IN_PROGRESS = "in_progress"
   REASSIGNED = "reassigned" 
 
 @strawberry.enum
-class ProductionOrderMixJobStatus(enum.Enum):
+class ProductionOrderMixJobStatusEnum(enum.Enum):
   CANCELLED = "cancelled"
   COMPLETED = "completed"
   IN_PROGRESS = "in_progress"
