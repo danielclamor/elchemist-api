@@ -22,4 +22,4 @@ def get_today(timezone: str | None = None) -> datetime:
   return datetime.now(ZoneInfo(os.getenv("TIMEZONE")))
 
 def generate_production_order_number(date: date, counter: int) -> str:
-  return f"PROD-{date:%Y%m%d}-{counter:06d}"
+  return f"{date:%Y%m%d}{counter:05d}"
