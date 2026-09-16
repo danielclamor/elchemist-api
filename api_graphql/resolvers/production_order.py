@@ -7,7 +7,7 @@ import uuid
 import strawberry
 
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, and_
 
 from zoneinfo import ZoneInfo
 
@@ -16,7 +16,9 @@ from models import (
   ProductionOrder,
   ProductionOrderJob,
   ProductionOrderMixJob,
+  ProductionOrderMixJobStatus,
   ProductionOrderRepatJob,
+  ProductionOrderRepatJobStatus,
   ProductionOrderStatus,
   ProductionOrderActivityLog,
   ProductionOrderActivity,
@@ -29,7 +31,9 @@ from api_graphql.types.eliquid import EliquidIdentifierInput
 
 from api_graphql.types.production_order import (
   ProductionOrderMixJobType,
+  ProductionOrderMixJobUpdatePayload,
   ProductionOrderRepatJobType,
+  ProductionOrderRepatJobUpdatePayload,
   ProductionOrderType,
   ProductionOrderCreatePayload,
   ProductionOrderDeletePayload,
@@ -45,6 +49,8 @@ if TYPE_CHECKING:
     ProductionOrderCreateInput,
     ProductionOrderUpdateInput,
   )
+  
+  from api_graphql.types.enums import ProductionOrderJobEnum
 
 from .utils import generate_production_order_number, get_today
 
@@ -83,6 +89,7 @@ def get_production_order_repat_job(db: Session, identifier: "ProductionOrderRepa
 def assign_production_order_to_mix_job(db: Session, production_order: ProductionOrder, created_at: datetime) -> ProductionOrderMixJobType:
   po_job = ProductionOrderMixJob(
     production_order_id=production_order.id,
+    production_order_number=production_order.order_number,
     ordered_quantity=production_order.quantity,
     is_priority=production_order.is_priority,
     created_at=created_at,
@@ -97,6 +104,7 @@ def assign_production_order_to_mix_job(db: Session, production_order: Production
 def assign_production_order_to_repat_job(db: Session, production_order: ProductionOrder, created_at: datetime) -> ProductionOrderRepatJobType:
   po_job = ProductionOrderRepatJob(
     production_order_id=production_order.id,
+    production_order_number=production_order.order_number,
     ordered_quantity=production_order.quantity,
     created_at=created_at,
     updated_at=created_at,
@@ -107,9 +115,7 @@ def assign_production_order_to_repat_job(db: Session, production_order: Producti
   
   return ProductionOrderRepatJobType.from_model(po_job)
     
-def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentifierInput", job: "ProductionOrderJob") -> ProductionOrderUpdatePayload:
-  job = ProductionOrderJob[job.name]
-  
+def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentifierInput", job: "ProductionOrderJobEnum") -> ProductionOrderUpdatePayload:
   po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
 
   if po is None:
@@ -120,62 +126,62 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
         message=f"ProductionOrder {identifier.provided[1]} not found"
       )
     )
+    
+  old_job = po.job
+  new_job = ProductionOrderJob[job.name]
   
-  if po.job == job:
+  if old_job == new_job:
     return ProductionOrderUpdatePayload(
-      production_order=po,
+      production_order=ProductionOrderType.from_model(po),
       feedback=Feedback(
         status=FeedbackStatusEnum.CANCELLED,
         message=f"ProductionOrder {identifier.provided[1]} is already assigned to {job.name}"
       )
     )
   
-  today = get_today()
-  created_at_utc = today.astimezone(ZoneInfo("UTC"))
+  today_as_utc = get_today("UTC")
   
-  new_job = job.name
+  if old_job == ProductionOrderJob.MIX:
+    mark_production_order_mix_job_reassigned(
+      db=db,
+      production_order_number=po.order_number,
+    )
+  elif old_job == ProductionOrderJob.REPAT:
+    mark_production_order_repat_job_reassigned(
+      db=db,
+      production_order_number=po.order_number,
+    )
   
-  if po.job is None:
-    old_job = None
-
-    if job == ProductionOrderJob.MIX:
-      assign_production_order_to_mix_job(
-        db=db,
-        production_order=po,
-        created_at=created_at_utc,
-      )
-    elif job == ProductionOrderJob.REPAT:
-      assign_production_order_to_repat_job(
-        db=db,
-        production_order=po,
-        created_at=created_at_utc,
-      )
-    else:
-      return ProductionOrderUpdatePayload(
-        production_order=None,
-        feedback=Feedback(
-          status=FeedbackStatusEnum.FAILED,
-          message="Job type not supported"
-        )
-      )      
+  if new_job == ProductionOrderJob.MIX:
+    assign_production_order_to_mix_job(
+      db=db,
+      production_order=po,
+      created_at=today_as_utc,
+    )
+  elif new_job == ProductionOrderJob.REPAT:
+    assign_production_order_to_repat_job(
+      db=db,
+      production_order=po,
+      created_at=today_as_utc,
+    )
   else:
     return ProductionOrderUpdatePayload(
-      production_order=po,
+      production_order=None,
       feedback=Feedback(
-        status=FeedbackStatusEnum.CANCELLED,
-        message=f"ProductionOrder {identifier.provided[1]} is already assigned to {po.job.name}"
+        status=FeedbackStatusEnum.FAILED,
+        message="Job type not supported"
       )
-    )
+    )    
     
-  po.job = job
+  po.job = new_job
   
   create_production_order_activity_log(
     db=db, 
     production_order_id=po.id,
     activity=ProductionOrderActivity.ASSIGN_JOB,
-    triggered_at=created_at_utc,
-    old_value=f"{old_job}",
-    new_value=f"{new_job}"
+    triggered_at=today_as_utc,
+    old_value=f"{old_job.name if old_job is not None else None}",
+    new_value=f"{new_job.name}"
   )
   
   db.commit()
@@ -453,6 +459,71 @@ def mark_production_order_mixed(db: Session, identifier: "ProductionOrderIdentif
       message=f"ProductionOrder {po.order_number} mixed"
     )
   )
+  
+def mark_production_order_mix_job_reassigned(db: Session, production_order_number: str) -> ProductionOrderMixJobUpdatePayload:
+  job = db.scalar(select(ProductionOrderMixJob).where(
+      and_(
+        ProductionOrderMixJob.production_order_number == production_order_number,
+        ProductionOrderMixJob.status == ProductionOrderMixJobStatus.IN_PROGRESS,
+      )
+    )
+  )
+  
+  if job is None:
+    return ProductionOrderMixJobUpdatePayload(
+      production_order_mix_job=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message=f"ProductionOrderMixJob {production_order_number} not found"
+      )
+    )
+  
+  today_as_utc = get_today("UTC")
+  
+  job.status = ProductionOrderMixJobStatus.REASSIGNED
+  job.updated_at = today_as_utc
+  db.flush()
+  
+  return ProductionOrderMixJobUpdatePayload(
+    production_order_mix_job=ProductionOrderMixJobType.from_model(job),
+    feedback=Feedback(
+      status=FeedbackStatusEnum.SUCCESS,
+      message=None
+    )
+  )
+
+def mark_production_order_repat_job_reassigned(db: Session, production_order_number: str) -> ProductionOrderRepatJobUpdatePayload:
+  job = db.scalar(select(ProductionOrderRepatJob).where(
+      and_(
+        ProductionOrderRepatJob.production_order_number == production_order_number,
+        ProductionOrderRepatJob.status == ProductionOrderRepatJobStatus.IN_PROGRESS,
+      )
+    )
+  )
+  
+  if job is None:
+    return ProductionOrderRepatJobUpdatePayload(
+      production_order_repat_job=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message=f"ProductionOrderRepatJob {production_order_number} not found"
+      )
+    )
+  
+  today_as_utc = get_today("UTC")
+  
+  job.status = ProductionOrderRepatJobStatus.REASSIGNED
+  job.updated_at = today_as_utc
+  db.flush()
+  
+  return ProductionOrderRepatJobUpdatePayload(
+    production_order_repat_job=ProductionOrderRepatJobType.from_model(job),
+    feedback=Feedback(
+      status=FeedbackStatusEnum.SUCCESS,
+      message=None
+    )
+  )
+  
 
 def set_production_order_archived(db: Session, identifier: "ProductionOrderIdentifierInput", is_archived: bool) -> ProductionOrderUpdatePayload:
   po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
