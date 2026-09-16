@@ -411,52 +411,37 @@ def mark_production_order_delivered(db: Session, identifier: "ProductionOrderIde
     )
   )
   
-def mark_production_order_mixed(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrderUpdatePayload:
-  po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
-  
-  if po is None:
-    return ProductionOrderUpdatePayload(
-      production_order=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"ProductionOrder {identifier.provided[1]} not found"
+def mark_production_order_mix_job_mixed(db: Session, identifier: "ProductionOrderMixJobIdentifierInput") -> ProductionOrderMixJobUpdatePayload:
+  job = db.scalar(select(ProductionOrderMixJob).where(
+      and_(
+        identifier.query_condition,
+        ProductionOrderMixJob.status == ProductionOrderMixJobStatus.IN_PROGRESS,
       )
     )
-  
-  if po.status == ProductionOrderStatus.MIXED:
-    return ProductionOrderUpdatePayload(
-      production_order=ProductionOrderType.from_model(po),
-      feedback=Feedback(
-        status=FeedbackStatusEnum.SUCCESS,
-        message=f"ProductionOrder {po.order_number} is already mixed"
-      )
-    )
-    
-  old_value = f"{po.status.name}"
-  
-  today = get_today("UTC")
-  
-  po.status = ProductionOrderStatus.MIXED
-  po.updated_at = today
-  db.flush()
-  
-  create_production_order_activity_log(
-    db=db,
-    production_order_id=po.id,
-    activity=ProductionOrderActivity.MIXED,
-    triggered_at=today,
-    old_value=old_value,
-    new_value=f"{po.status.name}",
   )
   
+  if job is None:
+    return ProductionOrderMixJobUpdatePayload(
+      production_order_mix_job=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message=f"ProductionOrderMixJob {identifier.provided[1]} in progress not found"
+      )
+    )
+  
+  today_as_utc = get_today("UTC")
+  
+  job.status = ProductionOrderMixJobStatus.MIXED
+  job.updated_at = today_as_utc
+ 
   db.commit()
-  db.refresh(po)
+  db.refresh(job)
     
-  return ProductionOrderUpdatePayload(
-    production_order=ProductionOrderType.from_model(po),
+  return ProductionOrderMixJobUpdatePayload(
+    production_order=ProductionOrderMixJobType.from_model(job),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
-      message=f"ProductionOrder {po.order_number} mixed"
+      message=f"ProductionOrderMixJob {job.production_order_number} mixed"
     )
   )
   
@@ -474,7 +459,7 @@ def mark_production_order_mix_job_reassigned(db: Session, production_order_numbe
       production_order_mix_job=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
-        message=f"ProductionOrderMixJob {production_order_number} not found"
+        message=f"ProductionOrderMixJob {production_order_number} in progress not found"
       )
     )
   
