@@ -86,7 +86,7 @@ def get_production_order_repat_job(db: Session, identifier: "ProductionOrderRepa
   )
 
 # Mutations
-def assign_production_order_to_mix_job(db: Session, production_order: ProductionOrder, created_at: datetime) -> ProductionOrderMixJobType:
+def create_production_order_mix_job(db: Session, production_order: ProductionOrder, created_at: datetime) -> ProductionOrderMixJobType:
   po_job = ProductionOrderMixJob(
     production_order_id=production_order.id,
     production_order_number=production_order.order_number,
@@ -101,7 +101,7 @@ def assign_production_order_to_mix_job(db: Session, production_order: Production
   
   return ProductionOrderMixJobType.from_model(po_job)
 
-def assign_production_order_to_repat_job(db: Session, production_order: ProductionOrder, created_at: datetime) -> ProductionOrderRepatJobType:
+def create_production_order_repat_job(db: Session, production_order: ProductionOrder, created_at: datetime) -> ProductionOrderRepatJobType:
   po_job = ProductionOrderRepatJob(
     production_order_id=production_order.id,
     production_order_number=production_order.order_number,
@@ -153,13 +153,13 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
     )
   
   if new_job == ProductionOrderJob.MIX:
-    assign_production_order_to_mix_job(
+    create_production_order_mix_job(
       db=db,
       production_order=po,
       created_at=today_as_utc,
     )
   elif new_job == ProductionOrderJob.REPAT:
-    assign_production_order_to_repat_job(
+    create_production_order_repat_job(
       db=db,
       production_order=po,
       created_at=today_as_utc,
