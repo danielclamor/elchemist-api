@@ -309,3 +309,9 @@ class ProductionOrderMixJobUpdatePayload:
 class ProductionOrderRepatJobUpdatePayload:
   production_order_repat_job: ProductionOrderRepatJobType | None
   feedback: Feedback
+  
+@strawberry.type
+class ProductionOrderAssignJobPayload:
+  production_order: ProductionOrderType | None
+  created_production_order_job: ProductionOrderMixJobType | ProductionOrderRepatJobType | None
+  feedback: Feedback
