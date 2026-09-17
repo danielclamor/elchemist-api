@@ -475,6 +475,53 @@ def mark_production_order_fulfilled(db: Session, identifier: "ProductionOrderIde
       message=f"ProductionOrder {po.order_number} fulfilled"
     )
   )
+  
+def mark_production_order_in_progress(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrderUpdatePayload:
+  po = db.scalar(
+    select(ProductionOrder).where(
+      and_(
+        identifier.query_condition,
+        ProductionOrder.status == ProductionOrderStatus.PENDING,
+      )
+    )
+  )
+  
+  if po is None:
+    return ProductionOrderUpdatePayload(
+      production_order=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message=f"ProductionOrder {identifier.provided[1]} pending not found"
+      )
+    )
+  
+  old_value = f"{po.status.name}"
+  
+  today_as_utc = get_today("UTC")
+  
+  po.status = ProductionOrderStatus.IN_PROGRESS
+  po.updated_at = today_as_utc
+  db.flush()
+  
+  create_production_order_activity_log(
+    db=db,
+    production_order_id=po.id,
+    activity=ProductionOrderActivity.CHANGE_STATUS,
+    triggered_at=today_as_utc,
+    old_value=old_value,
+    new_value=f"{po.status.name}",
+  )
+  
+  db.commit()
+  db.refresh(po)
+    
+  return ProductionOrderUpdatePayload(
+    production_order=ProductionOrderType.from_model(po),
+    feedback=Feedback(
+      status=FeedbackStatusEnum.SUCCESS,
+      message=f"ProductionOrder {po.order_number} fulfilled"
+    )
+  )
 
 def mark_production_order_mix_job_completed(db: Session, identifier: "ProductionOrderMixJobIdentifierInput") -> ProductionOrderMixJobUpdatePayload:
   job = db.scalar(

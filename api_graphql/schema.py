@@ -152,6 +152,7 @@ from api_graphql.resolvers.production_order import (
   get_production_order_repat_job,
   mark_production_order_cancelled,
   mark_production_order_delivered,
+  mark_production_order_in_progress,
   mark_production_order_mix_job_completed,
   mark_production_order_mix_job_mixed,
   set_production_order_archived,
@@ -614,6 +615,15 @@ class Mutation:
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
     return mark_production_order_delivered(
+      db=db, identifier=identifier,
+    )
+    
+  @strawberry.mutation
+  def productionOrderMarkInProgress(
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput,
+  ) -> ProductionOrderUpdatePayload:
+    db = info.context["db"]
+    return mark_production_order_in_progress(
       db=db, identifier=identifier,
     )
   
