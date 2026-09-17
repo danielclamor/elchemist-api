@@ -74,6 +74,7 @@ from api_graphql.types.production_order import (
   ProductionOrderMixJobUpdatePayload,
   ProductionOrderRepatJobIdentifierInput,
   ProductionOrderRepatJobType,
+  ProductionOrderRepatJobUpdatePayload,
   ProductionOrderType,
   ProductionOrderIdentifierInput,
   ProductionOrderCreateInput,
@@ -156,6 +157,7 @@ from api_graphql.resolvers.production_order import (
   mark_production_order_in_progress,
   mark_production_order_mix_job_completed,
   mark_production_order_mix_job_mixed,
+  mark_production_order_repat_job_completed,
   set_production_order_archived,
   set_production_order_priority,
   set_production_order_quantity,
@@ -643,6 +645,15 @@ class Mutation:
   ) -> ProductionOrderMixJobUpdatePayload:
     db = info.context["db"]
     return mark_production_order_mix_job_mixed(
+      db=db, identifier=identifier,
+    )
+  
+  @strawberry.mutation
+  def productionOrderRepatJobMarkCompleted(
+    self, info: strawberry.Info, identifier: ProductionOrderRepatJobIdentifierInput,
+  ) -> ProductionOrderRepatJobUpdatePayload:
+    db = info.context["db"]
+    return mark_production_order_repat_job_completed(
       db=db, identifier=identifier,
     )
   
