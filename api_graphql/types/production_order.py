@@ -280,6 +280,11 @@ class ProductionOrderCreatePayload:
   feedback: Feedback
   
 @strawberry.type
+class ProductionOrderJobCreatePayload:
+  production_order_job: ProductionOrderMixJobType | ProductionOrderRepatJobType | None
+  feedback: Feedback
+  
+@strawberry.type
 class ProductionOrderDeletePayload:
   deleted_order_number: str | None
   feedback: Feedback
