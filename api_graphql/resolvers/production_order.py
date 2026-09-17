@@ -107,7 +107,7 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
       created_production_order_job=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
-        message=f"Cannot assign {po.status.name} ProductionOrder {identifier.provided[1]} to a new job"
+        message=f"Cannot assign ProductionOrder {identifier.provided[1]} in {po.status.name} status to a new job"
       )
     )
     
@@ -368,12 +368,13 @@ def mark_production_order_cancelled(db: Session, identifier: "ProductionOrderIde
       )
     )
   
-  if po.status == ProductionOrderStatus.CANCELLED:
-    return ProductionOrderUpdatePayload(
+  if po.status != ProductionOrderStatus.PENDING and po.status != ProductionOrderStatus.IN_PROGRESS:
+    return ProductionOrderAssignJobPayload(
       production_order=ProductionOrderType.from_model(po),
+      created_production_order_job=None,
       feedback=Feedback(
-        status=FeedbackStatusEnum.SUCCESS,
-        message=f"ProductionOrder {po.order_number} is already cancelled"
+        status=FeedbackStatusEnum.FAILED,
+        message=f"Cannot cancel ProductionOrder {identifier.provided[1]} in {po.status.name} status"
       )
     )
     
@@ -385,10 +386,23 @@ def mark_production_order_cancelled(db: Session, identifier: "ProductionOrderIde
   po.updated_at = today
   db.flush()
   
+  if po.job == ProductionOrderJob.MIX:
+    from api_graphql.types.production_order import ProductionOrderMixJobIdentifierInput
+    mark_production_order_mix_job_cancelled(
+      db=db, 
+      identifier=ProductionOrderMixJobIdentifierInput(production_order_number=po.order_number),
+    )
+  elif po.job == ProductionOrderJob.REPAT:
+    from api_graphql.types.production_order import ProductionOrderRepatJobIdentifierInput
+    mark_production_order_repat_job_cancelled(
+      db=db, 
+      identifier=ProductionOrderRepatJobIdentifierInput(production_order_number=po.order_number),
+    )
+  
   create_production_order_activity_log(
     db=db,
     production_order_id=po.id,
-    activity=ProductionOrderActivity.CANCELLED,
+    activity=ProductionOrderActivity.CHANGE_STATUS,
     triggered_at=today,
     old_value=old_value,
     new_value=f"{po.status.name}",
@@ -548,6 +562,39 @@ def mark_production_order_in_progress(db: Session, identifier: "ProductionOrderI
     )
   )
 
+def mark_production_order_mix_job_cancelled(db: Session, identifier: "ProductionOrderMixJobIdentifierInput") -> ProductionOrderMixJobUpdatePayload:
+  job = db.scalar(
+    select(ProductionOrderMixJob).where(
+      and_(
+        identifier.query_condition,
+        ProductionOrderMixJob.status == ProductionOrderMixJobStatus.IN_PROGRESS,
+      )
+    )
+  )
+  
+  if job is None:
+    return ProductionOrderMixJobUpdatePayload(
+      production_order_mix_job=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message=f"ProductionOrderMixJob {identifier.provided[1]} with {ProductionOrderMixJobStatus.IN_PROGRESS.name} status not found"
+      )
+    )
+  
+  today_as_utc = get_today("UTC")
+  
+  job.status = ProductionOrderMixJobStatus.CANCELLED
+  job.updated_at = today_as_utc
+  db.flush()
+  
+  return ProductionOrderMixJobUpdatePayload(
+    production_order_mix_job=ProductionOrderMixJobType.from_model(job),
+    feedback=Feedback(
+      status=FeedbackStatusEnum.SUCCESS,
+      message=None
+    )
+  )
+
 def mark_production_order_mix_job_completed(db: Session, identifier: "ProductionOrderMixJobIdentifierInput") -> ProductionOrderMixJobUpdatePayload:
   job = db.scalar(
     select(ProductionOrderMixJob).where(
@@ -638,7 +685,7 @@ def mark_production_order_mix_job_reassigned(db: Session, production_order_numbe
       production_order_mix_job=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
-        message=f"ProductionOrderMixJob {production_order_number} in progress not found"
+        message=f"ProductionOrderMixJob {production_order_number} with {ProductionOrderMixJobStatus.IN_PROGRESS.name} status not found"
       )
     )
   
@@ -653,6 +700,46 @@ def mark_production_order_mix_job_reassigned(db: Session, production_order_numbe
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=None
+    )
+  )
+
+def mark_production_order_repat_job_cancelled(db: Session, identifier: "ProductionOrderRepatJobIdentifierInput") -> ProductionOrderRepatJobUpdatePayload:
+  job = db.scalar(
+    select(ProductionOrderRepatJob).where(
+      and_(
+        identifier.query_condition,
+        ProductionOrderRepatJob.status == ProductionOrderRepatJobStatus.IN_PROGRESS,
+      )
+    )
+  )
+  
+  if job is None:
+    return ProductionOrderRepatJobUpdatePayload(
+      production_order_mix_job=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message=f"ProductionOrderRepatJob {identifier.provided[1]} with {ProductionOrderRepatJobStatus.IN_PROGRESS.name} status not found"
+      )
+    )
+  
+  today_as_utc = get_today("UTC")
+  
+  job.status = ProductionOrderRepatJobStatus.CANCELLED
+  job.updated_at = today_as_utc
+  
+  db.flush()
+  
+  from api_graphql.types.production_order import ProductionOrderIdentifierInput
+  mark_production_order_fulfilled(db=db, identifier=ProductionOrderIdentifierInput(order_number=job.production_order_number))
+ 
+  db.commit()
+  db.refresh(job)
+    
+  return ProductionOrderRepatJobUpdatePayload(
+    production_order_mix_job=ProductionOrderRepatJobType.from_model(job),
+    feedback=Feedback(
+      status=FeedbackStatusEnum.SUCCESS,
+      message=f"ProductionOrderRepatJob {job.production_order_number} cancelled"
     )
   )
 
@@ -671,7 +758,7 @@ def mark_production_order_repat_job_completed(db: Session, identifier: "Producti
       production_order_mix_job=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
-        message=f"ProductionOrderRepatJob {identifier.provided[1]} IN_PROGRESS not found"
+        message=f"ProductionOrderRepatJob {identifier.provided[1]} with {ProductionOrderRepatJobStatus.IN_PROGRESS.name} status not found"
       )
     )
   
