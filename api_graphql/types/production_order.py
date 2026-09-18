@@ -300,6 +300,50 @@ class ProductionOrderUpdatePayload:
   production_order: ProductionOrderType | None
   feedback: Feedback
 
+@strawberry.input
+class ProductionOrderMixJobFlavoringParametersInput:
+  name: str
+  is_vg: bool
+  ratio: float
+  
+@strawberry.input
+class ProductionOrderMixJobNicBaseParametersInput:
+  code: str
+  name: str
+  is_vg: bool
+  ratio: float
+
+@strawberry.input
+class ProductionOrderMixJobParametersInput:
+  batch_volume_ml: float
+  target_nic_str: float
+  target_pg: float
+  target_vg: float
+  nic_base_nic_str: float
+  flavorings: list[ProductionOrderMixJobFlavoringParametersInput]
+  nic_bases: list[ProductionOrderMixJobNicBaseParametersInput]
+
+@strawberry.input
+class ProductionOrderMixJobIngredientInput:
+  name: str
+  ratio: float
+  volume_ml: float
+  weight_g: float
+
+@strawberry.input
+class ProductionOrderMixJobRecipeInput:
+  mix_parameters: ProductionOrderMixJobParametersInput
+  ingredients: list[ProductionOrderMixJobIngredientInput]
+  total_ratio: float
+  total_volume_ml: float
+  total_weight_g: float
+  nic_profile_slug: str
+
+@strawberry.input
+class ProductionOrderMixJobMarkMixedInput:
+  recipe: ProductionOrderMixJobRecipeInput
+  produced_quantity: int
+
 @strawberry.type
 class ProductionOrderMixJobUpdatePayload:
   production_order_mix_job: ProductionOrderMixJobType | None

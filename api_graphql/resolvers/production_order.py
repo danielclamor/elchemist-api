@@ -48,13 +48,14 @@ if TYPE_CHECKING:
     ProductionOrderIdentifierInput,
     ProductionOrderMixJobIdentifierInput,
     ProductionOrderRepatJobIdentifierInput,
+    ProductionOrderMixJobMarkMixedInput,
     ProductionOrderCreateInput,
     ProductionOrderUpdateInput,
   )
   
   from api_graphql.types.enums import ProductionOrderJobEnum
 
-from .utils import generate_production_order_number, get_today
+from .utils import generate_production_order_number, get_today, convert_strawberry_input_to_dict
 
 # Queries
 def get_all_production_orders(db: Session) -> list[ProductionOrder]:
@@ -635,7 +636,7 @@ def mark_production_order_mix_job_completed(db: Session, identifier: "Production
     )
   )
   
-def mark_production_order_mix_job_mixed(db: Session, identifier: "ProductionOrderMixJobIdentifierInput") -> ProductionOrderMixJobUpdatePayload:
+def mark_production_order_mix_job_mixed(db: Session, identifier: "ProductionOrderMixJobIdentifierInput", input: "ProductionOrderMixJobMarkMixedInput") -> ProductionOrderMixJobUpdatePayload:
   job = db.scalar(
     select(ProductionOrderMixJob).where(
       and_(
@@ -657,8 +658,16 @@ def mark_production_order_mix_job_mixed(db: Session, identifier: "ProductionOrde
   today_as_utc = get_today("UTC")
   
   job.status = ProductionOrderMixJobStatus.MIXED
+  
+  job.produced_quantity = input.produced_quantity
+  
+  recipe = input.recipe
+  job.recipe_snapshot = convert_strawberry_input_to_dict(recipe)
+  job.total_volume_ml = recipe.total_volume_ml
+  job.total_weight_g = recipe.total_weight_g
+  
   job.updated_at = today_as_utc
- 
+
   db.commit()
   db.refresh(job)
     
