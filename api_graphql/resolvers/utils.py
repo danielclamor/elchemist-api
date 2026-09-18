@@ -1,6 +1,9 @@
 from typing import TYPE_CHECKING
 from datetime import datetime
 from zoneinfo import ZoneInfo
+import dataclasses
+import json
+import strawberry
 
 if TYPE_CHECKING:
   from datetime import date
@@ -23,3 +26,7 @@ def get_today(timezone: str | None = None) -> datetime:
 
 def generate_production_order_number(date: date, counter: int) -> str:
   return f"{date:%Y%m%d}{counter:05d}"
+
+def convert_strawberry_input_to_dict(input_obj):
+    data = dataclasses.asdict(input_obj)
+    return {k: v for k, v in data.items() if v is not strawberry.UNSET}
