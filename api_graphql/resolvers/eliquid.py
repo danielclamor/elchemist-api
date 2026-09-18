@@ -40,7 +40,7 @@ def get_all_eliquids(db: Session) -> list[Eliquid]:
     db.scalars(select(Eliquid)).all()
   )
 
-def get_eliquid(db: Session, identifier: "EliquidIdentifierInput") -> Eliquid:
+def get_eliquid(db: Session, identifier: "EliquidIdentifierInput") -> Eliquid | None:
   return (
     db.scalar(select(Eliquid).where(identifier.query_condition))
   )

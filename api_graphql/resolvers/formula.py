@@ -33,7 +33,7 @@ def get_all_formulas(db: Session) -> list[Formula]:
     .all()
   )
   
-def get_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula:
+def get_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula | None:
   return (
     db.scalar(select(Formula).where(identifier.query_condition))
   )

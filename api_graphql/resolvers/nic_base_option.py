@@ -25,7 +25,7 @@ def get_all_nic_base_options(db: Session) -> list[NicBaseOption]:
     db.scalars(select(NicBaseOption)).all()
   )
   
-def get_nic_base_option(db: Session, identifier: "NicBaseOptionIdentifierInput") -> NicBaseOption:
+def get_nic_base_option(db: Session, identifier: "NicBaseOptionIdentifierInput") -> NicBaseOption | None:
   return (
     db.scalar(select(NicBaseOption).where(identifier.query_condition))
   )

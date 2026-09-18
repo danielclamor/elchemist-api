@@ -67,7 +67,7 @@ def get_all_nic_profiles(db: Session) -> list[NicProfile]:
     .all()
   )
 
-def get_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> NicProfile:
+def get_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> NicProfile | None:
   return (
     db.scalar(select(NicProfile).where(identifier.query_condition))
   )

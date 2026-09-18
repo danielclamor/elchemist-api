@@ -30,14 +30,11 @@ VG_DENSITY = 1.26130
 PG_DENSITY = 1.03730
 NIC_DENSITY = 1.00925  
 
-def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput", input: "RecipeInput") -> RecipeType:
+def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput", input: "RecipeInput") -> RecipeType | None:
   nic_profile = get_nic_profile(db=db, identifier=nic_profile_identifier)
     
   if nic_profile is None:
-    raise GraphQLError(
-      f"NicProfile not found for identifier: {nic_profile_identifier.provided[1]}",
-      extensions={"code": "NOT_FOUND"}
-    )
+    return None
   
   mix_parameters = MixParametersType(
     batch_volume_ml=input.batch_volume_ml,

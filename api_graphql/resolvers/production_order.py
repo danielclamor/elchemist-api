@@ -73,17 +73,17 @@ def get_all_production_order_repat_jobs(db: Session) -> list[ProductionOrderRepa
     db.scalars(select(ProductionOrderRepatJob)).unique().all()
   )
 
-def get_production_order(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrder:
+def get_production_order(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrder | None:
   return (
     db.scalar(select(ProductionOrder).where(identifier.query_condition))
   )
   
-def get_production_order_mix_job(db: Session, identifier: "ProductionOrderMixJobIdentifierInput") -> ProductionOrderMixJob:
+def get_production_order_mix_job(db: Session, identifier: "ProductionOrderMixJobIdentifierInput") -> ProductionOrderMixJob | None:
   return (
     db.scalar(select(ProductionOrderMixJob).where(identifier.query_condition))
   )
 
-def get_production_order_repat_job(db: Session, identifier: "ProductionOrderRepatJobIdentifierInput") -> ProductionOrderRepatJob:
+def get_production_order_repat_job(db: Session, identifier: "ProductionOrderRepatJobIdentifierInput") -> ProductionOrderRepatJob | None:
   return (
     db.scalar(select(ProductionOrderRepatJob).where(identifier.query_condition))
   )

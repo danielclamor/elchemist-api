@@ -28,7 +28,7 @@ def get_all_flavoring_options(db: Session) -> list[FlavoringOption]:
     db.scalars(select(FlavoringOption)).all()
   )
   
-def get_flavoring_option(db: Session, identifier: "FlavoringOptionIdentifierInput") -> FlavoringOption:
+def get_flavoring_option(db: Session, identifier: "FlavoringOptionIdentifierInput") -> FlavoringOption | None:
   return (
     db.scalar(select(FlavoringOption).where(identifier.query_condition))
   )
