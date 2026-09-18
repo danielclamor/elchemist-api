@@ -221,7 +221,11 @@ def _paginate_brands(
 class Query:
   @strawberry.field
   def brands(
-    self, info: strawberry.Info, after: Optional[str] = None, before: Optional[str] = None, first: Optional[int] = None, last: Optional[int] = None,
+    self, info: strawberry.Info, 
+    after: Optional[str] = None, 
+    before: Optional[str] = None, 
+    first: Optional[int] = None, 
+    last: Optional[int] = None,
   ) -> BrandConnection:
     db = info.context["db"]
     return _paginate_brands(get_all_brands(db=db), after, before, first, last)
@@ -229,7 +233,7 @@ class Query:
   @strawberry.field
   def eliquid(
     self, info: strawberry.Info, identifier: EliquidIdentifierInput,
-  ) -> Optional[EliquidType]:
+  ) -> EliquidType | None:
     db = info.context["db"]
     e = get_eliquid(db=db, identifier=identifier)
     return EliquidType.from_model(e) if e else None
@@ -244,7 +248,7 @@ class Query:
   @strawberry.field
   def flavoringOption(
     self, info: strawberry.Info, identifier: FlavoringOptionIdentifierInput,
-  ) -> Optional[FlavoringOptionType]:
+  ) -> FlavoringOptionType | None:
     db = info.context["db"]
     o = get_flavoring_option(db=db, identifier=identifier)
     return FlavoringOptionType.from_model(o) if o else None
@@ -259,7 +263,7 @@ class Query:
   @strawberry.field
   def formula(
     self, info: strawberry.Info, identifier: FormulaIdentifierInput,
-  ) -> Optional[FormulaType]:
+  ) -> FormulaType | None:
     db = info.context["db"]
     f = get_formula(db=db, identifier=identifier)
     return FormulaType.from_model(f) if f else None
@@ -274,7 +278,7 @@ class Query:
   @strawberry.field
   def nicBaseOption(
     self, info: strawberry.Info, identifier: NicBaseOptionIdentifierInput,
-  ) -> Optional[NicBaseOptionType]:
+  ) -> NicBaseOptionType | None:
     db = info.context["db"]
     o = get_nic_base_option(db=db, identifier=identifier)
     return NicBaseOptionType.from_model(o) if o else None
@@ -289,7 +293,7 @@ class Query:
   @strawberry.field
   def nicProfile(
     self, info: strawberry.Info, identifier: NicProfileIdentifierInput,
-  ) -> Optional[NicProfileType]:
+  ) -> NicProfileType | None:
     db = info.context["db"]
     p = get_nic_profile(db=db, identifier=identifier)
     return NicProfileType.from_model(p) if p else None
@@ -304,7 +308,7 @@ class Query:
   @strawberry.field
   def recipe(
     self, info: strawberry.Info, nic_profile_identifier: NicProfileIdentifierInput, input: RecipeInput,
-  ) -> RecipeType:
+  ) -> RecipeType | None:
     db = info.context["db"]
     return get_recipe(db=db, nic_profile_identifier=nic_profile_identifier, input=input)
   
@@ -317,7 +321,7 @@ class Query:
   @strawberry.field
   def productionOrder(
     self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput,
-  ) -> ProductionOrderType:
+  ) -> ProductionOrderType | None:
     db = info.context["db"]
     o = get_production_order(db, identifier=identifier)
     return ProductionOrderType.from_model(o) if o else None
@@ -332,7 +336,7 @@ class Query:
   @strawberry.field
   def productionOrderMixJob(
     self, info: strawberry.Info, identifier: ProductionOrderMixJobIdentifierInput,
-  ) -> ProductionOrderMixJobType:
+  ) -> ProductionOrderMixJobType | None:
     db = info.context["db"]
     j = get_production_order_mix_job(db, identifier=identifier)
     return ProductionOrderMixJobType.from_model(j) if j else None
@@ -347,7 +351,7 @@ class Query:
   @strawberry.field
   def productionOrderRepatJob(
     self, info: strawberry.Info, identifier: ProductionOrderRepatJobIdentifierInput,
-  ) -> ProductionOrderRepatJobType:
+  ) -> ProductionOrderRepatJobType | None:
     db = info.context["db"]
     j = get_production_order_repat_job(db, identifier=identifier)
     return ProductionOrderRepatJobType.from_model(j) if j else None
