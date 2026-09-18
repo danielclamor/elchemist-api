@@ -74,6 +74,7 @@ from api_graphql.types.production_order import (
   ProductionOrderMixJobType,
   ProductionOrderMixJobUpdatePayload,
   ProductionOrderRepatJobIdentifierInput,
+  ProductionOrderRepatJobMarkCompletedInput,
   ProductionOrderRepatJobType,
   ProductionOrderRepatJobUpdatePayload,
   ProductionOrderType,
@@ -655,11 +656,11 @@ class Mutation:
   
   @strawberry.mutation
   def productionOrderRepatJobMarkCompleted(
-    self, info: strawberry.Info, identifier: ProductionOrderRepatJobIdentifierInput,
+    self, info: strawberry.Info, identifier: ProductionOrderRepatJobIdentifierInput, input: ProductionOrderRepatJobMarkCompletedInput,
   ) -> ProductionOrderRepatJobUpdatePayload:
     db = info.context["db"]
     return mark_production_order_repat_job_completed(
-      db=db, identifier=identifier,
+      db=db, identifier=identifier, input=input,
     )
   
   @strawberry.mutation

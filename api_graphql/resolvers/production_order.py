@@ -49,6 +49,7 @@ if TYPE_CHECKING:
     ProductionOrderMixJobIdentifierInput,
     ProductionOrderRepatJobIdentifierInput,
     ProductionOrderMixJobMarkMixedInput,
+    ProductionOrderRepatJobMarkCompletedInput,
     ProductionOrderCreateInput,
     ProductionOrderUpdateInput,
   )
@@ -752,7 +753,7 @@ def mark_production_order_repat_job_cancelled(db: Session, identifier: "Producti
     )
   )
 
-def mark_production_order_repat_job_completed(db: Session, identifier: "ProductionOrderRepatJobIdentifierInput") -> ProductionOrderRepatJobUpdatePayload:
+def mark_production_order_repat_job_completed(db: Session, identifier: "ProductionOrderRepatJobIdentifierInput", input: "ProductionOrderRepatJobMarkCompletedInput") -> ProductionOrderRepatJobUpdatePayload:
   job = db.scalar(
     select(ProductionOrderRepatJob).where(
       and_(
@@ -774,6 +775,9 @@ def mark_production_order_repat_job_completed(db: Session, identifier: "Producti
   today_as_utc = get_today("UTC")
   
   job.status = ProductionOrderRepatJobStatus.COMPLETED
+  
+  job.incoming_quantity = input.incoming_quantity
+  
   job.updated_at = today_as_utc
   
   db.flush()

@@ -355,6 +355,10 @@ class ProductionOrderMixJobUpdatePayload:
   production_order_mix_job: ProductionOrderMixJobType | None
   feedback: Feedback
 
+@strawberry.input
+class ProductionOrderRepatJobMarkCompletedInput:
+  incoming_quantity: int
+
 @strawberry.type
 class ProductionOrderRepatJobUpdatePayload:
   production_order_repat_job: ProductionOrderRepatJobType | None
