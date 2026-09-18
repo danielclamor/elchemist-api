@@ -724,7 +724,7 @@ def mark_production_order_repat_job_cancelled(db: Session, identifier: "Producti
   
   if job is None:
     return ProductionOrderRepatJobUpdatePayload(
-      production_order_mix_job=None,
+      production_order_repat_job=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
         message=f"ProductionOrderRepatJob {identifier.provided[1]} with {ProductionOrderRepatJobStatus.IN_PROGRESS.name} status not found"
@@ -745,7 +745,7 @@ def mark_production_order_repat_job_cancelled(db: Session, identifier: "Producti
   db.refresh(job)
     
   return ProductionOrderRepatJobUpdatePayload(
-    production_order_mix_job=ProductionOrderRepatJobType.from_model(job),
+    production_order_repat_job=ProductionOrderRepatJobType.from_model(job),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=f"ProductionOrderRepatJob {job.production_order_number} cancelled"
@@ -764,7 +764,7 @@ def mark_production_order_repat_job_completed(db: Session, identifier: "Producti
   
   if job is None:
     return ProductionOrderRepatJobUpdatePayload(
-      production_order_mix_job=None,
+      production_order_repat_job=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
         message=f"ProductionOrderRepatJob {identifier.provided[1]} with {ProductionOrderRepatJobStatus.IN_PROGRESS.name} status not found"
@@ -785,7 +785,7 @@ def mark_production_order_repat_job_completed(db: Session, identifier: "Producti
   db.refresh(job)
     
   return ProductionOrderRepatJobUpdatePayload(
-    production_order_mix_job=ProductionOrderRepatJobType.from_model(job),
+    production_order_repat_job=ProductionOrderRepatJobType.from_model(job),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=f"ProductionOrderRepatJob {job.production_order_number} completed"
