@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Annotated, TYPE_CHECKING, Optional
 
 from graphql import GraphQLError
@@ -32,6 +33,8 @@ class NicProfileType(relay.Node):
   target_vg: float
   target_pg: float
   nic_base_nic_str: float
+  created_at: datetime
+  updated_at: datetime
 
   _model: strawberry.Private[NicProfile]
 
@@ -47,6 +50,8 @@ class NicProfileType(relay.Node):
       target_vg=p.target_vg,
       target_pg=p.target_pg,
       nic_base_nic_str=p.nic_base_nic_str,
+      created_at=p.created_at,
+      updated_at=p.updated_at,
       _model=p,
     )
     

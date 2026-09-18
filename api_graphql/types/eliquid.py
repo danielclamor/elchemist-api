@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Annotated, TYPE_CHECKING, Optional
 
 from graphql import GraphQLError
@@ -34,6 +35,8 @@ class EliquidType(relay.Node):
   size: SizeOptionEnum
   nic_level: NicLevelOptionEnum
   bottle_color: BottleColorEnum
+  created_at: datetime
+  updated_at: datetime
   
   _model: strawberry.Private["Eliquid"]
   
@@ -49,6 +52,8 @@ class EliquidType(relay.Node):
       size=SizeOptionEnum[e.size.name],
       nic_level=NicLevelOptionEnum[e.nic_level.name],
       bottle_color=BottleColorEnum[e.bottle_color.name],
+      created_at=e.created_at,
+      updated_at=e.updated_at,
       _model=e,
     )
     

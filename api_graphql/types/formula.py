@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import datetime
 
 from graphql import GraphQLError
 
@@ -24,6 +25,8 @@ class FormulaType(relay.Node):
   brand: str
   chill_type: ChillTypeEnum
   nic_type: NicTypeEnum
+  created_at: datetime
+  updated_at: datetime
 
   _model: strawberry.Private[Formula]
 
@@ -36,6 +39,8 @@ class FormulaType(relay.Node):
       brand=f.brand,
       chill_type=ChillTypeEnum[f.chill_type.name],
       nic_type=NicTypeEnum[f.nic_type.name],
+      created_at=f.created_at,
+      updated_at=f.updated_at,
       _model=f,
     )
 
