@@ -3,20 +3,15 @@ import enum
 import strawberry
 
 @strawberry.enum
+class BottleColorEnum(enum.Enum):
+  BLACK = "black"
+  CLEAR = "clear"
+  WHITE = "white"
+
+@strawberry.enum
 class ChillTypeEnum(enum.Enum):
   CHILLED = "chilled"
   NON_CHILLED = "non-chilled"
-
-@strawberry.enum
-class NicTypeEnum(enum.Enum):
-  FREEBASE = "freebase"
-  SALT = "salt"
-  
-@strawberry.enum
-class SizeOptionEnum(enum.Enum):
-  ML_30 = "30ml"
-  ML_60 = "60ml"
-  ML_120 = "120ml"
 
 @strawberry.enum
 class NicLevelOptionEnum(enum.Enum):
@@ -31,12 +26,17 @@ class NicLevelOptionEnum(enum.Enum):
   MG_20 = "20mg"
   HIT_35 = "hit35"
   HIT_50 = "hit50"
+
+@strawberry.enum
+class NicTypeEnum(enum.Enum):
+  FREEBASE = "freebase"
+  SALT = "salt"
   
 @strawberry.enum
-class BottleColorEnum(enum.Enum):
-  BLACK = "black"
-  CLEAR = "clear"
-  WHITE = "white"
+class SizeOptionEnum(enum.Enum):
+  ML_30 = "30ml"
+  ML_60 = "60ml"
+  ML_120 = "120ml"
   
 @strawberry.enum
 class ProductionOrderStatusEnum(enum.Enum):
@@ -61,16 +61,16 @@ class ProductionOrderJobEnum(enum.Enum):
   REPAT = "repat"
  
 @strawberry.enum
-class ProductionOrderRepatJobStatusEnum(enum.Enum):
-  CANCELLED = "cancelled"
-  COMPLETED = "completed"
-  IN_PROGRESS = "in_progress"
-  REASSIGNED = "reassigned" 
-
-@strawberry.enum
 class ProductionOrderMixJobStatusEnum(enum.Enum):
   CANCELLED = "cancelled"
   COMPLETED = "completed"
   IN_PROGRESS = "in_progress"
   MIXED = "mixed"
   REASSIGNED = "reassigned"
+ 
+@strawberry.enum
+class ProductionOrderRepatJobStatusEnum(enum.Enum):
+  CANCELLED = "cancelled"
+  COMPLETED = "completed"
+  IN_PROGRESS = "in_progress"
+  REASSIGNED = "reassigned" 
