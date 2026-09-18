@@ -57,6 +57,7 @@ class ProductionOrderMixJobType(relay.Node):
   status: ProductionOrderMixJobStatus
   is_priority: bool
   created_at: datetime
+  updated_at: datetime
   
   _model: strawberry.Private[ProductionOrderMixJob]
   
@@ -73,6 +74,7 @@ class ProductionOrderMixJobType(relay.Node):
       status=j.status,
       is_priority=j.is_priority,
       created_at=j.created_at,
+      updated_at=j.updated_at,
       _model=j,
     )
   
@@ -131,6 +133,7 @@ class ProductionOrderRepatJobType(relay.Node):
   incoming_quantity: int | None
   status: ProductionOrderRepatJobStatus
   created_at: datetime
+  updated_at: datetime
   
   _model: strawberry.Private[ProductionOrderRepatJob]
   
@@ -142,6 +145,7 @@ class ProductionOrderRepatJobType(relay.Node):
       incoming_quantity=j.incoming_quantity,
       status=j.status,
       created_at=j.created_at,
+      updated_at=j.updated_at,
       _model=j,
     )
   
@@ -203,6 +207,7 @@ class ProductionOrderType(relay.Node):
   job: ProductionOrderJobEnum | None
   is_priority: bool
   created_at: datetime
+  updated_at: datetime
 
   _model: strawberry.Private[ProductionOrder]
 
@@ -216,6 +221,7 @@ class ProductionOrderType(relay.Node):
       job=ProductionOrderJobEnum[o.job.name] if o.job else None,
       is_priority=o.is_priority,
       created_at=o.created_at,
+      updated_at=o.updated_at,
       _model=o,
     )
 
