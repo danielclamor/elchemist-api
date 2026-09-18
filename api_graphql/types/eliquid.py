@@ -12,11 +12,11 @@ from api_graphql.types.feedback import Feedback
 from api_graphql.types.nic_profile import NicProfileIdentifierInput
 
 from api_graphql.types.enums import (
-  ChillType, 
-  NicType, 
-  SizeOption, 
-  NicLevelOption, 
-  BottleColor
+  ChillTypeEnum, 
+  NicTypeEnum, 
+  SizeOptionEnum, 
+  NicLevelOptionEnum, 
+  BottleColorEnum
 )
 
 if TYPE_CHECKING:
@@ -29,11 +29,11 @@ class EliquidType(relay.Node):
   upc: str
   description: str
   brand: str
-  chill_type: ChillType
-  nic_type: NicType
-  size: SizeOption
-  nic_level: NicLevelOption
-  bottle_color: BottleColor
+  chill_type: ChillTypeEnum
+  nic_type: NicTypeEnum
+  size: SizeOptionEnum
+  nic_level: NicLevelOptionEnum
+  bottle_color: BottleColorEnum
   
   _model: strawberry.Private["Eliquid"]
   
@@ -44,11 +44,11 @@ class EliquidType(relay.Node):
       upc=e.upc,
       description=e.description,
       brand=e.brand,
-      chill_type=ChillType[e.chill_type.name],
-      nic_type=NicType[e.nic_type.name],
-      size=SizeOption[e.size.name],
-      nic_level=NicLevelOption[e.nic_level.name],
-      bottle_color=BottleColor[e.bottle_color.name],
+      chill_type=ChillTypeEnum[e.chill_type.name],
+      nic_type=NicTypeEnum[e.nic_type.name],
+      size=SizeOptionEnum[e.size.name],
+      nic_level=NicLevelOptionEnum[e.nic_level.name],
+      bottle_color=BottleColorEnum[e.bottle_color.name],
       _model=e,
     )
     
@@ -111,11 +111,11 @@ class EliquidCreateInput:
   upc: str
   description: str
   brand: str
-  chill_type: ChillType
-  nic_type: NicType
-  size: SizeOption
-  nic_level: NicLevelOption
-  bottle_color: BottleColor
+  chill_type: ChillTypeEnum
+  nic_type: NicTypeEnum
+  size: SizeOptionEnum
+  nic_level: NicLevelOptionEnum
+  bottle_color: BottleColorEnum
   nic_profile: Optional[NicProfileIdentifierInput] = strawberry.UNSET
   
 @strawberry.type
@@ -134,11 +134,11 @@ class EliquidUpdateInput:
   upc: Optional[str] = strawberry.UNSET
   description: Optional[str] = strawberry.UNSET
   brand: Optional[str] = strawberry.UNSET
-  chill_type: Optional[ChillType] = strawberry.UNSET
-  nic_type: Optional[NicType] = strawberry.UNSET
-  size: Optional[SizeOption] = strawberry.UNSET
-  nic_level: Optional[NicLevelOption] = strawberry.UNSET
-  bottle_color: Optional[BottleColor] = strawberry.UNSET
+  chill_type: Optional[ChillTypeEnum] = strawberry.UNSET
+  nic_type: Optional[NicTypeEnum] = strawberry.UNSET
+  size: Optional[SizeOptionEnum] = strawberry.UNSET
+  nic_level: Optional[NicLevelOptionEnum] = strawberry.UNSET
+  bottle_color: Optional[BottleColorEnum] = strawberry.UNSET
   
 @strawberry.type
 class EliquidUpdatePayload:

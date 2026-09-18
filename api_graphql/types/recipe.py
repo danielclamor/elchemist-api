@@ -14,17 +14,17 @@ class MixParametersType:
   target_pg: float
   target_vg: float
   nic_base_nic_str: float
-  flavorings: list[MixParametersFlavorings]
-  nic_bases: list[MixParametersNicBases]
+  flavorings: list[MixParametersFlavoringsType]
+  nic_bases: list[MixParametersNicBasesType]
   
 @strawberry.type
-class MixParametersFlavorings:
+class MixParametersFlavoringsType:
   name: str
   is_vg: bool
   ratio: float
   
 @strawberry.type
-class MixParametersNicBases:
+class MixParametersNicBasesType:
   code: str
   name: str
   is_vg: bool

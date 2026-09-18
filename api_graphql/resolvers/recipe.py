@@ -6,8 +6,8 @@ import strawberry
 
 from api_graphql.types.recipe import (
   MixParametersType,
-  MixParametersFlavorings,
-  MixParametersNicBases,
+  MixParametersFlavoringsType,
+  MixParametersNicBasesType,
   RecipeType,
   RecipeDiyType,
   RecipeIngredientType,
@@ -30,14 +30,11 @@ VG_DENSITY = 1.26130
 PG_DENSITY = 1.03730
 NIC_DENSITY = 1.00925  
 
-def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput", input: "RecipeInput") -> RecipeType:
+def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput", input: "RecipeInput") -> RecipeType | None:
   nic_profile = get_nic_profile(db=db, identifier=nic_profile_identifier)
     
   if nic_profile is None:
-    raise GraphQLError(
-      f"NicProfile not found for identifier: {nic_profile_identifier.provided[1]}",
-      extensions={"code": "NOT_FOUND"}
-    )
+    return None
   
   mix_parameters = MixParametersType(
     batch_volume_ml=input.batch_volume_ml,
@@ -46,14 +43,14 @@ def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput",
     target_pg=float(nic_profile.target_pg),
     nic_base_nic_str=float(nic_profile.nic_base_nic_str),
     flavorings=[
-      MixParametersFlavorings(
+      MixParametersFlavoringsType(
         name=f.flavoring_option.name,
         is_vg=f.flavoring_option.is_vg,
         ratio=float(f.ratio),
       ) for f in nic_profile.flavorings
     ],
     nic_bases=[
-      MixParametersNicBases(
+      MixParametersNicBasesType(
         code=b.nic_base_option.code,
         name=b.nic_base_option.name,
         is_vg=b.nic_base_option.is_vg,
@@ -65,14 +62,14 @@ def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput",
   if input.overrides is not strawberry.UNSET:
     OVERRIDE_TRANSFORMS = {
       "flavorings": lambda value: [
-        MixParametersFlavorings(
+        MixParametersFlavoringsType(
           name=v.name,
           is_vg=v.is_vg,
           ratio=v.ratio
         ) for v in value
       ],
       "nic_bases": lambda value: [
-        MixParametersNicBases(
+        MixParametersNicBasesType(
           code=v.code,
           name=v.name,
           is_vg=v.is_vg,
@@ -110,20 +107,20 @@ def get_recipe_diy(input: RecipeDiyInput) -> RecipeDiyType:
     target_pg=float(input.target_pg),
     nic_base_nic_str=float(input.nic_base_nic_str),
     flavorings=[
-      MixParametersFlavorings(
+      MixParametersFlavoringsType(
         name=f.name,
         is_vg=f.is_vg,
         ratio=float(f.ratio),
       ) for f in input.flavorings
     ],
     nic_bases=[
-      MixParametersNicBases(
+      MixParametersNicBasesType(
         code="PG",
         name="PG",
         is_vg=False,
         ratio=float(input.nic_base_pg),
       ),
-      MixParametersNicBases(
+      MixParametersNicBasesType(
         code="VG",
         name="VG",
         is_vg=True,
@@ -175,7 +172,7 @@ def get_recipe_ingredients(mix_parameters: MixParametersType) -> list[RecipeIngr
   
   return nic_base_ingredients.ingredients + flavoring_ingredients.ingredients + [vg_ingredient, pg_ingredient]
 
-def get_flavoring_ingredients(flavorings: list[MixParametersFlavorings], batch_volume_ml: float) -> RecipeIngredientGroup:
+def get_flavoring_ingredients(flavorings: list[MixParametersFlavoringsType], batch_volume_ml: float) -> RecipeIngredientGroup:
   ingredients = []
   total_pg_ratio = 0.0
   total_vg_ratio = 0.0
@@ -206,7 +203,7 @@ def get_flavoring_ingredients(flavorings: list[MixParametersFlavorings], batch_v
     total_vg_ratio=total_vg_ratio
   )
 
-def get_nic_base_ingredients(nic_bases: list[MixParametersNicBases], batch_volume_ml: float, target_nic_str: float, nic_base_nic_str: float) -> RecipeIngredientGroup:
+def get_nic_base_ingredients(nic_bases: list[MixParametersNicBasesType], batch_volume_ml: float, target_nic_str: float, nic_base_nic_str: float) -> RecipeIngredientGroup:
   ingredients = []
   total_pg_ratio = 0.0
   total_vg_ratio = 0.0

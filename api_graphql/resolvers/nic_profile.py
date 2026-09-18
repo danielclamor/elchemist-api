@@ -24,7 +24,7 @@ from api_graphql.resolvers.nic_base_option import (
   get_nic_base_option,
 )
 
-from api_graphql.types.feedback import Feedback, FeedbackStatus
+from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 
 from api_graphql.types.nic_profile import (
   NicProfileType,
@@ -67,7 +67,7 @@ def get_all_nic_profiles(db: Session) -> list[NicProfile]:
     .all()
   )
 
-def get_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> NicProfile:
+def get_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> NicProfile | None:
   return (
     db.scalar(select(NicProfile).where(identifier.query_condition))
   )
@@ -81,7 +81,7 @@ def add_nic_profile_flavoring(db: Session, id: uuid.UUID, input: "NicProfileFlav
     return NicProfileFlavoringAddPayload(
       nic_profile_flavoring=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"FlavoringOption {input.flavoring_option_identifier.provided[1]} not found."
       )
     )
@@ -99,7 +99,7 @@ def add_nic_profile_flavoring(db: Session, id: uuid.UUID, input: "NicProfileFlav
     return NicProfileFlavoringAddPayload(
       nic_profile_flavoring=NicProfileFlavoringType.from_model(existing),
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message=f"Flavoring {existing.name} is already connected with ratio {existing.ratio}"
       )
     )
@@ -117,7 +117,7 @@ def add_nic_profile_flavoring(db: Session, id: uuid.UUID, input: "NicProfileFlav
   return NicProfileFlavoringAddPayload(
     nic_profile_flavoring=NicProfileFlavoringType.from_model(flavoring),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -129,7 +129,7 @@ def add_nic_profile_nic_base(db: Session, id: uuid.UUID, input: "NicProfileNicBa
     return NicProfileNicBaseAddPayload(
       nic_profile_nic_base=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"NicBaseOption {input.nic_base_option_identifier.provided[1]} not found."
       )
     )
@@ -147,7 +147,7 @@ def add_nic_profile_nic_base(db: Session, id: uuid.UUID, input: "NicProfileNicBa
     return NicProfileNicBaseAddPayload(
       nic_profile_nic_base=NicProfileNicBaseType.from_model(existing),
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message=f"NicBase {existing.name} is already connected with ratio {existing.ratio}"
       )
     )
@@ -165,7 +165,7 @@ def add_nic_profile_nic_base(db: Session, id: uuid.UUID, input: "NicProfileNicBa
   return NicProfileNicBaseAddPayload(
     nic_profile_nic_base=NicProfileNicBaseType.from_model(nic_base),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -177,7 +177,7 @@ def bulk_add_nic_profile_flavorings(db: Session, identifier: "NicProfileIdentifi
     return NicProfileFlavoringsBulkAddPayload(
       nic_profile_flavorings=[],
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"NicProfile {identifier.provided[1]} not found."
       )
     )
@@ -186,7 +186,7 @@ def bulk_add_nic_profile_flavorings(db: Session, identifier: "NicProfileIdentifi
     return NicProfileFlavoringsBulkAddPayload(
       nic_profile_flavorings=[],
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message="Nothing to add"
       )
     )
@@ -199,7 +199,7 @@ def bulk_add_nic_profile_flavorings(db: Session, identifier: "NicProfileIdentifi
   return NicProfileFlavoringsBulkAddPayload(
     nic_profile_flavorings=flavorings,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -211,7 +211,7 @@ def bulk_add_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifie
     return NicProfileNicBasesBulkAddPayload(
       nic_profile_nic_bases=[],
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"NicProfile {identifier.provided[1]} not found."
       )
     )
@@ -220,7 +220,7 @@ def bulk_add_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifie
     return NicProfileNicBasesBulkAddPayload(
       nic_profile_nic_bases=[],
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message="Nothing to add"
       )
     )
@@ -233,7 +233,7 @@ def bulk_add_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifie
   return NicProfileNicBasesBulkAddPayload(
     nic_profile_nic_bases=nic_bases,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -245,7 +245,7 @@ def bulk_remove_nic_profile_flavorings(db: Session, identifiers: list[NicProfile
     return NicProfileFlavoringsBulkRemovePayload(
       nic_profile_flavorings=[],
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message="Nothing to remove.",
       )
     )
@@ -256,7 +256,7 @@ def bulk_remove_nic_profile_flavorings(db: Session, identifiers: list[NicProfile
   return NicProfileFlavoringsBulkRemovePayload(
     nic_profile_flavorings=removed,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -268,7 +268,7 @@ def bulk_remove_nic_profile_nic_bases(db: Session, identifiers: list[NicProfileN
     return NicProfileNicBasesBulkRemovePayload(
       nic_profile_nic_bases=[],
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message="Nothing to remove.",
       )
     )
@@ -279,7 +279,7 @@ def bulk_remove_nic_profile_nic_bases(db: Session, identifiers: list[NicProfileN
   return NicProfileNicBasesBulkRemovePayload(
     nic_profile_nic_bases=removed,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -291,7 +291,7 @@ def create_nic_profile(db: Session, formula_identifier: "FormulaIdentifierInput"
     return NicProfileCreatePayload(
       nic_profile=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"Formula {formula_identifier.provided[1]} not found.",
       )
     )
@@ -313,7 +313,7 @@ def create_nic_profile(db: Session, formula_identifier: "FormulaIdentifierInput"
     return NicProfileCreatePayload(
       nic_profile=NicProfileType.from_model(existing),
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message=f"Nic Profile {slug} already exists",
       )
     )
@@ -337,7 +337,7 @@ def create_nic_profile(db: Session, formula_identifier: "FormulaIdentifierInput"
   return NicProfileCreatePayload(
     nic_profile=NicProfileType.from_model(nic_profile),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -350,7 +350,7 @@ def delete_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> 
       deleted_slug=None,
       deleted_full_name=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"Nic profile {identifier.slug} not found."
       )
     )
@@ -365,7 +365,7 @@ def delete_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> 
     deleted_slug=slug,
     deleted_full_name=full_name,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None
     )
   )
@@ -379,7 +379,7 @@ def remove_nic_profile_flavoring(db: Session, identifier: "NicProfileFlavoringId
       removed_name=None,
       removed_ratio=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message="Flavoring not found."
       )
     )
@@ -396,7 +396,7 @@ def remove_nic_profile_flavoring(db: Session, identifier: "NicProfileFlavoringId
     removed_name=name,
     removed_ratio=ratio,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -410,7 +410,7 @@ def remove_nic_profile_nic_base(db: Session, identifier: "NicProfileNicBaseIdent
       removed_name=None,
       removed_ratio=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message="NicBase not found."
       )
     )
@@ -427,7 +427,7 @@ def remove_nic_profile_nic_base(db: Session, identifier: "NicProfileNicBaseIdent
     removed_name=name,
     removed_ratio=ratio,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -445,7 +445,7 @@ def set_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifierInpu
     return NicProfileNicBasesSetPayload(
       nic_profile_nic_bases=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"NicProfile {identifier.provided[1]} not found."
       )
     )
@@ -454,7 +454,7 @@ def set_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifierInpu
     return NicProfileNicBasesSetPayload(
       nic_profile_nic_bases=None,
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message="Nothing to set"
       )
     )
@@ -468,7 +468,7 @@ def set_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifierInpu
       return NicProfileNicBasesSetPayload(
         nic_profile_nic_bases=None,
         feedback=Feedback(
-          status=FeedbackStatus.FAILED,
+          status=FeedbackStatusEnum.FAILED,
           message=f"NicBaseOption {input.nic_base_option_identifier.provided[1]} not found."
         )
       )
@@ -496,7 +496,7 @@ def set_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifierInpu
   return NicProfileNicBasesSetPayload(
     nic_profile_nic_bases=nic_base_types,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -508,7 +508,7 @@ def update_nic_profile(db: Session, identifier: "NicProfileIdentifierInput", inp
     return NicProfileUpdatePayload(
       nic_profile=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"Nic profile not found."
       )
     )
@@ -542,7 +542,7 @@ def update_nic_profile(db: Session, identifier: "NicProfileIdentifierInput", inp
   return NicProfileUpdatePayload(
     nic_profile=NicProfileType.from_model(nic_profile),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=message
     )
   )

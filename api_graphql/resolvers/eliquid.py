@@ -21,7 +21,7 @@ from api_graphql.types.eliquid import (
   EliquidUpdatePayload,
 )
 
-from api_graphql.types.feedback import Feedback, FeedbackStatus
+from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 
 from typing import TYPE_CHECKING
 
@@ -40,7 +40,7 @@ def get_all_eliquids(db: Session) -> list[Eliquid]:
     db.scalars(select(Eliquid)).all()
   )
 
-def get_eliquid(db: Session, identifier: "EliquidIdentifierInput") -> Eliquid:
+def get_eliquid(db: Session, identifier: "EliquidIdentifierInput") -> Eliquid | None:
   return (
     db.scalar(select(Eliquid).where(identifier.query_condition))
   )
@@ -54,7 +54,7 @@ def create_eliquid(db: Session, input: "EliquidCreateInput") -> EliquidCreatePay
     return EliquidCreatePayload(
       eliquid=EliquidType.from_model(existing),
       feedback=Feedback(
-        status=FeedbackStatus.Cancelled,
+        status=FeedbackStatusEnum.Cancelled,
         message=f"Eliquid with upc {input.upc} already exists",
       )
     )
@@ -89,7 +89,7 @@ def create_eliquid(db: Session, input: "EliquidCreateInput") -> EliquidCreatePay
   return EliquidCreatePayload(
     eliquid=EliquidType.from_model(eliquid),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=feedback_message,
     )
   )
@@ -102,7 +102,7 @@ def delete_eliquid(db: Session, identifier: "EliquidIdentifierInput") -> Eliquid
       deleted_upc=None,
       deleted_description=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"Eliquid {identifier.provided[1]} not found."
       )
     )
@@ -117,7 +117,7 @@ def delete_eliquid(db: Session, identifier: "EliquidIdentifierInput") -> Eliquid
     deleted_upc=upc,
     deleted_description=description,
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None
     )
   )
@@ -129,7 +129,7 @@ def set_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifierInput", n
     return EliquidUpdatePayload(
       eliquid=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"Eliquid {identifier.provided[1]} not found."
       )
     )
@@ -140,7 +140,7 @@ def set_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifierInput", n
     return EliquidUpdatePayload(
       eliquid=EliquidType.from_model(eliquid),
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"NicProfile {nic_profile_identifier.provided[1]} not found."
       )
     )
@@ -149,7 +149,7 @@ def set_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifierInput", n
     return EliquidUpdatePayload(
       eliquid=EliquidType.from_model(eliquid),
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message=f"Eliquid {eliquid.description} already connected to NicProfile {nic_profile.slug}."
       )
     )
@@ -162,7 +162,7 @@ def set_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifierInput", n
   return EliquidUpdatePayload(
     eliquid=EliquidType.from_model(eliquid),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -174,7 +174,7 @@ def unset_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifierInput")
     return EliquidUpdatePayload(
       eliquid=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"Eliquid {identifier.provided[1]} not found."
       )
     )
@@ -183,7 +183,7 @@ def unset_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifierInput")
     return EliquidUpdatePayload(
       eliquid=EliquidType.from_model(eliquid),
       feedback=Feedback(
-        status=FeedbackStatus.CANCELLED,
+        status=FeedbackStatusEnum.CANCELLED,
         message=f"Eliquid {eliquid.description} is not connected to any NicProfile."
       )
     )
@@ -196,7 +196,7 @@ def unset_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifierInput")
   return EliquidUpdatePayload(
     eliquid=EliquidType.from_model(eliquid),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
@@ -208,7 +208,7 @@ def update_eliquid(db: Session, identifier: "EliquidIdentifierInput", input: "El
     return EliquidUpdatePayload(
       eliquid=None,
       feedback=Feedback(
-        status=FeedbackStatus.FAILED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"Eliquid {identifier.provided[1]} not found."
       )
     )
@@ -240,7 +240,7 @@ def update_eliquid(db: Session, identifier: "EliquidIdentifierInput", input: "El
   return EliquidUpdatePayload(
     eliquid=EliquidType.from_model(eliquid),
     feedback=Feedback(
-      status=FeedbackStatus.SUCCESS,
+      status=FeedbackStatusEnum.SUCCESS,
       message=message
     )
   )
