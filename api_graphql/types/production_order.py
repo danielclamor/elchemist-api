@@ -233,6 +233,14 @@ class ProductionOrderType(relay.Node):
   @relay.connection(relay.ListConnection["ProductionOrderActivityLogType"])
   def activity_logs(self) -> list["ProductionOrderActivityLogType"]:
     return [ProductionOrderActivityLogType.from_model(l) for l in self._model.activity_logs]
+  
+  @relay.connection(relay.ListConnection["ProductionOrderMixJobType"])
+  def production_order_mix_jobs(self) -> list["ProductionOrderMixJobType"]:
+    return [ProductionOrderMixJobType.from_model(j) for j in self._model.production_order_mix_jobs]
+  
+  @relay.connection(relay.ListConnection["ProductionOrderRepatJobType"])
+  def production_order_repat_jobs(self) -> list["ProductionOrderRepatJobType"]:
+    return [ProductionOrderRepatJobType.from_model(j) for j in self._model.production_order_repat_jobs]
 
 @strawberry.input
 class ProductionOrderIdentifierInput:
