@@ -238,7 +238,7 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
   po = ProductionOrder(
     order_number=po_number,
     eliquid_id=eliquid.id,
-    quantity=input.quantity,
+    ordered_quantity=input.quantity,
     is_priority=input.is_priority,
     status=ProductionOrderStatus.PENDING,
     created_at=created_at_utc,
@@ -321,7 +321,7 @@ def create_production_order_mix_job(db: Session, production_order: ProductionOrd
   po_job = ProductionOrderMixJob(
     production_order_id=production_order.id,
     production_order_number=production_order.order_number,
-    ordered_quantity=production_order.quantity,
+    ordered_quantity=production_order.ordered_quantity,
     is_priority=production_order.is_priority,
     created_at=created_at,
     updated_at=created_at,
@@ -342,7 +342,7 @@ def create_production_order_repat_job(db: Session, production_order: ProductionO
   po_job = ProductionOrderRepatJob(
     production_order_id=production_order.id,
     production_order_number=production_order.order_number,
-    ordered_quantity=production_order.quantity,
+    ordered_quantity=production_order.ordered_quantity,
     created_at=created_at,
     updated_at=created_at,
   )
@@ -470,7 +470,7 @@ def mark_production_order_delivered(db: Session, identifier: "ProductionOrderIde
     )
   )
 
-def mark_production_order_fulfilled(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrderUpdatePayload:
+def mark_production_order_fulfilled(db: Session, identifier: "ProductionOrderIdentifierInput", fulfilled_quantity: int) -> ProductionOrderUpdatePayload:
   po = db.scalar(
     select(ProductionOrder).where(
       and_(
@@ -493,6 +493,7 @@ def mark_production_order_fulfilled(db: Session, identifier: "ProductionOrderIde
   
   today_as_utc = get_today("UTC")
   
+  po.fulfilled_quantity = fulfilled_quantity
   po.status = ProductionOrderStatus.FULFILLED
   po.updated_at = today_as_utc
   db.flush()
@@ -593,7 +594,7 @@ def mark_production_order_mix_job_cancelled(db: Session, identifier: "Production
     production_order_mix_job=ProductionOrderMixJobType.from_model(job),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
-      message=None
+      message=f"ProductionOrderMixJob {job.production_order_number} cancelled",
     )
   )
 
@@ -624,7 +625,7 @@ def mark_production_order_mix_job_completed(db: Session, identifier: "Production
   db.flush()
   
   from api_graphql.types.production_order import ProductionOrderIdentifierInput
-  mark_production_order_fulfilled(db=db, identifier=ProductionOrderIdentifierInput(order_number=job.production_order_number))
+  mark_production_order_fulfilled(db=db, identifier=ProductionOrderIdentifierInput(order_number=job.production_order_number), fulfilled_quantity=job.produced_quantity)
  
   db.commit()
   db.refresh(job)
@@ -736,14 +737,7 @@ def mark_production_order_repat_job_cancelled(db: Session, identifier: "Producti
   
   job.status = ProductionOrderRepatJobStatus.CANCELLED
   job.updated_at = today_as_utc
-  
   db.flush()
-  
-  from api_graphql.types.production_order import ProductionOrderIdentifierInput
-  mark_production_order_fulfilled(db=db, identifier=ProductionOrderIdentifierInput(order_number=job.production_order_number))
- 
-  db.commit()
-  db.refresh(job)
     
   return ProductionOrderRepatJobUpdatePayload(
     production_order_repat_job=ProductionOrderRepatJobType.from_model(job),
@@ -940,11 +934,11 @@ def set_production_order_quantity(db: Session, identifier: "ProductionOrderIdent
       )
     )
   
-  old_value = f"{po.quantity}"
+  old_value = f"{po.ordered_quantity}"
   
   today = get_today("UTC")
   
-  po.quantity = quantity
+  po.ordered_quantity = quantity
   po.updated_at = today
   db.flush()
   
@@ -954,7 +948,7 @@ def set_production_order_quantity(db: Session, identifier: "ProductionOrderIdent
     activity=ProductionOrderActivity.ADJUST_QUANTITY,
     triggered_at=today,
     old_value=old_value,
-    new_value=f"{po.quantity}",
+    new_value=f"{po.ordered_quantity}",
   )
   
   db.commit()
@@ -964,7 +958,7 @@ def set_production_order_quantity(db: Session, identifier: "ProductionOrderIdent
     production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
-      message=f"ProductionOrder {po.order_number} quantity updated to {po.quantity}"
+      message=f"ProductionOrder {po.order_number} quantity updated to {po.ordered_quantity}"
     )
   )
   

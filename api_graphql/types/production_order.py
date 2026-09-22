@@ -202,7 +202,8 @@ class ProductionOrderRepatJobIdentifierInput:
 class ProductionOrderType(relay.Node):
   id: relay.NodeID[str]
   order_number: str
-  quantity: int | None
+  ordered_quantity: int | None
+  fulfilled_quantity: int | None
   status: ProductionOrderStatusEnum
   job: ProductionOrderJobEnum | None
   is_priority: bool
@@ -216,7 +217,8 @@ class ProductionOrderType(relay.Node):
     return cls(
       id=o.id,
       order_number=o.order_number,
-      quantity=o.quantity,
+      ordered_quantity=o.ordered_quantity,
+      fulfilled_quantity=o.fulfilled_quantity,
       status=ProductionOrderStatusEnum[o.status.name],
       job=ProductionOrderJobEnum[o.job.name] if o.job else None,
       is_priority=o.is_priority,

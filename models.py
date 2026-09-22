@@ -294,7 +294,8 @@ class ProductionOrder(Base):
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   order_number: Mapped[str] = mapped_column(String(20), unique=True, index=True)
   eliquid_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("eliquids.id"), index=True)
-  quantity: Mapped[int] = mapped_column(nullable=True)
+  ordered_quantity: Mapped[int] = mapped_column(nullable=True)
+  fulfilled_quantity: Mapped[int] = mapped_column(nullable=True)
   status: Mapped[ProductionOrderStatus] = mapped_column(production_order_status_enum, default=ProductionOrderStatus.PENDING)
   job: Mapped[ProductionOrderJob] = mapped_column(production_order_job_enum, nullable=True)
   is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -319,7 +320,7 @@ class ProductionOrder(Base):
   )
 
   def __repr__(self) -> str:
-    return f"<ProductionOrder {self.order_number!r} eliquid={self.eliquid.description!r} quantity={self.quantity} status={self.status.value}>"
+    return f"<ProductionOrder {self.order_number!r} eliquid={self.eliquid.description!r} quantity={self.ordered_quantity} status={self.status.value}>"
   
 
 class ProductionOrderActivity(enum.Enum):
