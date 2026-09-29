@@ -51,16 +51,16 @@ class NicType(enum.Enum):
 nic_type_enum = Enum(NicType, name="nictype")
 
 
-class SizeOption(enum.Enum):
+class BottleSize(enum.Enum):
   ML_30 = "30ml"
   ML_60 = "60ml"
   ML_120 = "120ml"
 
 
-size_option_enum = Enum(SizeOption, name="sizeoption")
+bottle_size_enum = Enum(BottleSize, name="bottlesize")
 
 
-class NicLevelOption(enum.Enum):
+class NicLevel(enum.Enum):
   MG_0 = "0mg"
   MG_3 = "3mg"
   MG_5 = "5mg"
@@ -74,7 +74,7 @@ class NicLevelOption(enum.Enum):
   HIT_50 = "hit50"
 
 
-nic_level_option_enum = Enum(NicLevelOption, name="nicleveloption")
+nic_level_enum = Enum(NicLevel, name="niclevel")
 
 
 class Eliquid(Base):
@@ -86,8 +86,8 @@ class Eliquid(Base):
   brand: Mapped[str] = mapped_column(String(255))
   chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
   nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
-  size: Mapped[SizeOption] = mapped_column(size_option_enum)
-  nic_level: Mapped[NicLevelOption] = mapped_column(nic_level_option_enum)
+  bottle_size: Mapped[BottleSize] = mapped_column(bottle_size_enum)
+  nic_level: Mapped[NicLevel] = mapped_column(nic_level_enum)
   bottle_color: Mapped[BottleColor] = mapped_column(bottle_color_enum)
   nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="SET NULL"), nullable=True, index=True)
 

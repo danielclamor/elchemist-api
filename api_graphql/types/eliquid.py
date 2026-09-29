@@ -15,8 +15,8 @@ from api_graphql.types.nic_profile import NicProfileIdentifierInput
 from api_graphql.types.enums import (
   ChillTypeEnum, 
   NicTypeEnum, 
-  SizeOptionEnum, 
-  NicLevelOptionEnum, 
+  BottleSizeEnum, 
+  NicLevelEnum, 
   BottleColorEnum
 )
 
@@ -32,8 +32,8 @@ class EliquidType(relay.Node):
   brand: str
   chill_type: ChillTypeEnum
   nic_type: NicTypeEnum
-  size: SizeOptionEnum
-  nic_level: NicLevelOptionEnum
+  size: BottleSizeEnum
+  nic_level: NicLevelEnum
   bottle_color: BottleColorEnum
   created_at: datetime
   updated_at: datetime
@@ -49,8 +49,8 @@ class EliquidType(relay.Node):
       brand=e.brand,
       chill_type=ChillTypeEnum[e.chill_type.name],
       nic_type=NicTypeEnum[e.nic_type.name],
-      size=SizeOptionEnum[e.size.name],
-      nic_level=NicLevelOptionEnum[e.nic_level.name],
+      size=BottleSizeEnum[e.bottle_size.name],
+      nic_level=NicLevelEnum[e.nic_level.name],
       bottle_color=BottleColorEnum[e.bottle_color.name],
       created_at=e.created_at,
       updated_at=e.updated_at,
@@ -118,8 +118,8 @@ class EliquidCreateInput:
   brand: str
   chill_type: ChillTypeEnum
   nic_type: NicTypeEnum
-  size: SizeOptionEnum
-  nic_level: NicLevelOptionEnum
+  size: BottleSizeEnum
+  nic_level: NicLevelEnum
   bottle_color: BottleColorEnum
   nic_profile: Optional[NicProfileIdentifierInput] = strawberry.UNSET
   
@@ -141,8 +141,8 @@ class EliquidUpdateInput:
   brand: Optional[str] = strawberry.UNSET
   chill_type: Optional[ChillTypeEnum] = strawberry.UNSET
   nic_type: Optional[NicTypeEnum] = strawberry.UNSET
-  size: Optional[SizeOptionEnum] = strawberry.UNSET
-  nic_level: Optional[NicLevelOptionEnum] = strawberry.UNSET
+  size: Optional[BottleSizeEnum] = strawberry.UNSET
+  nic_level: Optional[NicLevelEnum] = strawberry.UNSET
   bottle_color: Optional[BottleColorEnum] = strawberry.UNSET
   
 @strawberry.type
