@@ -7,6 +7,12 @@ class BottleColorEnum(enum.Enum):
   BLACK = "black"
   CLEAR = "clear"
   WHITE = "white"
+  
+@strawberry.enum
+class BottleSizeEnum(enum.Enum):
+  ML_30 = "30ml"
+  ML_60 = "60ml"
+  ML_120 = "120ml"
 
 @strawberry.enum
 class ChillTypeEnum(enum.Enum):
@@ -14,7 +20,7 @@ class ChillTypeEnum(enum.Enum):
   NON_CHILLED = "non-chilled"
 
 @strawberry.enum
-class NicLevelOptionEnum(enum.Enum):
+class NicLevelEnum(enum.Enum):
   MG_0 = "0mg"
   MG_3 = "3mg"
   MG_5 = "5mg"
@@ -31,12 +37,6 @@ class NicLevelOptionEnum(enum.Enum):
 class NicTypeEnum(enum.Enum):
   FREEBASE = "freebase"
   SALT = "salt"
-  
-@strawberry.enum
-class SizeOptionEnum(enum.Enum):
-  ML_30 = "30ml"
-  ML_60 = "60ml"
-  ML_120 = "120ml"
   
 @strawberry.enum
 class ProductionOrderStatusEnum(enum.Enum):

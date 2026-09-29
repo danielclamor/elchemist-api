@@ -9,8 +9,8 @@ from models import (
   NicProfile, 
   ChillType, 
   NicType, 
-  SizeOption, 
-  NicLevelOption, 
+  BottleSize, 
+  NicLevel, 
   BottleColor
 )
 
@@ -76,8 +76,8 @@ def create_eliquid(db: Session, input: "EliquidCreateInput") -> EliquidCreatePay
     brand=input.brand,
     chill_type=ChillType[input.chill_type.name],
     nic_type=NicType[input.nic_type.name],
-    size=SizeOption[input.size.name],
-    nic_level=NicLevelOption[input.nic_level.name],
+    bottle_size=BottleSize[input.bottle_size.name],
+    nic_level=NicLevel[input.nic_level.name],
     bottle_color=BottleColor[input.bottle_color.name],
     nic_profile_id=nic_profile_id,
   )
