@@ -4,10 +4,11 @@ from datetime import datetime
 from enum import Enum
 import uuid
 
+from graphql import GraphQLError
 import strawberry
 
 from sqlalchemy.orm import Session
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func
 
 from zoneinfo import ZoneInfo
 
@@ -59,13 +60,24 @@ if TYPE_CHECKING:
 from .utils import generate_production_order_number, get_today, convert_strawberry_input_to_dict
 
 # Queries
-def get_all_production_orders(db: Session) -> list[ProductionOrder]:
-  return (
-    db.scalars(
-      select(ProductionOrder)
-      .order_by(ProductionOrder.created_at.desc(), ProductionOrder.id)
-    ).unique().all()
-  )
+def _filter_production_orders(stmt, status=None, created_from=None, created_to=None):
+  if status is not None:
+    stmt = stmt.where(ProductionOrder.status == status)
+  if created_from is not None:
+    stmt = stmt.where(ProductionOrder.created_at >= created_from)
+  if created_to is not None:
+    stmt = stmt.where(ProductionOrder.created_at < created_to)
+  return stmt
+
+def get_all_production_orders(db: Session, status=None, created_from=None, created_to=None) -> list[ProductionOrder]:
+  stmt = select(ProductionOrder).order_by(ProductionOrder.created_at.desc(), ProductionOrder.id)
+  stmt = _filter_production_orders(stmt, status, created_from, created_to)
+  return db.scalars(stmt).unique().all()
+
+def get_production_order_status_counts(db: Session, created_from=None, created_to=None) -> dict:
+  stmt = select(ProductionOrder.status, func.count()).group_by(ProductionOrder.status)
+  stmt = _filter_production_orders(stmt, None, created_from, created_to)
+  return {status: count for status, count in db.execute(stmt).all()}
 
 def get_all_production_order_mix_jobs(db: Session) -> list[ProductionOrderMixJob]:
   return (

@@ -284,7 +284,12 @@ class ProductionOrderIdentifierInput:
       return ProductionOrder.id == value.node_id
     else:
       return getattr(ProductionOrder, attr) == value
-  
+
+@strawberry.type
+class ProductionOrderStatusCountType:
+  status: ProductionOrderStatusEnum
+  count: int
+
 @strawberry.input
 class ProductionOrderCreateInput:
   quantity: int

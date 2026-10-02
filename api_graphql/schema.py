@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from graphql import GraphQLError
 import strawberry
 from strawberry import relay
@@ -13,7 +15,7 @@ from api_graphql.types.eliquid import (
   EliquidUpdateInput, 
   EliquidUpdatePayload,
 )
-from api_graphql.types.enums import ProductionOrderJobEnum
+from api_graphql.types.enums import ProductionOrderJobEnum, ProductionOrderStatusEnum
 from api_graphql.types.flavoring_option import (
   FlavoringOptionsBulkDeletePayload,
   FlavoringOptionDeletePayload,
@@ -77,6 +79,7 @@ from api_graphql.types.production_order import (
   ProductionOrderRepatJobMarkCompletedInput,
   ProductionOrderRepatJobType,
   ProductionOrderRepatJobUpdatePayload,
+  ProductionOrderStatusCountType,
   ProductionOrderType,
   ProductionOrderIdentifierInput,
   ProductionOrderCreateInput,
@@ -154,6 +157,7 @@ from api_graphql.resolvers.production_order import (
   get_production_order,
   get_production_order_mix_job,
   get_production_order_repat_job,
+  get_production_order_status_counts,
   mark_production_order_cancelled,
   mark_production_order_delivered,
   mark_production_order_in_progress,
@@ -165,6 +169,7 @@ from api_graphql.resolvers.production_order import (
   set_production_order_quantity,
   update_production_order,
 )
+from models import ProductionOrderStatus
 
 def _cursor_index(cursor: str) -> int:
   return int(relay.from_base64(cursor).split(":")[1])
@@ -330,9 +335,25 @@ class Query:
   @relay.connection(relay.ListConnection[ProductionOrderType])
   def productionOrders(
     self, info: strawberry.Info,
+    status: Optional[ProductionOrderStatusEnum] = None,
+    created_from: Optional[datetime] = None,
+    created_to: Optional[datetime] = None,
   ) -> List[ProductionOrderType]:
     db = info.context["db"]
-    return [ProductionOrderType.from_model(po) for po in get_all_production_orders(db)]
+    model_status = ProductionOrderStatus[status.name] if status else None
+    return [ProductionOrderType.from_model(po) for po in
+            get_all_production_orders(db, model_status, created_from, created_to)]
+
+  @strawberry.field
+  def productionOrderStatusCounts(
+    self, info: strawberry.Info,
+    created_from: Optional[datetime] = None,
+    created_to: Optional[datetime] = None,
+  ) -> List[ProductionOrderStatusCountType]:
+    db = info.context["db"]
+    counts = get_production_order_status_counts(db, created_from, created_to)
+    return [ProductionOrderStatusCountType(status=ProductionOrderStatusEnum[s.name], count=counts.get(s, 0))
+            for s in ProductionOrderStatus]
 
   @strawberry.field
   def productionOrderMixJob(
