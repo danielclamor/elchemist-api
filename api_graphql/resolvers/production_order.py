@@ -61,7 +61,10 @@ from .utils import generate_production_order_number, get_today, convert_strawber
 # Queries
 def get_all_production_orders(db: Session) -> list[ProductionOrder]:
   return (
-    db.scalars(select(ProductionOrder)).unique().all()
+    db.scalars(
+      select(ProductionOrder)
+      .order_by(ProductionOrder.created_at.desc(), ProductionOrder.id)
+    ).unique().all()
   )
 
 def get_all_production_order_mix_jobs(db: Session) -> list[ProductionOrderMixJob]:
