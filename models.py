@@ -433,3 +433,20 @@ class ProductionOrderMixJob(Base):
   
   def __repr__(self):
     return f"<ProductionOrderMix {self.production_order_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
+
+class Location(Base):
+  __tablename__ = "locations"
+  
+  id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+  code: Mapped[str] = mapped_column(String(20), index=True)
+  name: Mapped[str] = mapped_column(String(255))
+  address: Mapped[str] = mapped_column(String(255))
+  city: Mapped[str] = mapped_column(String(255))
+  province: Mapped[str] = mapped_column(String[255])
+  created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+  updated_at: Mapped[datetime] = mapped_column(
+    DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+  )
+  
+  def __repr__(self) -> str:
+    return f"<Location {self.name!r}>"
