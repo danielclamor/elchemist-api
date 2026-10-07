@@ -5,6 +5,7 @@ from decimal import Decimal
 
 from sqlalchemy import (
   Boolean,
+  CheckConstraint,
   Date,
   DateTime,
   Enum,
@@ -13,6 +14,7 @@ from sqlalchemy import (
   Integer,
   Numeric,
   String,
+  UniqueConstraint,
   func,
   text,
 )
@@ -89,7 +91,7 @@ class Eliquid(Base):
   bottle_size: Mapped[BottleSize] = mapped_column(bottle_size_enum)
   nic_level: Mapped[NicLevel] = mapped_column(nic_level_enum)
   bottle_color: Mapped[BottleColor] = mapped_column(bottle_color_enum)
-  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="SET NULL"), nullable=True, index=True)
+  nic_profile_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("nic_profiles.id", ondelete="SET NULL"), index=True)
 
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
@@ -294,15 +296,19 @@ class ProductionOrder(Base):
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   order_number: Mapped[str] = mapped_column(String(20), unique=True, index=True)
   eliquid_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("eliquids.id"), index=True)
-  ordered_quantity: Mapped[int] = mapped_column(nullable=True)
-  fulfilled_quantity: Mapped[int] = mapped_column(nullable=True)
+  ordered_quantity: Mapped[int | None]
+  fulfilled_quantity: Mapped[int | None]
   status: Mapped[ProductionOrderStatus] = mapped_column(production_order_status_enum, default=ProductionOrderStatus.PENDING)
-  job: Mapped[ProductionOrderJob] = mapped_column(production_order_job_enum, nullable=True)
+  job: Mapped[ProductionOrderJob | None] = mapped_column(production_order_job_enum)
   is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
   is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+  )
+  
+  allocations: Mapped[list["ProductionOrderAllocation"]] = relationship(
+    back_populates="production_order", cascade="all, delete-orphan", passive_deletes=True
   )
 
   eliquid: Mapped["Eliquid"] = relationship(back_populates="production_orders")
@@ -318,6 +324,12 @@ class ProductionOrder(Base):
   production_order_mix_jobs: Mapped[list["ProductionOrderMixJob"]] = relationship(
     back_populates="production_order", cascade="all, delete-orphan"
   )
+  
+  @property
+  def hq_quantity(self) -> int | None:
+    if self.ordered_quantity is None:
+      return None
+    return self.ordered_quantity - sum(a.quantity for a in self.allocations)
 
   def __repr__(self) -> str:
     return f"<ProductionOrder {self.order_number!r} eliquid={self.eliquid.description!r} quantity={self.ordered_quantity} status={self.status.value}>"
@@ -341,8 +353,8 @@ class ProductionOrderActivityLog(Base):
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
   activity: Mapped[ProductionOrderActivity] = mapped_column(production_order_activity_enum)
-  old_value: Mapped[str] = mapped_column(String(255), nullable=True)
-  new_value: Mapped[str] = mapped_column(String(255), nullable=True)
+  old_value: Mapped[str | None] = mapped_column(String(255))
+  new_value: Mapped[str | None] = mapped_column(String(255))
   triggered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   
   production_order: Mapped["ProductionOrder"] = relationship(back_populates="activity_logs")
@@ -376,8 +388,8 @@ class ProductionOrderRepatJob(Base):
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
   production_order_number: Mapped[str] = mapped_column(String(20), index=True)
-  ordered_quantity: Mapped[int] = mapped_column(nullable=True)
-  incoming_quantity: Mapped[int] = mapped_column(nullable=True)
+  ordered_quantity: Mapped[int | None]
+  incoming_quantity: Mapped[int | None]
   status: Mapped[ProductionOrderRepatJobStatus] = mapped_column(production_order_repat_job_status_enum, default=ProductionOrderRepatJobStatus.IN_PROGRESS)
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
@@ -416,12 +428,12 @@ class ProductionOrderMixJob(Base):
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
   production_order_number: Mapped[str] = mapped_column(String(20), index=True)
-  ordered_quantity: Mapped[int] = mapped_column()
-  produced_quantity: Mapped[int] = mapped_column(nullable=True)
-  batch_number: Mapped[str] = mapped_column(nullable=True)
-  recipe_snapshot: Mapped[dict] = mapped_column(JSONB, nullable=True)
-  total_volume_ml: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=True)
-  total_weight_g: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=True)
+  ordered_quantity: Mapped[int]
+  produced_quantity: Mapped[int | None]
+  batch_number: Mapped[str | None] = mapped_column(String(255))
+  recipe_snapshot: Mapped[dict | None] = mapped_column(JSONB)
+  total_volume_ml: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+  total_weight_g: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
   status: Mapped[ProductionOrderMixJobStatus] = mapped_column(production_order_mix_job_status_enum, default=ProductionOrderMixJobStatus.IN_PROGRESS)
   is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -434,15 +446,40 @@ class ProductionOrderMixJob(Base):
   def __repr__(self):
     return f"<ProductionOrderMix {self.production_order_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
 
+class ProductionOrderAllocation(Base):
+  __tablename__ = "production_order_allocations"
+  
+  __table_args__ = (
+    UniqueConstraint("production_order_id", "location_id", name="uq_allocation_order_location"),
+    CheckConstraint("quantity > 0", name="ck_allocation_quantity_positive"),
+  )
+  
+  id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+  production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
+  location_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("locations.id"), index=True)
+  quantity: Mapped[int]
+  
+  production_order: Mapped["ProductionOrder"] = relationship(back_populates="allocations")
+  
+  location: Mapped["Location"] = relationship()
+  
+  def __repr__(self):
+    return f"<{self.__class__.__name__} {self.quantity}>"
+
 class Location(Base):
   __tablename__ = "locations"
   
+  __table_args__ = (
+    Index("uq_locations_single_hq", "is_hq", unique=True, postgresql_where=text("is_hq")),
+  )
+  
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  code: Mapped[str] = mapped_column(String(20), index=True)
+  code: Mapped[str] = mapped_column(String(20), index=True, unique=True)
   name: Mapped[str] = mapped_column(String(255))
   address: Mapped[str] = mapped_column(String(255))
   city: Mapped[str] = mapped_column(String(255))
-  province: Mapped[str] = mapped_column(String[255])
+  province: Mapped[str] = mapped_column(String(255))
+  is_hq: Mapped[bool] = mapped_column(default=False, server_default=text("false"))
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
