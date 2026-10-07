@@ -9,6 +9,7 @@ from strawberry import relay
 
 from models import Eliquid
 
+from api_graphql.types.connections import ListConnectionWithTotalCount
 from api_graphql.types.feedback import Feedback
 from api_graphql.types.nic_profile import NicProfileIdentifierInput
 
@@ -65,10 +66,11 @@ class EliquidType(relay.Node):
 
     return None
   
-  @relay.connection(relay.ListConnection[Annotated["ProductionOrderType", strawberry.lazy("api_graphql.types.production_order")]])
+  @relay.connection(ListConnectionWithTotalCount[Annotated["ProductionOrderType", strawberry.lazy("api_graphql.types.production_order")]])
   def production_orders(self) -> list[Annotated["ProductionOrderType", strawberry.lazy("api_graphql.types.production_order")]]:
     from api_graphql.types.production_order import ProductionOrderType
-    return [ProductionOrderType.from_model(o) for o in self._model.production_orders]
+    orders = sorted(self._model.production_orders, key=lambda o: (o.created_at, o.id), reverse=True)
+    return [ProductionOrderType.from_model(o) for o in orders]
 
 @strawberry.input
 class EliquidIdentifierInput:

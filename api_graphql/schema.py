@@ -5,6 +5,7 @@ import strawberry
 from strawberry import relay
 from typing import List, Optional
 
+from api_graphql.types.connections import ListConnectionWithTotalCount
 from api_graphql.types.brand import BrandEdge, BrandConnection
 from api_graphql.types.eliquid import (
   EliquidType,
@@ -332,7 +333,7 @@ class Query:
     o = get_production_order(db, identifier=identifier)
     return ProductionOrderType.from_model(o) if o else None
   
-  @relay.connection(relay.ListConnection[ProductionOrderType])
+  @relay.connection(ListConnectionWithTotalCount[ProductionOrderType])
   def productionOrders(
     self, info: strawberry.Info,
     status: Optional[ProductionOrderStatusEnum] = None,
