@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 from datetime import datetime
 from enum import Enum
 import uuid
@@ -9,12 +13,16 @@ import strawberry
 
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_, func
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from zoneinfo import ZoneInfo
 
+from api_graphql.resolvers.location import get_hq_location
 from models import (
   Eliquid,
+  Location,
   ProductionOrder,
+  ProductionOrderAllocation,
   ProductionOrderJob,
   ProductionOrderMixJob,
   ProductionOrderMixJobStatus,
@@ -104,7 +112,7 @@ def get_production_order_repat_job(db: Session, identifier: "ProductionOrderRepa
     db.scalar(select(ProductionOrderRepatJob).where(identifier.query_condition))
   )
 
-# Mutations    
+# Mutations
 def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentifierInput", job: "ProductionOrderJobEnum") -> ProductionOrderAssignJobPayload:
   po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
 
@@ -226,55 +234,143 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
         message=f"Eliquid {eliquid_identifier.provided[1]} not found"
       )
     )
+    
+  quantity = None if input.quantity in (None, strawberry.UNSET) else input.quantity
+  allocation_inputs = [] if input.allocations in (None, strawberry.UNSET) else input.allocations
   
+  resolved: list[tuple[Location, int]] = []
+  
+  if allocation_inputs:
+    if quantity is None:
+      return ProductionOrderCreatePayload(
+        production_order=None,
+        feedback=Feedback(
+          status=FeedbackStatusEnum.FAILED,
+          message="Set an ordered quantity before allocating"
+        )
+      )
+  
+    seen: set[uuid.UUID] = set()
+    
+    for a in allocation_inputs:
+      location = db.scalar(select(Location).where(a.location_identifier.query_condition))
+
+      if location is None:
+        return ProductionOrderCreatePayload(
+          production_order=None,
+          feedback=Feedback(
+            status=FeedbackStatusEnum.FAILED,
+            message=f"Location {a.location_identifier.provided[1]} not found"
+          )
+        )
+      if location.is_hq:
+        return ProductionOrderCreatePayload(
+          production_order=None,
+          feedback=Feedback(
+            status=FeedbackStatusEnum.FAILED,
+            message=f"Location {location.code} is HQ. HQ gets the remainder, allocate only to remote locations"
+          )
+        )
+      if location.id in seen:
+        return ProductionOrderCreatePayload(
+          production_order=None,
+          feedback=Feedback(
+            status=FeedbackStatusEnum.FAILED,
+            message=f"Duplicate allocation for location {location.code}"
+          )
+        )
+      
+      seen.add(location.id)
+      resolved.append((location, a.quantity))
+      
+    allocated = sum(q for _, q in resolved)
+    if allocated > quantity:
+      return ProductionOrderCreatePayload(
+        production_order=None,
+        feedback=Feedback(
+          status=FeedbackStatusEnum.FAILED,
+          message=f"Allocations ({allocated}) exceed ordered quantity ({quantity})"
+        )
+      )
+
   today = get_today()
   todate = today.date()
-  counter = db.scalar(
-    select(ProductionOrderCounter)
-    .where(ProductionOrderCounter.date == todate)
-    .with_for_update()
-  )
-
-  if counter is not None:
-    counter.last_number += 1
-  else:
-    counter = ProductionOrderCounter(
-      date=todate,
-      last_number=1,
-    )
-    db.add(counter)
-
-  db.flush()
-  
-  po_number = generate_production_order_number(date=todate, counter=counter.last_number)
-  
   created_at_utc = today.astimezone(ZoneInfo("UTC"))
   
-  po = ProductionOrder(
-    order_number=po_number,
-    eliquid_id=eliquid.id,
-    ordered_quantity=input.quantity,
-    is_priority=input.is_priority,
-    status=ProductionOrderStatus.PENDING,
-    created_at=created_at_utc,
-    updated_at=created_at_utc,
-  )
-  
-  db.add(po)
-  db.flush()
-  
-  create_production_order_activity_log(
-    db=db,
-    production_order_id=po.id,
-    activity=ProductionOrderActivity.CREATED,
-    triggered_at=created_at_utc,
-    old_value=None,
-    new_value=None,
-  )
-  
-  db.commit()
-  db.refresh(po)
+  try: 
+    counter = db.scalar(
+      select(ProductionOrderCounter)
+      .where(ProductionOrderCounter.date == todate)
+      .with_for_update()
+    )
+
+    if counter is not None:
+      counter.last_number += 1
+    else:
+      counter = ProductionOrderCounter(
+        date=todate,
+        last_number=1,
+      )
+      db.add(counter)
+
+    db.flush()
     
+    po_number = generate_production_order_number(date=todate, counter=counter.last_number)
+    
+    po = ProductionOrder(
+      order_number=po_number,
+      eliquid_id=eliquid.id,
+      ordered_quantity=quantity,
+      is_priority=input.is_priority,
+      status=ProductionOrderStatus.PENDING,
+      created_at=created_at_utc,
+      updated_at=created_at_utc,
+    )
+    
+    db.add(po)
+    db.flush()
+    
+    for location, qty in resolved:
+      create_production_order_allocation(
+        db=db,
+        production_order_id=po.id,
+        location_id=location.id,
+        quantity=qty,
+      )
+    
+    create_production_order_activity_log(
+      db=db,
+      production_order_id=po.id,
+      activity=ProductionOrderActivity.CREATED,
+      triggered_at=created_at_utc,
+      old_value=None,
+      new_value=None,
+    )
+    
+    db.commit()
+  except IntegrityError:
+    db.rollback()
+    logger.exception("Integrity error creating production order")
+    return ProductionOrderCreatePayload(
+      production_order=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message="Could not create ProductionOrder: a database constraint was violated",
+      ),
+    )
+  except SQLAlchemyError:
+    db.rollback()
+    logger.exception("Database error creating production order")
+    return ProductionOrderCreatePayload(
+      production_order=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message="Could not create ProductionOrder due to a database error",
+      ),
+    )
+    
+  db.refresh(po)
+      
   return ProductionOrderCreatePayload(
     production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
@@ -306,31 +402,23 @@ def create_production_order_activity_log(
   db.flush()
   
   return log
-  
-def delete_production_order(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrderDeletePayload:
-  po = get_production_order(db=db, identifier=identifier)
-  
-  if po is None:
-    return ProductionOrderDeletePayload(
-      deleted_order_number=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"ProductionOrder {identifier.provided[1]} not found."
-      )
-    )
-  
-  order_number = po.order_number
-  
-  db.delete(po)
-  db.commit()
-  
-  return ProductionOrderDeletePayload(
-    deleted_order_number=order_number,
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=None
-    )
+
+def create_production_order_allocation(
+  db: Session,
+  production_order_id: uuid.UUID,
+  location_id: uuid.UUID,
+  quantity: int,
+) -> ProductionOrderAllocation:
+  allocation = ProductionOrderAllocation(
+    production_order_id=production_order_id,
+    location_id=location_id,
+    quantity=quantity
   )
+  
+  db.add(allocation)
+  db.flush()
+  
+  return allocation
 
 def create_production_order_mix_job(db: Session, production_order: ProductionOrder, created_at: datetime) -> ProductionOrderJobCreatePayload:
   po_job = ProductionOrderMixJob(
@@ -370,6 +458,31 @@ def create_production_order_repat_job(db: Session, production_order: ProductionO
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=None,
+    )
+  )
+  
+def delete_production_order(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrderDeletePayload:
+  po = get_production_order(db=db, identifier=identifier)
+  
+  if po is None:
+    return ProductionOrderDeletePayload(
+      deleted_order_number=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message=f"ProductionOrder {identifier.provided[1]} not found."
+      )
+    )
+  
+  order_number = po.order_number
+  
+  db.delete(po)
+  db.commit()
+  
+  return ProductionOrderDeletePayload(
+    deleted_order_number=order_number,
+    feedback=Feedback(
+      status=FeedbackStatusEnum.SUCCESS,
+      message=None
     )
   )
 

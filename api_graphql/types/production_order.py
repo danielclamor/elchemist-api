@@ -8,6 +8,7 @@ import strawberry
 from strawberry import relay
 from strawberry.scalars import JSON
 
+from api_graphql.types.location import LocationIdentifierInput
 from models import (
   ProductionOrder, 
   ProductionOrderActivityLog,
@@ -225,6 +226,18 @@ class ProductionOrderAllocationType(relay.Node):
     from api_graphql.types.production_order import ProductionOrderType
     return ProductionOrderType.from_model(self._model.production_order)
 
+@strawberry.input
+class ProductionOrderAllocationInput:
+  location_identifier: LocationIdentifierInput
+  quantity: int
+
+  def __post_init__(self):
+    if self.quantity <= 0:
+      raise GraphQLError(
+        "Allocation quantity must be greater than 0.",
+        extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
+      )
+
 @strawberry.type
 class ProductionOrderType(relay.Node):
   id: relay.NodeID[str]
@@ -327,8 +340,9 @@ class ProductionOrderStatusCountType:
 
 @strawberry.input
 class ProductionOrderCreateInput:
-  quantity: int
+  quantity: Optional[int] = strawberry.UNSET
   is_priority: bool = False
+  allocations: Optional[list[ProductionOrderAllocationInput]] = strawberry.UNSET
 
 @strawberry.type
 class ProductionOrderCreatePayload:
