@@ -10,7 +10,8 @@ from strawberry.scalars import JSON
 
 from models import (
   ProductionOrder, 
-  ProductionOrderActivityLog, 
+  ProductionOrderActivityLog,
+  ProductionOrderAllocation, 
   ProductionOrderMixJob, 
   ProductionOrderMixJobStatus, 
   ProductionOrderRepatJob, 
@@ -26,6 +27,8 @@ from api_graphql.types.enums import (
 
 if TYPE_CHECKING:
   from api_graphql.types.eliquid import EliquidType
+  from api_graphql.types.location import LocationType
+  from api_graphql.types.production_order import ProductionOrderType
 
 @strawberry.type
 class ProductionOrderActivityLogType(relay.Node):
@@ -197,6 +200,30 @@ class ProductionOrderRepatJobIdentifierInput:
     else:
       return getattr(ProductionOrderRepatJob, attr) == value
 
+@strawberry.type
+class ProductionOrderAllocationType(relay.Node):
+  id: relay.NodeID[str]
+  quantity: int
+  
+  _model: strawberry.Private[ProductionOrderAllocation]
+  
+  @classmethod
+  def from_model(cls, a: ProductionOrderAllocation) -> "ProductionOrderAllocationType":
+    return cls(
+      id=a.id,
+      quantity=a.quantity,
+      _model=a,
+    )
+    
+  @strawberry.field
+  def location(self) -> Annotated["LocationType", strawberry.lazy("api_graphql.types.location")]:
+    from api_graphql.types.location import LocationType
+    return LocationType.from_model(self._model.location)
+  
+  @strawberry.field
+  def production_order(self) -> Annotated["ProductionOrderType", strawberry.lazy("api_graphql.types.production_order")]:
+    from api_graphql.types.production_order import ProductionOrderType
+    return ProductionOrderType.from_model(self._model.production_order)
 
 @strawberry.type
 class ProductionOrderType(relay.Node):
@@ -238,11 +265,19 @@ class ProductionOrderType(relay.Node):
   
   @relay.connection(relay.ListConnection["ProductionOrderMixJobType"])
   def production_order_mix_jobs(self) -> list["ProductionOrderMixJobType"]:
-    return [ProductionOrderMixJobType.from_model(j) for j in self._model.production_order_mix_jobs]
+    return [ProductionOrderMixJobType.from_model(j) for j in self._model.mix_jobs]
   
   @relay.connection(relay.ListConnection["ProductionOrderRepatJobType"])
   def production_order_repat_jobs(self) -> list["ProductionOrderRepatJobType"]:
-    return [ProductionOrderRepatJobType.from_model(j) for j in self._model.production_order_repat_jobs]
+    return [ProductionOrderRepatJobType.from_model(j) for j in self._model.repat_jobs]
+
+  @strawberry.field
+  def hq_quantity(self) -> int | None:
+    return self._model.hq_quantity
+  
+  @relay.connection(relay.ListConnection["ProductionOrderAllocationType"])
+  def allocations(self) -> list["ProductionOrderAllocationType"]:
+    return [ProductionOrderAllocationType.from_model(a) for a in self._model.allocations]
 
 @strawberry.input
 class ProductionOrderIdentifierInput:
