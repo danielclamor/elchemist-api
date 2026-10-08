@@ -90,6 +90,11 @@ from api_graphql.types.production_order import (
   ProductionOrderUpdatePayload,
 )
 
+from api_graphql.types.location import (
+  LocationType,
+  LocationIdentifierInput,
+)
+
 from api_graphql.resolvers.brand import (
   get_all_brands,
 )
@@ -170,6 +175,13 @@ from api_graphql.resolvers.production_order import (
   set_production_order_quantity,
   update_production_order,
 )
+
+from api_graphql.resolvers.location import (
+  get_all_locations,
+  get_hq_location,
+  get_location,
+)
+
 from models import ProductionOrderStatus
 
 def _cursor_index(cursor: str) -> int:
@@ -385,6 +397,29 @@ class Query:
   ) -> List[ProductionOrderRepatJobType]:
     db = info.context["db"]
     return [ProductionOrderRepatJobType.from_model(j) for j in get_all_production_order_repat_jobs(db)]
+  
+  @strawberry.field
+  def location(
+    self, info: strawberry.Info, identifier: LocationIdentifierInput,
+  ) -> LocationType | None:
+    db = info.context["db"]
+    l = get_location(db, identifier=identifier)
+    return LocationType.from_model(l) if l else None
+  
+  @strawberry.field
+  def locationHq(
+    self, info: strawberry.Info,
+  ) -> LocationType | None:
+    db = info.context["db"]
+    l = get_hq_location(db)
+    return LocationType.from_model(l) if l else None
+  
+  @relay.connection(relay.ListConnection[LocationType])
+  def locations(
+    self, info: strawberry.Info,
+  ) -> List[LocationType]:
+    db = info.context["db"]
+    return [LocationType.from_model(l) for l in get_all_locations(db)]
 
 @strawberry.type
 class Mutation:
