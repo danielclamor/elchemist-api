@@ -237,6 +237,12 @@ class ProductionOrderAllocationInput:
         "Allocation quantity must be greater than 0.",
         extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
       )
+      
+@strawberry.type
+class ProductionOrderHqAllocationType:
+  quantity: int | None
+  location_code: str
+  location_name: str
 
 @strawberry.type
 class ProductionOrderType(relay.Node):
@@ -283,10 +289,21 @@ class ProductionOrderType(relay.Node):
   @relay.connection(relay.ListConnection["ProductionOrderRepatJobType"])
   def production_order_repat_jobs(self) -> list["ProductionOrderRepatJobType"]:
     return [ProductionOrderRepatJobType.from_model(j) for j in self._model.repat_jobs]
-
+  
   @strawberry.field
-  def hq_quantity(self) -> int | None:
-    return self._model.hq_quantity
+  def allocation_hq(self, info: strawberry.Info) -> ProductionOrderHqAllocationType | None:
+    from api_graphql.resolvers.location import get_hq_location
+
+    hq = get_hq_location(info.context["db"])
+
+    if hq is None:
+      return None
+
+    return ProductionOrderHqAllocationType(
+      quantity=self._model.hq_quantity,
+      location_code=hq.code,
+      location_name=hq.name,
+    )
   
   @relay.connection(relay.ListConnection["ProductionOrderAllocationType"])
   def allocations(self) -> list["ProductionOrderAllocationType"]:
