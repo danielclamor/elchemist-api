@@ -317,11 +317,11 @@ class ProductionOrder(Base):
     back_populates="production_order", cascade="all, delete-orphan"
   )
   
-  production_order_repat_jobs: Mapped[list["ProductionOrderRepatJob"]] = relationship(
+  repat_jobs: Mapped[list["ProductionOrderRepatJob"]] = relationship(
     back_populates="production_order", cascade="all, delete-orphan"
   )
   
-  production_order_mix_jobs: Mapped[list["ProductionOrderMixJob"]] = relationship(
+  mix_jobs: Mapped[list["ProductionOrderMixJob"]] = relationship(
     back_populates="production_order", cascade="all, delete-orphan"
   )
   
@@ -396,7 +396,7 @@ class ProductionOrderRepatJob(Base):
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
   )
   
-  production_order: Mapped["ProductionOrder"] = relationship(back_populates="production_order_repat_jobs")
+  production_order: Mapped["ProductionOrder"] = relationship(back_populates="repat_jobs")
   
   def __repr__(self):
     return f"<ProductionOrderRepatriation {self.production_order_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
@@ -441,7 +441,7 @@ class ProductionOrderMixJob(Base):
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
   )
   
-  production_order: Mapped["ProductionOrder"] = relationship(back_populates="production_order_mix_jobs")
+  production_order: Mapped["ProductionOrder"] = relationship(back_populates="mix_jobs")
   
   def __repr__(self):
     return f"<ProductionOrderMix {self.production_order_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
