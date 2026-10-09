@@ -305,7 +305,7 @@ class ProductionOrderType(relay.Node):
       location_name=hq.name,
     )
   
-  @relay.connection(relay.ListConnection["ProductionOrderAllocationType"])
+  @strawberry.field
   def allocations(self) -> list["ProductionOrderAllocationType"]:
     return [ProductionOrderAllocationType.from_model(a) for a in self._model.allocations]
 
