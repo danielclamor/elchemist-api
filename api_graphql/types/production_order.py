@@ -278,7 +278,7 @@ class ProductionOrderType(relay.Node):
     from api_graphql.types.eliquid import EliquidType
     return EliquidType.from_model(self._model.eliquid)
 
-  @relay.connection(relay.ListConnection["ProductionOrderActivityLogType"])
+  @strawberry.field
   def activity_logs(self) -> list["ProductionOrderActivityLogType"]:
     return [ProductionOrderActivityLogType.from_model(l) for l in self._model.activity_logs]
   
