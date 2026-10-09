@@ -47,7 +47,7 @@ class ProductionOrderStatusEnum(enum.Enum):
   PENDING = "pending"
   
 @strawberry.enum
-class ProductionOrderActivityEnum(enum.Enum):
+class ProductionOrderActivityTypeEnum(enum.Enum):
   CREATED = "created"
   ADJUST_QUANTITY = "quantity"
   CHANGE_STATUS = "status"

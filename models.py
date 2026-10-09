@@ -335,7 +335,7 @@ class ProductionOrder(Base):
     return f"<ProductionOrder {self.order_number!r} eliquid={self.eliquid.description!r} quantity={self.ordered_quantity} status={self.status.value}>"
   
 
-class ProductionOrderActivity(enum.Enum):
+class ProductionOrderActivityType(enum.Enum):
   CREATED = "created"
   ADJUST_QUANTITY = "quantity"
   CHANGE_STATUS = "status"
@@ -344,7 +344,7 @@ class ProductionOrderActivity(enum.Enum):
   ASSIGN_JOB = "job"
 
 
-production_order_activity_enum = Enum(ProductionOrderActivity, name="productionorderactivity")
+production_order_activity_type_enum = Enum(ProductionOrderActivityType, name="productionorderactivitytype")
 
 
 class ProductionOrderActivityLog(Base):
@@ -352,7 +352,7 @@ class ProductionOrderActivityLog(Base):
   
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
-  activity: Mapped[ProductionOrderActivity] = mapped_column(production_order_activity_enum)
+  type: Mapped[ProductionOrderActivityType] = mapped_column(production_order_activity_type_enum)
   old_value: Mapped[str | None] = mapped_column(String(255))
   new_value: Mapped[str | None] = mapped_column(String(255))
   triggered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -360,7 +360,7 @@ class ProductionOrderActivityLog(Base):
   production_order: Mapped["ProductionOrder"] = relationship(back_populates="activity_logs")
   
   def __repr__(self) -> str:
-    return f"<ProductionOrderActivityLog {self.production_order.order_number!r} activity={self.activity} old_value={self.old_value} new_value={self.new_value}>"
+    return f"<ProductionOrderActivityLog {self.production_order.order_number!r} type={self.type} old_value={self.old_value} new_value={self.new_value}>"
   
 
 class ProductionOrderRepatJobStatus(enum.Enum):

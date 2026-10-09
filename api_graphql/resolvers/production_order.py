@@ -30,7 +30,7 @@ from models import (
   ProductionOrderRepatJobStatus,
   ProductionOrderStatus,
   ProductionOrderActivityLog,
-  ProductionOrderActivity,
+  ProductionOrderActivityType,
   ProductionOrderCounter,
 )
 
@@ -202,7 +202,7 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
   create_production_order_activity_log(
     db=db, 
     production_order_id=po.id,
-    activity=ProductionOrderActivity.ASSIGN_JOB,
+    type=ProductionOrderActivityType.ASSIGN_JOB,
     triggered_at=today_as_utc,
     old_value=f"{old_job.name if old_job is not None else None}",
     new_value=f"{new_job.name}"
@@ -341,7 +341,7 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
     create_production_order_activity_log(
       db=db,
       production_order_id=po.id,
-      activity=ProductionOrderActivity.CREATED,
+      type=ProductionOrderActivityType.CREATED,
       triggered_at=created_at_utc,
       old_value=None,
       new_value=None,
@@ -382,7 +382,7 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
 def create_production_order_activity_log(
   db: Session,
   production_order_id: uuid.UUID,
-  activity: ProductionOrderActivity,
+  type: ProductionOrderActivityType,
   triggered_at: datetime,
   old_value: Optional[str],
   new_value: Optional[str],
@@ -392,7 +392,7 @@ def create_production_order_activity_log(
   
   log = ProductionOrderActivityLog(
     production_order_id=production_order_id,
-    activity=activity,
+    type=type,
     triggered_at=triggered_at,
     old_value=old_value,
     new_value=new_value,
@@ -532,7 +532,7 @@ def mark_production_order_cancelled(db: Session, identifier: "ProductionOrderIde
   create_production_order_activity_log(
     db=db,
     production_order_id=po.id,
-    activity=ProductionOrderActivity.CHANGE_STATUS,
+    type=ProductionOrderActivityType.CHANGE_STATUS,
     triggered_at=today,
     old_value=old_value,
     new_value=f"{po.status.name}",
@@ -581,7 +581,7 @@ def mark_production_order_delivered(db: Session, identifier: "ProductionOrderIde
   create_production_order_activity_log(
     db=db,
     production_order_id=po.id,
-    activity=ProductionOrderActivity.DELIVERED,
+    type=ProductionOrderActivityType.DELIVERED,
     triggered_at=today,
     old_value=old_value,
     new_value=f"{po.status.name}",
@@ -629,7 +629,7 @@ def mark_production_order_fulfilled(db: Session, identifier: "ProductionOrderIde
   create_production_order_activity_log(
     db=db,
     production_order_id=po.id,
-    activity=ProductionOrderActivity.CHANGE_STATUS,
+    type=ProductionOrderActivityType.CHANGE_STATUS,
     triggered_at=today_as_utc,
     old_value=old_value,
     new_value=f"{po.status.name}",
@@ -676,7 +676,7 @@ def mark_production_order_in_progress(db: Session, identifier: "ProductionOrderI
   create_production_order_activity_log(
     db=db,
     production_order_id=po.id,
-    activity=ProductionOrderActivity.CHANGE_STATUS,
+    type=ProductionOrderActivityType.CHANGE_STATUS,
     triggered_at=today_as_utc,
     old_value=old_value,
     new_value=f"{po.status.name}",
@@ -984,7 +984,7 @@ def set_production_order_archived(db: Session, identifier: "ProductionOrderIdent
   create_production_order_activity_log(
     db=db,
     production_order_id=po.id,
-    activity=ProductionOrderActivity.TOGGLE_ARCHIVED,
+    type=ProductionOrderActivityType.TOGGLE_ARCHIVED,
     triggered_at=today,
     old_value=old_value,
     new_value=f"{po.is_archived}",
@@ -1033,7 +1033,7 @@ def set_production_order_priority(db: Session, identifier: "ProductionOrderIdent
   create_production_order_activity_log(
     db=db,
     production_order_id=po.id,
-    activity=ProductionOrderActivity.SWITCH_PRIORITY,
+    type=ProductionOrderActivityType.SWITCH_PRIORITY,
     triggered_at=today,
     old_value=old_value,
     new_value=f"{po.is_priority}",
@@ -1073,7 +1073,7 @@ def set_production_order_quantity(db: Session, identifier: "ProductionOrderIdent
   create_production_order_activity_log(
     db=db,
     production_order_id=po.id,
-    activity=ProductionOrderActivity.ADJUST_QUANTITY,
+    type=ProductionOrderActivityType.ADJUST_QUANTITY,
     triggered_at=today,
     old_value=old_value,
     new_value=f"{po.ordered_quantity}",
@@ -1123,7 +1123,7 @@ def update_production_order(db: Session, identifier: "ProductionOrderIdentifierI
       create_production_order_activity_log(
         db=db,
         production_order_id=po.id,
-        activity=ProductionOrderActivity(attr),
+        type=ProductionOrderActivityType(attr),
         triggered_at=today,
         old_value=f"{current.name}",
         new_value=f"{value}",

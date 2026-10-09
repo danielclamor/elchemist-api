@@ -21,7 +21,7 @@ from models import (
 
 from api_graphql.types.feedback import Feedback
 from api_graphql.types.enums import (
-  ProductionOrderActivityEnum,
+  ProductionOrderActivityTypeEnum,
   ProductionOrderJobEnum, 
   ProductionOrderStatusEnum
 )
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 @strawberry.type
 class ProductionOrderActivityLogType(relay.Node):
   id: relay.NodeID[str]
-  activity: ProductionOrderActivityEnum
+  type: ProductionOrderActivityTypeEnum
   old_value: Optional[str] = None
   new_value: Optional[str] = None
   triggered_at: datetime
@@ -43,7 +43,7 @@ class ProductionOrderActivityLogType(relay.Node):
   def from_model(cls, l: ProductionOrderActivityLog) -> "ProductionOrderActivityLogType":
     return cls(
       id=l.id,
-      activity=ProductionOrderActivityEnum[l.activity.name],
+      type=ProductionOrderActivityTypeEnum[l.type.name],
       old_value=l.old_value,
       new_value=l.new_value,
       triggered_at=l.triggered_at,
