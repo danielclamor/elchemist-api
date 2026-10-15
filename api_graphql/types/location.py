@@ -7,6 +7,8 @@ from strawberry import relay
 
 from models import Location
 
+from api_graphql.types.feedback import Feedback
+
 @strawberry.type
 class LocationType(relay.Node):
   id: relay.NodeID[str]
@@ -16,6 +18,7 @@ class LocationType(relay.Node):
   city: str
   province: str
   is_hq: bool
+  is_archived: bool
   created_at: datetime
   updated_at: datetime
   
@@ -29,6 +32,7 @@ class LocationType(relay.Node):
       city=l.city,
       province=l.province,
       is_hq=l.is_hq,
+      is_archived=l.is_archived,
       created_at=l.created_at,
       updated_at=l.updated_at,
     )
@@ -73,3 +77,8 @@ class LocationIdentifierInput:
       return Location.id == value.node_id
     else:
       return getattr(Location, attr) == value
+
+@strawberry.type
+class LocationUpdatePayload:
+  location: LocationType | None
+  feedback: Feedback

@@ -93,6 +93,7 @@ from api_graphql.types.production_order import (
 from api_graphql.types.location import (
   LocationType,
   LocationIdentifierInput,
+  LocationUpdatePayload,
 )
 
 from api_graphql.resolvers.brand import (
@@ -180,6 +181,7 @@ from api_graphql.resolvers.location import (
   get_all_locations,
   get_hq_location,
   get_location,
+  set_location_archived,
 )
 
 from models import ProductionOrderStatus
@@ -416,10 +418,10 @@ class Query:
   
   @relay.connection(relay.ListConnection[LocationType])
   def locations(
-    self, info: strawberry.Info,
+    self, info: strawberry.Info, include_archived: bool = False,
   ) -> List[LocationType]:
     db = info.context["db"]
-    return [LocationType.from_model(l) for l in get_all_locations(db)]
+    return [LocationType.from_model(l) for l in get_all_locations(db, include_archived=include_archived)]
 
 @strawberry.type
 class Mutation:
@@ -747,6 +749,15 @@ class Mutation:
       db=db, identifier=identifier, quantity=quantity,
     )
   
+  @strawberry.mutation
+  def locationSetArchived(
+    self, info: strawberry.Info, identifier: LocationIdentifierInput, is_archived: bool,
+  ) -> LocationUpdatePayload:
+    db = info.context["db"]
+    return set_location_archived(
+      db=db, identifier=identifier, is_archived=is_archived,
+    )
+
   @strawberry.mutation
   def productionOrderUpdate(
     self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, production_order: ProductionOrderUpdateInput,

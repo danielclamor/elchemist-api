@@ -310,6 +310,14 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
             message=f"Location {a.location_identifier.provided[1]} not found"
           )
         )
+      if location.is_archived:
+        return ProductionOrderCreatePayload(
+          production_order=None,
+          feedback=Feedback(
+            status=FeedbackStatusEnum.FAILED,
+            message=f"Location {location.code} is archived. Restore it or allocate to another location"
+          )
+        )
       if location.is_hq:
         return ProductionOrderCreatePayload(
           production_order=None,
