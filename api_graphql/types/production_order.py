@@ -301,9 +301,7 @@ class ProductionOrderType(relay.Node):
   
   @strawberry.field
   def allocation_hq(self, info: strawberry.Info) -> ProductionOrderHqAllocationType | None:
-    from api_graphql.resolvers.location import get_hq_location
-
-    hq = get_hq_location(info.context["db"])
+    hq = self._model.hq_location
 
     if hq is None:
       return None

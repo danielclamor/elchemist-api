@@ -262,6 +262,17 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
       )
     )
     
+  hq = get_hq_location(db)
+
+  if hq is None:
+    return ProductionOrderCreatePayload(
+      production_order=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message="No HQ location is set. Mark one location as HQ first",
+      ),
+    )
+    
   quantity = None if input.quantity in (None, strawberry.UNSET) else input.quantity
   allocation_inputs = [] if input.allocations in (None, strawberry.UNSET) else input.allocations
   
@@ -350,6 +361,7 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
       ordered_quantity=quantity,
       is_priority=input.is_priority,
       status=ProductionOrderStatus.PENDING,
+      hq_location_id=hq.id,
       created_at=created_at_utc,
       updated_at=created_at_utc,
     )

@@ -302,16 +302,19 @@ class ProductionOrder(Base):
   job: Mapped[ProductionOrderJob | None] = mapped_column(production_order_job_enum)
   is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
   is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
+  hq_location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("locations.id"), index=True)
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
   )
-  
+    
   allocations: Mapped[list["ProductionOrderAllocation"]] = relationship(
     back_populates="production_order", cascade="all, delete-orphan", passive_deletes=True
   )
 
   eliquid: Mapped["Eliquid"] = relationship(back_populates="production_orders")
+  
+  hq_location: Mapped["Location | None"] = relationship()
   
   activity_logs: Mapped[list["ProductionOrderActivityLog"]] = relationship(
     back_populates="production_order", cascade="all, delete-orphan"
