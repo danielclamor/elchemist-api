@@ -11,7 +11,7 @@ import uuid
 from graphql import GraphQLError
 import strawberry
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import select, and_, func
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -78,7 +78,16 @@ def _filter_production_orders(stmt, status:"ProductionOrderStatus"=None, created
   return stmt
 
 def get_all_production_orders(db: Session, status:"ProductionOrderStatus"=None, created_from:datetime=None, created_to:datetime=None) -> list[ProductionOrder]:
-  stmt = select(ProductionOrder).order_by(ProductionOrder.created_at.desc(), ProductionOrder.id)
+  stmt = (
+    select(ProductionOrder)
+    .options(
+      selectinload(ProductionOrder.allocations).selectinload(ProductionOrderAllocation.location),
+      selectinload(ProductionOrder.hq_location),
+      selectinload(ProductionOrder.mix_jobs),
+      selectinload(ProductionOrder.repat_jobs),
+    )
+    .order_by(ProductionOrder.created_at.desc(), ProductionOrder.id)
+  )
   stmt = _filter_production_orders(stmt, status, created_from, created_to)
   return db.scalars(stmt).unique().all()
 

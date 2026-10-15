@@ -317,6 +317,14 @@ class ProductionOrderType(relay.Node):
   def allocations(self) -> list["ProductionOrderAllocationType"]:
     return [ProductionOrderAllocationType.from_model(a) for a in self._model.allocations]
 
+  @strawberry.field
+  def allocated_quantity(self) -> int:
+    return self._model.allocated_quantity
+
+  @strawberry.field
+  def allocation_shortfall(self) -> int | None:
+    return self._model.allocation_shortfall
+
 @strawberry.input
 class ProductionOrderIdentifierInput:
   id: Optional[relay.GlobalID] = strawberry.UNSET

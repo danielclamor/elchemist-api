@@ -340,6 +340,18 @@ class ProductionOrder(Base):
   @property
   def is_hq_quantity_projected(self) -> bool:
     return self.fulfilled_quantity is None
+
+  @property
+  def allocated_quantity(self) -> int:
+    return sum(a.quantity for a in self.allocations)
+
+  @property
+  def allocation_shortfall(self) -> int | None:
+    # only known once production reports an actual quantity
+    if self.fulfilled_quantity is None:
+      return None
+
+    return max(self.allocated_quantity - self.fulfilled_quantity, 0)
   
   @property
   def current_job(self) -> "ProductionOrderMixJob | ProductionOrderRepatJob | None":
