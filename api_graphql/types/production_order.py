@@ -222,11 +222,6 @@ class ProductionOrderAllocationType(relay.Node):
   def location(self) -> Annotated["LocationType", strawberry.lazy("api_graphql.types.location")]:
     from api_graphql.types.location import LocationType
     return LocationType.from_model(self._model.location)
-  
-  @strawberry.field
-  def production_order(self) -> Annotated["ProductionOrderType", strawberry.lazy("api_graphql.types.production_order")]:
-    from api_graphql.types.production_order import ProductionOrderType
-    return ProductionOrderType.from_model(self._model.production_order)
 
 @strawberry.input
 class ProductionOrderAllocationInput:
