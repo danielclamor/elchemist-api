@@ -716,7 +716,7 @@ def mark_production_order_in_progress(db: Session, identifier: "ProductionOrderI
     production_order=ProductionOrderType.from_model(po),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
-      message=f"ProductionOrder {po.order_number} fulfilled"
+      message=f"ProductionOrder {po.order_number} in progress"
     )
   )
 
@@ -932,7 +932,11 @@ def mark_production_order_repat_job_completed(db: Session, identifier: "Producti
   db.flush()
   
   from api_graphql.types.production_order import ProductionOrderIdentifierInput
-  mark_production_order_fulfilled(db=db, identifier=ProductionOrderIdentifierInput(order_number=job.production_order_number))
+  mark_production_order_fulfilled(
+    db=db, 
+    identifier=ProductionOrderIdentifierInput(order_number=job.production_order_number), 
+    fulfilled_quantity=job.incoming_quantity
+  )
  
   db.commit()
   db.refresh(job)
