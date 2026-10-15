@@ -9,9 +9,9 @@ if TYPE_CHECKING:
     LocationIdentifierInput
   )
 
-def get_all_locations(db: Session) -> list[Location]:
+def get_all_locations(db: Session) -> list[Location]: 
   return (
-    db.scalars(select(Location))
+    db.scalars(select(Location).order_by(Location.name.asc()))
     .unique()
     .all()
   )
