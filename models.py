@@ -327,9 +327,27 @@ class ProductionOrder(Base):
   
   @property
   def hq_quantity(self) -> int | None:
-    if self.ordered_quantity is None:
+    total = self.fulfilled_quantity if self.fulfilled_quantity is not None else self.ordered_quantity
+
+    if total is None:
       return None
-    return self.ordered_quantity - sum(a.quantity for a in self.allocations)
+
+    return max(total - sum(a.quantity for a in self.allocations), 0)
+
+  @property
+  def is_hq_quantity_projected(self) -> bool:
+    return self.fulfilled_quantity is None
+  
+  @property
+  def current_job(self) -> "ProductionOrderMixJob | ProductionOrderRepatJob | None":
+    if self.job == ProductionOrderJob.MIX:
+      jobs = [j for j in self.mix_jobs if j.status != ProductionOrderMixJobStatus.REASSIGNED]
+    elif self.job == ProductionOrderJob.REPAT:
+      jobs = [j for j in self.repat_jobs if j.status != ProductionOrderRepatJobStatus.REASSIGNED]
+    else:
+      return None
+
+    return max(jobs, key=lambda j: j.created_at, default=None)
 
   def __repr__(self) -> str:
     return f"<ProductionOrder {self.order_number!r} eliquid={self.eliquid.description!r} quantity={self.ordered_quantity} status={self.status.value}>"

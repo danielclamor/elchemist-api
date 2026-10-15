@@ -113,8 +113,8 @@ def get_production_order_repat_job(db: Session, identifier: "ProductionOrderRepa
   )
 
 # Mutations
-def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentifierInput", job: "ProductionOrderJobEnum") -> ProductionOrderAssignJobPayload:
-  po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
+def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentifierInput", ordered_quantity: Optional[int], job: "ProductionOrderJobEnum") -> ProductionOrderAssignJobPayload: 
+  po = db.scalar(select(ProductionOrder).where(identifier.query_condition).with_for_update())
 
   if po is None:
     return ProductionOrderAssignJobPayload(
@@ -137,7 +137,18 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
     )
     
   old_job = po.job
-  new_job = ProductionOrderJob[job.name]
+  
+  try:
+    new_job = ProductionOrderJob[job.name]
+  except KeyError:
+    return ProductionOrderAssignJobPayload(
+      production_order=ProductionOrderType.from_model(po),
+      created_production_order_job=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message=f"Job type {job.name} not supported",
+      ),
+    )
   
   if old_job == new_job:
     return ProductionOrderAssignJobPayload(
@@ -147,6 +158,28 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
         status=FeedbackStatusEnum.CANCELLED,
         message=f"ProductionOrder {identifier.provided[1]} is already assigned to {job.name}"
       )
+    )
+  
+  effective_quantity = ordered_quantity if ordered_quantity is not None else po.ordered_quantity
+
+  if new_job == ProductionOrderJob.MIX and effective_quantity is None:
+    return ProductionOrderAssignJobPayload(
+      production_order=ProductionOrderType.from_model(po),
+      created_production_order_job=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message="Mix job needs an ordered quantity. Provide one, or set it on the production order",
+      ),
+    )
+  
+  if effective_quantity is not None and effective_quantity <= 0:
+    return ProductionOrderAssignJobPayload(
+      production_order=ProductionOrderType.from_model(po),
+      created_production_order_job=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message=f"Quantity must be greater than 0. Currently, {effective_quantity}",
+      ),
     )
   
   today_as_utc = get_today("UTC")
@@ -165,6 +198,7 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
     reassigned_job = None
     
   if old_job is not None and reassigned_job is None:
+    db.rollback()
     return ProductionOrderAssignJobPayload(
       production_order=ProductionOrderType.from_model(po),
       created_production_order_job=None,
@@ -179,22 +213,15 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
       db=db,
       production_order=po,
       created_at=today_as_utc,
+      ordered_quantity=effective_quantity,
     ).production_order_job
-  elif new_job == ProductionOrderJob.REPAT:
+  else:
     created_job = create_production_order_repat_job(
       db=db,
       production_order=po,
       created_at=today_as_utc,
+      ordered_quantity=effective_quantity,
     ).production_order_job
-  else:
-    return ProductionOrderAssignJobPayload(
-      production_order=None,
-      created_production_order_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message="Job type not supported"
-      )
-    )
     
   po.job = new_job
   db.flush()
@@ -420,11 +447,11 @@ def create_production_order_allocation(
   
   return allocation
 
-def create_production_order_mix_job(db: Session, production_order: ProductionOrder, created_at: datetime) -> ProductionOrderJobCreatePayload:
+def create_production_order_mix_job(db: Session, production_order: ProductionOrder, ordered_quantity: int, created_at: datetime) -> ProductionOrderJobCreatePayload:
   po_job = ProductionOrderMixJob(
     production_order_id=production_order.id,
     production_order_number=production_order.order_number,
-    ordered_quantity=production_order.ordered_quantity,
+    ordered_quantity=ordered_quantity,
     is_priority=production_order.is_priority,
     created_at=created_at,
     updated_at=created_at,
@@ -441,11 +468,11 @@ def create_production_order_mix_job(db: Session, production_order: ProductionOrd
     )
   )
 
-def create_production_order_repat_job(db: Session, production_order: ProductionOrder, created_at: datetime) -> ProductionOrderJobCreatePayload:
+def create_production_order_repat_job(db: Session, production_order: ProductionOrder, ordered_quantity: Optional[int], created_at: datetime) -> ProductionOrderJobCreatePayload:
   po_job = ProductionOrderRepatJob(
     production_order_id=production_order.id,
     production_order_number=production_order.order_number,
-    ordered_quantity=production_order.ordered_quantity,
+    ordered_quantity=ordered_quantity,
     created_at=created_at,
     updated_at=created_at,
   )

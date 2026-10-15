@@ -22,7 +22,9 @@ from models import (
 from api_graphql.types.feedback import Feedback
 from api_graphql.types.enums import (
   ProductionOrderActivityTypeEnum,
-  ProductionOrderJobEnum, 
+  ProductionOrderJobEnum,
+  ProductionOrderMixJobStatusEnum,
+  ProductionOrderRepatJobStatusEnum, 
   ProductionOrderStatusEnum
 )
 
@@ -58,7 +60,7 @@ class ProductionOrderMixJobType(relay.Node):
   recipe_snapshot: JSON | None
   total_volume_ml: float | None
   total_weight_g: float | None
-  status: ProductionOrderMixJobStatus
+  status: ProductionOrderMixJobStatusEnum
   is_priority: bool
   created_at: datetime
   updated_at: datetime
@@ -75,7 +77,7 @@ class ProductionOrderMixJobType(relay.Node):
       recipe_snapshot=j.recipe_snapshot,
       total_volume_ml=j.total_volume_ml,
       total_weight_g=j.total_weight_g,
-      status=j.status,
+      status=ProductionOrderMixJobStatusEnum[j.status.name],
       is_priority=j.is_priority,
       created_at=j.created_at,
       updated_at=j.updated_at,
@@ -135,7 +137,7 @@ class ProductionOrderRepatJobType(relay.Node):
   id: relay.NodeID[str]
   ordered_quantity: int
   incoming_quantity: int | None
-  status: ProductionOrderRepatJobStatus
+  status: ProductionOrderRepatJobStatusEnum
   created_at: datetime
   updated_at: datetime
   
@@ -147,7 +149,7 @@ class ProductionOrderRepatJobType(relay.Node):
       id=j.id,
       ordered_quantity=j.ordered_quantity,
       incoming_quantity=j.incoming_quantity,
-      status=j.status,
+      status=ProductionOrderRepatJobStatusEnum[j.status.name],
       created_at=j.created_at,
       updated_at=j.updated_at,
       _model=j,
@@ -241,6 +243,7 @@ class ProductionOrderAllocationInput:
 @strawberry.type
 class ProductionOrderHqAllocationType:
   quantity: int | None
+  is_projected: bool
   location_code: str
   location_name: str
 
@@ -291,6 +294,17 @@ class ProductionOrderType(relay.Node):
     return [ProductionOrderRepatJobType.from_model(j) for j in self._model.repat_jobs]
   
   @strawberry.field
+  def current_job(self) -> ProductionOrderMixJobType | ProductionOrderRepatJobType | None:
+    job = self._model.current_job
+
+    if isinstance(job, ProductionOrderMixJob):
+      return ProductionOrderMixJobType.from_model(job)
+    if isinstance(job, ProductionOrderRepatJob):
+      return ProductionOrderRepatJobType.from_model(job)
+
+    return None
+  
+  @strawberry.field
   def allocation_hq(self, info: strawberry.Info) -> ProductionOrderHqAllocationType | None:
     from api_graphql.resolvers.location import get_hq_location
 
@@ -301,6 +315,7 @@ class ProductionOrderType(relay.Node):
 
     return ProductionOrderHqAllocationType(
       quantity=self._model.hq_quantity,
+      is_projected=self._model.is_hq_quantity_projected,
       location_code=hq.code,
       location_name=hq.name,
     )
