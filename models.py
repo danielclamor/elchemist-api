@@ -320,11 +320,11 @@ class ProductionOrder(Base):
     back_populates="production_order", cascade="all, delete-orphan"
   )
   
-  repat_jobs: Mapped[list["ProductionOrderRepatJob"]] = relationship(
+  repat_jobs: Mapped[list["RepatJob"]] = relationship(
     back_populates="production_order", cascade="all, delete-orphan"
   )
   
-  mix_jobs: Mapped[list["ProductionOrderMixJob"]] = relationship(
+  mix_jobs: Mapped[list["MixJob"]] = relationship(
     back_populates="production_order", cascade="all, delete-orphan"
   )
   
@@ -354,11 +354,11 @@ class ProductionOrder(Base):
     return max(self.allocated_quantity - self.fulfilled_quantity, 0)
   
   @property
-  def current_job(self) -> "ProductionOrderMixJob | ProductionOrderRepatJob | None":
+  def current_job(self) -> "MixJob | RepatJob | None":
     if self.job_type == ProductionOrderJobType.MIX:
-      jobs = [j for j in self.mix_jobs if j.status != ProductionOrderMixJobStatus.REASSIGNED]
+      jobs = [j for j in self.mix_jobs if j.status != MixJobStatus.REASSIGNED]
     elif self.job_type == ProductionOrderJobType.REPAT:
-      jobs = [j for j in self.repat_jobs if j.status != ProductionOrderRepatJobStatus.REASSIGNED]
+      jobs = [j for j in self.repat_jobs if j.status != RepatJobStatus.REASSIGNED]
     else:
       return None
 
@@ -396,22 +396,22 @@ class ProductionOrderActivityLog(Base):
     return f"<ProductionOrderActivityLog {self.production_order.order_number!r} type={self.type} old_value={self.old_value} new_value={self.new_value}>"
   
 
-class ProductionOrderRepatJobStatus(enum.Enum):
+class RepatJobStatus(enum.Enum):
   CANCELLED = "cancelled"
   COMPLETED = "completed"
   IN_PROGRESS = "in_progress"
   REASSIGNED = "reassigned"
 
 
-production_order_repat_job_status_enum = Enum(ProductionOrderRepatJobStatus, name="productionorderjobstatus")
+repat_job_status_enum = Enum(RepatJobStatus, name="productionorderjobstatus")
 
 
-class ProductionOrderRepatJob(Base):
-  __tablename__ = "production_order_repat_jobs"
+class RepatJob(Base):
+  __tablename__ = "repat_jobs"
   
   __table_args__ = (
     Index(
-      "ix_production_order_repat_jobs_one_active_per_order",
+      "ix_repat_jobs_one_active_per_order",
       "production_order_id",
       unique=True,
       postgresql_where=text("status = 'IN_PROGRESS'")
@@ -423,7 +423,7 @@ class ProductionOrderRepatJob(Base):
   production_order_number: Mapped[str] = mapped_column(String(20), index=True)
   ordered_quantity: Mapped[int | None]
   incoming_quantity: Mapped[int | None]
-  status: Mapped[ProductionOrderRepatJobStatus] = mapped_column(production_order_repat_job_status_enum, default=ProductionOrderRepatJobStatus.IN_PROGRESS)
+  status: Mapped[RepatJobStatus] = mapped_column(repat_job_status_enum, default=RepatJobStatus.IN_PROGRESS)
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -435,7 +435,7 @@ class ProductionOrderRepatJob(Base):
     return f"<ProductionOrderRepatriation {self.production_order_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
 
 
-class ProductionOrderMixJobStatus(enum.Enum):
+class MixJobStatus(enum.Enum):
   CANCELLED = "cancelled"
   COMPLETED = "completed"
   IN_PROGRESS = "in_progress"
@@ -443,15 +443,15 @@ class ProductionOrderMixJobStatus(enum.Enum):
   REASSIGNED = "reassigned"
   
   
-production_order_mix_job_status_enum = Enum(ProductionOrderMixJobStatus, name="productionordermixjobstatus")
+mix_job_status_enum = Enum(MixJobStatus, name="productionordermixjobstatus")
 
 
-class ProductionOrderMixJob(Base):
-  __tablename__ = "production_order_mix_jobs"
+class MixJob(Base):
+  __tablename__ = "mix_jobs"
   
   __table_args__ = (
     Index(
-      "ix_production_order_mix_jobs_one_active_per_order",
+      "ix_mix_jobs_one_active_per_order",
       "production_order_id",
       unique=True,
       postgresql_where=text("status = 'IN_PROGRESS'")
@@ -467,7 +467,7 @@ class ProductionOrderMixJob(Base):
   recipe_snapshot: Mapped[dict | None] = mapped_column(JSONB)
   total_volume_ml: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
   total_weight_g: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
-  status: Mapped[ProductionOrderMixJobStatus] = mapped_column(production_order_mix_job_status_enum, default=ProductionOrderMixJobStatus.IN_PROGRESS)
+  status: Mapped[MixJobStatus] = mapped_column(mix_job_status_enum, default=MixJobStatus.IN_PROGRESS)
   is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(

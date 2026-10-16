@@ -13,8 +13,8 @@ from models import (
   ProductionOrder, 
   ProductionOrderActivityLog,
   ProductionOrderAllocation, 
-  ProductionOrderMixJob, 
-  ProductionOrderRepatJob,
+  MixJob, 
+  RepatJob,
 )
 
 from api_graphql.types.feedback import Feedback
@@ -49,7 +49,7 @@ class ProductionOrderActivityLogType(relay.Node):
     )
 
 @strawberry.type
-class ProductionOrderMixJobType(relay.Node):
+class MixJobType(relay.Node):
   id: relay.NodeID[str]
   ordered_quantity: int
   produced_quantity: int | None
@@ -62,10 +62,10 @@ class ProductionOrderMixJobType(relay.Node):
   created_at: datetime
   updated_at: datetime
   
-  _model: strawberry.Private[ProductionOrderMixJob]
+  _model: strawberry.Private[MixJob]
   
   @classmethod
-  def from_model(cls, j: ProductionOrderMixJob) -> "ProductionOrderMixJobType":
+  def from_model(cls, j: MixJob) -> "MixJobType":
     return cls(
       id=j.id,
       ordered_quantity=j.ordered_quantity,
@@ -86,7 +86,7 @@ class ProductionOrderMixJobType(relay.Node):
     return ProductionOrderType.from_model(self._model.production_order)
 
 @strawberry.input
-class ProductionOrderMixJobIdentifierInput:
+class MixJobIdentifierInput:
   id: Optional[relay.GlobalID] = strawberry.UNSET
   production_order_id: Optional[relay.GlobalID] = strawberry.UNSET
   production_order_number: Optional[str] = strawberry.UNSET
@@ -107,7 +107,7 @@ class ProductionOrderMixJobIdentifierInput:
     
     if self.id is not strawberry.UNSET:
       type_name = self.id.type_name
-      expected_name = ProductionOrderMixJobType.__strawberry_definition__.name
+      expected_name = MixJobType.__strawberry_definition__.name
       if type_name != expected_name:
         raise GraphQLError(
           f"Expected {expected_name} ID, got {type_name} ID",
@@ -123,14 +123,14 @@ class ProductionOrderMixJobIdentifierInput:
     attr, value = self.provided
     
     if attr == "id":
-      return ProductionOrderMixJob.id == value.node_id
+      return MixJob.id == value.node_id
     elif attr == "production_order_id":
-      return ProductionOrderMixJob.production_order_id == value.node_id
+      return MixJob.production_order_id == value.node_id
     else:
-      return getattr(ProductionOrderMixJob, attr) == value
+      return getattr(MixJob, attr) == value
 
 @strawberry.type
-class ProductionOrderRepatJobType(relay.Node):
+class RepatJobType(relay.Node):
   id: relay.NodeID[str]
   ordered_quantity: int | None
   incoming_quantity: int | None
@@ -138,10 +138,10 @@ class ProductionOrderRepatJobType(relay.Node):
   created_at: datetime
   updated_at: datetime
   
-  _model: strawberry.Private[ProductionOrderRepatJob]
+  _model: strawberry.Private[RepatJob]
   
   @classmethod
-  def from_model(cls, j: ProductionOrderRepatJob) -> "ProductionOrderRepatJobType":
+  def from_model(cls, j: RepatJob) -> "RepatJobType":
     return cls(
       id=j.id,
       ordered_quantity=j.ordered_quantity,
@@ -157,7 +157,7 @@ class ProductionOrderRepatJobType(relay.Node):
     return ProductionOrderType.from_model(self._model.production_order)
   
 @strawberry.input
-class ProductionOrderRepatJobIdentifierInput:
+class RepatJobIdentifierInput:
   id: Optional[relay.GlobalID] = strawberry.UNSET
   production_order_id: Optional[relay.GlobalID] = strawberry.UNSET
   production_order_number: Optional[str] = strawberry.UNSET
@@ -178,7 +178,7 @@ class ProductionOrderRepatJobIdentifierInput:
     
     if self.id is not strawberry.UNSET:
       type_name = self.id.type_name
-      expected_name = ProductionOrderRepatJobType.__strawberry_definition__.name
+      expected_name = RepatJobType.__strawberry_definition__.name
       if type_name != expected_name:
         raise GraphQLError(
           f"Expected {expected_name} ID, got {type_name} ID",
@@ -194,11 +194,11 @@ class ProductionOrderRepatJobIdentifierInput:
     attr, value = self.provided
     
     if attr == "id":
-      return ProductionOrderRepatJob.id == value.node_id
+      return RepatJob.id == value.node_id
     elif attr == "production_order_id":
-      return ProductionOrderRepatJob.production_order_id == value.node_id
+      return RepatJob.production_order_id == value.node_id
     else:
-      return getattr(ProductionOrderRepatJob, attr) == value
+      return getattr(RepatJob, attr) == value
 
 @strawberry.type
 class ProductionOrderAllocationType(relay.Node):
@@ -277,22 +277,22 @@ class ProductionOrderType(relay.Node):
   def activity_logs(self) -> list["ProductionOrderActivityLogType"]:
     return [ProductionOrderActivityLogType.from_model(l) for l in self._model.activity_logs]
   
-  @relay.connection(relay.ListConnection["ProductionOrderMixJobType"])
-  def production_order_mix_jobs(self) -> list["ProductionOrderMixJobType"]:
-    return [ProductionOrderMixJobType.from_model(j) for j in self._model.mix_jobs]
+  @relay.connection(relay.ListConnection["MixJobType"])
+  def mix_jobs(self) -> list["MixJobType"]:
+    return [MixJobType.from_model(j) for j in self._model.mix_jobs]
   
-  @relay.connection(relay.ListConnection["ProductionOrderRepatJobType"])
-  def production_order_repat_jobs(self) -> list["ProductionOrderRepatJobType"]:
-    return [ProductionOrderRepatJobType.from_model(j) for j in self._model.repat_jobs]
+  @relay.connection(relay.ListConnection["RepatJobType"])
+  def repat_jobs(self) -> list["RepatJobType"]:
+    return [RepatJobType.from_model(j) for j in self._model.repat_jobs]
   
   @strawberry.field
-  def current_job(self) -> ProductionOrderMixJobType | ProductionOrderRepatJobType | None:
+  def current_job(self) -> MixJobType | RepatJobType | None:
     job = self._model.current_job
 
-    if isinstance(job, ProductionOrderMixJob):
-      return ProductionOrderMixJobType.from_model(job)
-    if isinstance(job, ProductionOrderRepatJob):
-      return ProductionOrderRepatJobType.from_model(job)
+    if isinstance(job, MixJob):
+      return MixJobType.from_model(job)
+    if isinstance(job, RepatJob):
+      return RepatJobType.from_model(job)
 
     return None
   
@@ -381,7 +381,7 @@ class ProductionOrderCreatePayload:
   
 @strawberry.type
 class ProductionOrderJobCreatePayload:
-  production_order_job: ProductionOrderMixJobType | ProductionOrderRepatJobType | None
+  production_order_job: MixJobType | RepatJobType | None
   feedback: Feedback
   
 @strawberry.type
@@ -401,65 +401,65 @@ class ProductionOrderUpdatePayload:
   feedback: Feedback
 
 @strawberry.input
-class ProductionOrderMixJobFlavoringParametersInput:
+class MixJobFlavoringParametersInput:
   name: str
   is_vg: bool
   ratio: float
   
 @strawberry.input
-class ProductionOrderMixJobNicBaseParametersInput:
+class MixJobNicBaseParametersInput:
   code: str
   name: str
   is_vg: bool
   ratio: float
 
 @strawberry.input
-class ProductionOrderMixJobParametersInput:
+class MixJobParametersInput:
   batch_volume_ml: float
   target_nic_str: float
   target_pg: float
   target_vg: float
   nic_base_nic_str: float
-  flavorings: list[ProductionOrderMixJobFlavoringParametersInput]
-  nic_bases: list[ProductionOrderMixJobNicBaseParametersInput]
+  flavorings: list[MixJobFlavoringParametersInput]
+  nic_bases: list[MixJobNicBaseParametersInput]
 
 @strawberry.input
-class ProductionOrderMixJobIngredientInput:
+class MixJobIngredientInput:
   name: str
   ratio: float
   volume_ml: float
   weight_g: float
 
 @strawberry.input
-class ProductionOrderMixJobRecipeInput:
-  mix_parameters: ProductionOrderMixJobParametersInput
-  ingredients: list[ProductionOrderMixJobIngredientInput]
+class MixJobRecipeInput:
+  mix_parameters: MixJobParametersInput
+  ingredients: list[MixJobIngredientInput]
   total_ratio: float
   total_volume_ml: float
   total_weight_g: float
   nic_profile_slug: str
 
 @strawberry.input
-class ProductionOrderMixJobMarkMixedInput:
-  recipe: ProductionOrderMixJobRecipeInput
+class MixJobMarkMixedInput:
+  recipe: MixJobRecipeInput
   produced_quantity: int
 
 @strawberry.type
-class ProductionOrderMixJobUpdatePayload:
-  production_order_mix_job: ProductionOrderMixJobType | None
+class MixJobUpdatePayload:
+  mix_job: MixJobType | None
   feedback: Feedback
 
 @strawberry.input
-class ProductionOrderRepatJobMarkCompletedInput:
+class RepatJobMarkCompletedInput:
   incoming_quantity: int
 
 @strawberry.type
-class ProductionOrderRepatJobUpdatePayload:
-  production_order_repat_job: ProductionOrderRepatJobType | None
+class RepatJobUpdatePayload:
+  repat_job: RepatJobType | None
   feedback: Feedback
   
 @strawberry.type
 class ProductionOrderAssignJobPayload:
   production_order: ProductionOrderType | None
-  created_production_order_job: ProductionOrderMixJobType | ProductionOrderRepatJobType | None
+  created_production_order_job: MixJobType | RepatJobType | None
   feedback: Feedback
