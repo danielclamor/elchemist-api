@@ -63,7 +63,7 @@ if TYPE_CHECKING:
     ProductionOrderUpdateInput,
   )
   
-  from api_graphql.types.enums import ProductionOrderJobEnum
+  from api_graphql.types.enums import ProductionOrderJobTypeEnum
 
 from .utils import generate_production_order_number, get_today, convert_strawberry_input_to_dict
 
@@ -122,7 +122,7 @@ def get_production_order_repat_job(db: Session, identifier: "ProductionOrderRepa
   )
 
 # Mutations
-def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentifierInput", ordered_quantity: Optional[int], job: "ProductionOrderJobEnum") -> ProductionOrderAssignJobPayload: 
+def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentifierInput", ordered_quantity: Optional[int], job: "ProductionOrderJobTypeEnum") -> ProductionOrderAssignJobPayload: 
   po = db.scalar(select(ProductionOrder).where(identifier.query_condition).with_for_update())
 
   if po is None:

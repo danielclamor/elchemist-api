@@ -14,18 +14,15 @@ from models import (
   ProductionOrderActivityLog,
   ProductionOrderAllocation, 
   ProductionOrderMixJob, 
-  ProductionOrderMixJobStatus, 
-  ProductionOrderRepatJob, 
-  ProductionOrderRepatJobStatus
+  ProductionOrderRepatJob,
 )
 
 from api_graphql.types.feedback import Feedback
 from api_graphql.types.enums import (
   ProductionOrderActivityTypeEnum,
-  ProductionOrderJobEnum,
-  ProductionOrderMixJobStatusEnum,
-  ProductionOrderRepatJobStatusEnum, 
-  ProductionOrderStatusEnum
+  ProductionOrderJobStatusEnum,
+  ProductionOrderJobTypeEnum,
+  ProductionOrderStatusEnum,
 )
 
 if TYPE_CHECKING:
@@ -60,7 +57,7 @@ class ProductionOrderMixJobType(relay.Node):
   recipe_snapshot: JSON | None
   total_volume_ml: float | None
   total_weight_g: float | None
-  status: ProductionOrderMixJobStatusEnum
+  status: ProductionOrderJobStatusEnum
   is_priority: bool
   created_at: datetime
   updated_at: datetime
@@ -77,7 +74,7 @@ class ProductionOrderMixJobType(relay.Node):
       recipe_snapshot=j.recipe_snapshot,
       total_volume_ml=j.total_volume_ml,
       total_weight_g=j.total_weight_g,
-      status=ProductionOrderMixJobStatusEnum[j.status.name],
+      status=ProductionOrderJobStatusEnum[j.status.name],
       is_priority=j.is_priority,
       created_at=j.created_at,
       updated_at=j.updated_at,
@@ -135,9 +132,9 @@ class ProductionOrderMixJobIdentifierInput:
 @strawberry.type
 class ProductionOrderRepatJobType(relay.Node):
   id: relay.NodeID[str]
-  ordered_quantity: int
+  ordered_quantity: int | None
   incoming_quantity: int | None
-  status: ProductionOrderRepatJobStatusEnum
+  status: ProductionOrderJobStatusEnum
   created_at: datetime
   updated_at: datetime
   
@@ -149,7 +146,7 @@ class ProductionOrderRepatJobType(relay.Node):
       id=j.id,
       ordered_quantity=j.ordered_quantity,
       incoming_quantity=j.incoming_quantity,
-      status=ProductionOrderRepatJobStatusEnum[j.status.name],
+      status=ProductionOrderJobStatusEnum[j.status.name],
       created_at=j.created_at,
       updated_at=j.updated_at,
       _model=j,
@@ -249,7 +246,7 @@ class ProductionOrderType(relay.Node):
   ordered_quantity: int | None
   fulfilled_quantity: int | None
   status: ProductionOrderStatusEnum
-  job: ProductionOrderJobEnum | None
+  job: ProductionOrderJobTypeEnum | None
   is_priority: bool
   created_at: datetime
   updated_at: datetime
@@ -264,7 +261,7 @@ class ProductionOrderType(relay.Node):
       ordered_quantity=o.ordered_quantity,
       fulfilled_quantity=o.fulfilled_quantity,
       status=ProductionOrderStatusEnum[o.status.name],
-      job=ProductionOrderJobEnum[o.job.name] if o.job else None,
+      job=ProductionOrderJobTypeEnum[o.job.name] if o.job else None,
       is_priority=o.is_priority,
       created_at=o.created_at,
       updated_at=o.updated_at,
@@ -300,7 +297,7 @@ class ProductionOrderType(relay.Node):
     return None
   
   @strawberry.field
-  def allocation_hq(self, info: strawberry.Info) -> ProductionOrderHqAllocationType | None:
+  def allocation_hq(self) -> ProductionOrderHqAllocationType | None:
     hq = self._model.hq_location
 
     if hq is None:

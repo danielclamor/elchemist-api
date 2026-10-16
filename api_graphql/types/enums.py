@@ -56,21 +56,14 @@ class ProductionOrderActivityTypeEnum(enum.Enum):
   ASSIGN_JOB = "job"
   
 @strawberry.enum
-class ProductionOrderJobEnum(enum.Enum):
+class ProductionOrderJobTypeEnum(enum.Enum):
   MIX = "mix"
   REPAT = "repat"
- 
+  
 @strawberry.enum
-class ProductionOrderMixJobStatusEnum(enum.Enum):
+class ProductionOrderJobStatusEnum(enum.Enum):
   CANCELLED = "cancelled"
   COMPLETED = "completed"
   IN_PROGRESS = "in_progress"
   MIXED = "mixed"
   REASSIGNED = "reassigned"
- 
-@strawberry.enum
-class ProductionOrderRepatJobStatusEnum(enum.Enum):
-  CANCELLED = "cancelled"
-  COMPLETED = "completed"
-  IN_PROGRESS = "in_progress"
-  REASSIGNED = "reassigned" 
