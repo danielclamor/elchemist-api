@@ -122,7 +122,7 @@ def get_production_order_repat_job(db: Session, identifier: "ProductionOrderRepa
   )
 
 # Mutations
-def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentifierInput", ordered_quantity: Optional[int], job: "ProductionOrderJobTypeEnum") -> ProductionOrderAssignJobPayload: 
+def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentifierInput", ordered_quantity: Optional[int], job_type: "ProductionOrderJobTypeEnum") -> ProductionOrderAssignJobPayload: 
   po = db.scalar(select(ProductionOrder).where(identifier.query_condition).with_for_update())
 
   if po is None:
@@ -148,14 +148,14 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
   old_job = po.job_type
   
   try:
-    new_job = ProductionOrderJobType[job.name]
+    new_job = ProductionOrderJobType[job_type.name]
   except KeyError:
     return ProductionOrderAssignJobPayload(
       production_order=ProductionOrderType.from_model(po),
       created_production_order_job=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
-        message=f"Job type {job.name} not supported",
+        message=f"Job type {job_type.name} not supported",
       ),
     )
   
@@ -165,7 +165,7 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
       created_production_order_job=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.CANCELLED,
-        message=f"ProductionOrder {identifier.provided[1]} is already assigned to {job.name}"
+        message=f"ProductionOrder {identifier.provided[1]} is already assigned to {job_type.name}"
       )
     )
   
