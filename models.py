@@ -403,7 +403,7 @@ class RepatJobStatus(enum.Enum):
   REASSIGNED = "reassigned"
 
 
-repat_job_status_enum = Enum(RepatJobStatus, name="productionorderjobstatus")
+repat_job_status_enum = Enum(RepatJobStatus, name="repatjobstatus")
 
 
 class RepatJob(Base):
@@ -443,7 +443,7 @@ class MixJobStatus(enum.Enum):
   REASSIGNED = "reassigned"
   
   
-mix_job_status_enum = Enum(MixJobStatus, name="productionordermixjobstatus")
+mix_job_status_enum = Enum(MixJobStatus, name="mixjobstatus")
 
 
 class MixJob(Base):
