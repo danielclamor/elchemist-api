@@ -23,7 +23,7 @@ from models import (
   Location,
   ProductionOrder,
   ProductionOrderAllocation,
-  ProductionOrderJob,
+  ProductionOrderJobType,
   ProductionOrderMixJob,
   ProductionOrderMixJobStatus,
   ProductionOrderRepatJob,
@@ -145,10 +145,10 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
       )
     )
     
-  old_job = po.job
+  old_job = po.job_type
   
   try:
-    new_job = ProductionOrderJob[job.name]
+    new_job = ProductionOrderJobType[job.name]
   except KeyError:
     return ProductionOrderAssignJobPayload(
       production_order=ProductionOrderType.from_model(po),
@@ -171,7 +171,7 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
   
   effective_quantity = ordered_quantity if ordered_quantity is not None else po.ordered_quantity
 
-  if new_job == ProductionOrderJob.MIX and effective_quantity is None:
+  if new_job == ProductionOrderJobType.MIX and effective_quantity is None:
     return ProductionOrderAssignJobPayload(
       production_order=ProductionOrderType.from_model(po),
       created_production_order_job=None,
@@ -193,12 +193,12 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
   
   today_as_utc = get_today("UTC")
   
-  if old_job == ProductionOrderJob.MIX:
+  if old_job == ProductionOrderJobType.MIX:
     reassigned_job = mark_production_order_mix_job_reassigned(
       db=db,
       production_order_number=po.order_number,
     ).production_order_mix_job
-  elif old_job == ProductionOrderJob.REPAT:
+  elif old_job == ProductionOrderJobType.REPAT:
     reassigned_job = mark_production_order_repat_job_reassigned(
       db=db,
       production_order_number=po.order_number,
@@ -217,7 +217,7 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
       )
     )
    
-  if new_job == ProductionOrderJob.MIX:
+  if new_job == ProductionOrderJobType.MIX:
     created_job = create_production_order_mix_job(
       db=db,
       production_order=po,
@@ -232,7 +232,7 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
       ordered_quantity=effective_quantity,
     ).production_order_job
     
-  po.job = new_job
+  po.job_type = new_job
   db.flush()
   
   create_production_order_activity_log(
@@ -572,13 +572,13 @@ def mark_production_order_cancelled(db: Session, identifier: "ProductionOrderIde
   po.updated_at = today
   db.flush()
   
-  if po.job == ProductionOrderJob.MIX:
+  if po.job_type == ProductionOrderJobType.MIX:
     from api_graphql.types.production_order import ProductionOrderMixJobIdentifierInput
     mark_production_order_mix_job_cancelled(
       db=db, 
       identifier=ProductionOrderMixJobIdentifierInput(production_order_number=po.order_number),
     )
-  elif po.job == ProductionOrderJob.REPAT:
+  elif po.job_type == ProductionOrderJobType.REPAT:
     from api_graphql.types.production_order import ProductionOrderRepatJobIdentifierInput
     mark_production_order_repat_job_cancelled(
       db=db, 

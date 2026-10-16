@@ -274,12 +274,12 @@ class ProductionOrderStatus(enum.Enum):
 production_order_status_enum = Enum(ProductionOrderStatus, name="productionorderstatus")
 
 
-class ProductionOrderJob(enum.Enum):
+class ProductionOrderJobType(enum.Enum):
   MIX = "mix"
   REPAT = "repat"
 
 
-production_order_job_enum = Enum(ProductionOrderJob, name="productionorderjob")
+production_order_job_type_enum = Enum(ProductionOrderJobType, name="productionorderjobtype")
 
 
 class ProductionOrder(Base):
@@ -299,7 +299,7 @@ class ProductionOrder(Base):
   ordered_quantity: Mapped[int | None]
   fulfilled_quantity: Mapped[int | None]
   status: Mapped[ProductionOrderStatus] = mapped_column(production_order_status_enum, default=ProductionOrderStatus.PENDING)
-  job: Mapped[ProductionOrderJob | None] = mapped_column(production_order_job_enum)
+  job_type: Mapped[ProductionOrderJobType | None] = mapped_column(production_order_job_type_enum)
   is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
   is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
   hq_location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("locations.id"), index=True)
@@ -355,9 +355,9 @@ class ProductionOrder(Base):
   
   @property
   def current_job(self) -> "ProductionOrderMixJob | ProductionOrderRepatJob | None":
-    if self.job == ProductionOrderJob.MIX:
+    if self.job_type == ProductionOrderJobType.MIX:
       jobs = [j for j in self.mix_jobs if j.status != ProductionOrderMixJobStatus.REASSIGNED]
-    elif self.job == ProductionOrderJob.REPAT:
+    elif self.job_type == ProductionOrderJobType.REPAT:
       jobs = [j for j in self.repat_jobs if j.status != ProductionOrderRepatJobStatus.REASSIGNED]
     else:
       return None

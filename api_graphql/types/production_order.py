@@ -261,7 +261,7 @@ class ProductionOrderType(relay.Node):
       ordered_quantity=o.ordered_quantity,
       fulfilled_quantity=o.fulfilled_quantity,
       status=ProductionOrderStatusEnum[o.status.name],
-      job=ProductionOrderJobTypeEnum[o.job.name] if o.job else None,
+      job=ProductionOrderJobTypeEnum[o.job_type.name] if o.job_type else None,
       is_priority=o.is_priority,
       created_at=o.created_at,
       updated_at=o.updated_at,
