@@ -398,45 +398,6 @@ class ProductionOrderActivityLog(Base):
     return f"<ProductionOrderActivityLog {self.production_order.order_number!r} type={self.type} old_value={self.old_value} new_value={self.new_value}>"
   
 
-class RepatJobStatus(enum.Enum):
-  CANCELLED = "cancelled"
-  COMPLETED = "completed"
-  IN_PROGRESS = "in_progress"
-  REASSIGNED = "reassigned"
-
-
-repat_job_status_enum = Enum(RepatJobStatus, name="repatjobstatus")
-
-
-class RepatJob(Base):
-  __tablename__ = "repat_jobs"
-  
-  __table_args__ = (
-    Index(
-      "ix_repat_jobs_one_active_per_order",
-      "production_order_id",
-      unique=True,
-      postgresql_where=text("status = 'IN_PROGRESS'")
-    ),
-  )
-  
-  id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
-  production_order_number: Mapped[str] = mapped_column(String(20), index=True)
-  ordered_quantity: Mapped[int | None]
-  incoming_quantity: Mapped[int | None]
-  status: Mapped[RepatJobStatus] = mapped_column(repat_job_status_enum, default=RepatJobStatus.IN_PROGRESS)
-  created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-  updated_at: Mapped[datetime] = mapped_column(
-    DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-  )
-  
-  production_order: Mapped["ProductionOrder"] = relationship(back_populates="repat_jobs")
-  
-  def __repr__(self):
-    return f"<ProductionOrderRepatriation {self.production_order_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
-
-
 class MixJobStatus(enum.Enum):
   CANCELLED = "cancelled"
   COMPLETED = "completed"
@@ -461,8 +422,8 @@ class MixJob(Base):
   )
   
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+  job_number: Mapped[str] = mapped_column(String(32), index=True, unique=True)
   production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
-  production_order_number: Mapped[str] = mapped_column(String(20), index=True)
   ordered_quantity: Mapped[int]
   produced_quantity: Mapped[int | None]
   batch_number: Mapped[str | None] = mapped_column(String(255))
@@ -479,7 +440,46 @@ class MixJob(Base):
   production_order: Mapped["ProductionOrder"] = relationship(back_populates="mix_jobs")
   
   def __repr__(self):
-    return f"<ProductionOrderMix {self.production_order_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
+    return f"<MixJob {self.job_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
+
+class RepatJobStatus(enum.Enum):
+  CANCELLED = "cancelled"
+  COMPLETED = "completed"
+  IN_PROGRESS = "in_progress"
+  REASSIGNED = "reassigned"
+
+
+repat_job_status_enum = Enum(RepatJobStatus, name="repatjobstatus")
+
+
+class RepatJob(Base):
+  __tablename__ = "repat_jobs"
+  
+  __table_args__ = (
+    Index(
+      "ix_repat_jobs_one_active_per_order",
+      "production_order_id",
+      unique=True,
+      postgresql_where=text("status = 'IN_PROGRESS'")
+    ),
+  )
+  
+  id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+  job_number: Mapped[str] = mapped_column(String(32), index=True, unique=True)
+  production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
+  ordered_quantity: Mapped[int | None]
+  incoming_quantity: Mapped[int | None]
+  status: Mapped[RepatJobStatus] = mapped_column(repat_job_status_enum, default=RepatJobStatus.IN_PROGRESS)
+  created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+  updated_at: Mapped[datetime] = mapped_column(
+    DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+  )
+  
+  production_order: Mapped["ProductionOrder"] = relationship(back_populates="repat_jobs")
+  
+  def __repr__(self):
+    return f"<RepatJob {self.job_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
+
 
 class ProductionOrderAllocation(Base):
   __tablename__ = "production_order_allocations"
