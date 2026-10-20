@@ -51,6 +51,7 @@ class ProductionOrderActivityLogType(relay.Node):
 @strawberry.type
 class MixJobType(relay.Node):
   id: relay.NodeID[str]
+  job_number: str
   ordered_quantity: int
   produced_quantity: int | None
   batch_number: str | None
@@ -68,6 +69,7 @@ class MixJobType(relay.Node):
   def from_model(cls, j: MixJob) -> "MixJobType":
     return cls(
       id=j.id,
+      job_number=j.job_number,
       ordered_quantity=j.ordered_quantity,
       produced_quantity=j.produced_quantity,
       batch_number=j.batch_number,
@@ -88,8 +90,7 @@ class MixJobType(relay.Node):
 @strawberry.input
 class MixJobIdentifierInput:
   id: Optional[relay.GlobalID] = strawberry.UNSET
-  production_order_id: Optional[relay.GlobalID] = strawberry.UNSET
-  production_order_number: Optional[str] = strawberry.UNSET
+  job_number: Optional[str] = strawberry.UNSET
   
   def __post_init__(self):
     if any(v is None for v in vars(self).values()):
@@ -113,7 +114,10 @@ class MixJobIdentifierInput:
           f"Expected {expected_name} ID, got {type_name} ID",
           extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
         )
-    
+        
+    if self.job_number is not strawberry.UNSET:
+      self.job_number = self.job_number.strip().upper()    
+      
   @property
   def provided(self):
     return next((a, v) for a, v in vars(self).items() if v is not strawberry.UNSET)
@@ -124,14 +128,13 @@ class MixJobIdentifierInput:
     
     if attr == "id":
       return MixJob.id == value.node_id
-    elif attr == "production_order_id":
-      return MixJob.production_order_id == value.node_id
     else:
       return getattr(MixJob, attr) == value
 
 @strawberry.type
 class RepatJobType(relay.Node):
   id: relay.NodeID[str]
+  job_number: str
   ordered_quantity: int | None
   incoming_quantity: int | None
   status: ProductionOrderJobStatusEnum
@@ -144,6 +147,7 @@ class RepatJobType(relay.Node):
   def from_model(cls, j: RepatJob) -> "RepatJobType":
     return cls(
       id=j.id,
+      job_number=j.job_number,
       ordered_quantity=j.ordered_quantity,
       incoming_quantity=j.incoming_quantity,
       status=ProductionOrderJobStatusEnum[j.status.name],
@@ -159,8 +163,7 @@ class RepatJobType(relay.Node):
 @strawberry.input
 class RepatJobIdentifierInput:
   id: Optional[relay.GlobalID] = strawberry.UNSET
-  production_order_id: Optional[relay.GlobalID] = strawberry.UNSET
-  production_order_number: Optional[str] = strawberry.UNSET
+  job_number: Optional[str] = strawberry.UNSET
   
   def __post_init__(self):
     if any(v is None for v in vars(self).values()):
@@ -184,6 +187,9 @@ class RepatJobIdentifierInput:
           f"Expected {expected_name} ID, got {type_name} ID",
           extensions={"code": "INPUT_ERROR", "inputObjectType": self.__strawberry_definition__.name}
         )
+        
+    if self.job_number is not strawberry.UNSET:
+      self.job_number = self.job_number.strip().upper()
   
   @property
   def provided(self):
@@ -195,8 +201,6 @@ class RepatJobIdentifierInput:
     
     if attr == "id":
       return RepatJob.id == value.node_id
-    elif attr == "production_order_id":
-      return RepatJob.production_order_id == value.node_id
     else:
       return getattr(RepatJob, attr) == value
 
