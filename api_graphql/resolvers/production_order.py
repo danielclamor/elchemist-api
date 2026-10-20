@@ -81,6 +81,7 @@ def get_all_production_orders(db: Session, status:"ProductionOrderStatus"=None, 
   stmt = (
     select(ProductionOrder)
     .options(
+      selectinload(ProductionOrder.activity_logs),
       selectinload(ProductionOrder.allocations).selectinload(ProductionOrderAllocation.location),
       selectinload(ProductionOrder.hq_location),
       selectinload(ProductionOrder.mix_jobs),

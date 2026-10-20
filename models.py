@@ -317,7 +317,9 @@ class ProductionOrder(Base):
   hq_location: Mapped["Location | None"] = relationship()
   
   activity_logs: Mapped[list["ProductionOrderActivityLog"]] = relationship(
-    back_populates="production_order", cascade="all, delete-orphan"
+    back_populates="production_order",
+    cascade="all, delete-orphan",
+    order_by=lambda: (ProductionOrderActivityLog.triggered_at, ProductionOrderActivityLog.id),
   )
   
   repat_jobs: Mapped[list["RepatJob"]] = relationship(
