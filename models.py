@@ -431,7 +431,6 @@ class MixJob(Base):
   total_volume_ml: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
   total_weight_g: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
   status: Mapped[MixJobStatus] = mapped_column(mix_job_status_enum, default=MixJobStatus.IN_PROGRESS)
-  is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

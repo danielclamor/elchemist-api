@@ -488,7 +488,6 @@ def create_mix_job(db: Session, production_order: ProductionOrder, ordered_quant
     job_number=generate_job_number(production_order.order_number, "MJ", sequence),
     production_order_id=production_order.id,
     ordered_quantity=ordered_quantity,
-    is_priority=production_order.is_priority,
     created_at=created_at,
     updated_at=created_at,
   )

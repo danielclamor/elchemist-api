@@ -59,7 +59,6 @@ class MixJobType(relay.Node):
   total_volume_ml: float | None
   total_weight_g: float | None
   status: ProductionOrderJobStatusEnum
-  is_priority: bool
   created_at: datetime
   updated_at: datetime
   
@@ -77,7 +76,6 @@ class MixJobType(relay.Node):
       total_volume_ml=j.total_volume_ml,
       total_weight_g=j.total_weight_g,
       status=ProductionOrderJobStatusEnum[j.status.name],
-      is_priority=j.is_priority,
       created_at=j.created_at,
       updated_at=j.updated_at,
       _model=j,
