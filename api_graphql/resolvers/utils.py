@@ -27,6 +27,9 @@ def get_today(timezone: str | None = None) -> datetime:
 def generate_production_order_number(date: date, counter: int) -> str:
   return f"{date:%Y%m%d}{counter:05d}"
 
+def generate_job_number(order_number: str, prefix: str, sequence: int) -> str:
+  return f"{order_number}-{prefix}{sequence}"
+
 def convert_strawberry_input_to_dict(input_obj):
     data = dataclasses.asdict(input_obj)
     return {k: v for k, v in data.items() if v is not strawberry.UNSET}
