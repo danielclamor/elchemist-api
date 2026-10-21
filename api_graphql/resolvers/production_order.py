@@ -182,15 +182,16 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
       ),
     )
   
-  if effective_quantity is not None and effective_quantity <= 0:
-    return ProductionOrderAssignJobPayload(
-      production_order=ProductionOrderType.from_model(po),
-      created_production_order_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"Quantity must be greater than 0. Currently, {effective_quantity}",
-      ),
-    )
+  # don't require orderedQuantity for other jobs than mix
+  # if effective_quantity is not None and effective_quantity <= 0:
+  #   return ProductionOrderAssignJobPayload(
+  #     production_order=ProductionOrderType.from_model(po),
+  #     created_production_order_job=None,
+  #     feedback=Feedback(
+  #       status=FeedbackStatusEnum.FAILED,
+  #       message=f"Quantity must be greater than 0. Currently, {effective_quantity}",
+  #     ),
+  #   )
   
   today_as_utc = get_today("UTC")
   
