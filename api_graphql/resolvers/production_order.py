@@ -68,7 +68,9 @@ if TYPE_CHECKING:
 from .utils import generate_job_number, generate_production_order_number, get_today, convert_strawberry_input_to_dict
 
 # Queries
-def _filter_production_orders(stmt, status:"ProductionOrderStatus"=None, created_from:datetime=None, created_to:datetime=None):
+def _filter_production_orders(stmt, job_type: "ProductionOrderJobType"=None, status:"ProductionOrderStatus"=None, created_from:datetime=None, created_to:datetime=None):
+  if job_type is not None:
+    stmt = stmt.where(ProductionOrder.job_type == job_type)
   if status is not None:
     stmt = stmt.where(ProductionOrder.status == status)
   if created_from is not None:
@@ -77,7 +79,7 @@ def _filter_production_orders(stmt, status:"ProductionOrderStatus"=None, created
     stmt = stmt.where(ProductionOrder.created_at < created_to)
   return stmt
 
-def get_all_production_orders(db: Session, status:"ProductionOrderStatus"=None, created_from:datetime=None, created_to:datetime=None) -> list[ProductionOrder]:
+def get_all_production_orders(db: Session, job_type: "ProductionOrderJobType"=None, status:"ProductionOrderStatus"=None, created_from:datetime=None, created_to:datetime=None) -> list[ProductionOrder]:
   stmt = (
     select(ProductionOrder)
     .options(
@@ -89,7 +91,7 @@ def get_all_production_orders(db: Session, status:"ProductionOrderStatus"=None, 
     )
     .order_by(ProductionOrder.created_at.desc(), ProductionOrder.id)
   )
-  stmt = _filter_production_orders(stmt, status, created_from, created_to)
+  stmt = _filter_production_orders(stmt, job_type, status, created_from, created_to)
   return db.scalars(stmt).unique().all()
 
 def get_production_order_status_counts(db: Session, created_from=None, created_to=None) -> dict:

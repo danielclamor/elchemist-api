@@ -184,7 +184,7 @@ from api_graphql.resolvers.location import (
   set_location_archived,
 )
 
-from models import ProductionOrderStatus
+from models import ProductionOrderJobType, ProductionOrderStatus
 
 def _cursor_index(cursor: str) -> int:
   return int(relay.from_base64(cursor).split(":")[1])
@@ -350,14 +350,16 @@ class Query:
   @relay.connection(ListConnectionWithTotalCount[ProductionOrderType])
   def productionOrders(
     self, info: strawberry.Info,
+    job_type: Optional[ProductionOrderJobTypeEnum] = None,
     status: Optional[ProductionOrderStatusEnum] = None,
     created_from: Optional[datetime] = None,
     created_to: Optional[datetime] = None,
   ) -> List[ProductionOrderType]:
     db = info.context["db"]
+    model_job_type = ProductionOrderJobType[job_type.name] if job_type else None
     model_status = ProductionOrderStatus[status.name] if status else None
     return [ProductionOrderType.from_model(po) for po in
-            get_all_production_orders(db, model_status, created_from, created_to)]
+            get_all_production_orders(db, model_job_type, model_status, created_from, created_to)]
 
   @strawberry.field
   def productionOrderStatusCounts(
