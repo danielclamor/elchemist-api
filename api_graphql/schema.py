@@ -741,12 +741,12 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def productionOrderSetQuantity(
-    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, quantity: int,
+  def productionOrderSetOrderedQuantity(
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, ordered_quantity: int | None,
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
-    return set_production_order_quantity(
-      db=db, identifier=identifier, quantity=quantity,
+    return set_production_order_ordered_quantity(
+      db=db, identifier=identifier, ordered_quantity=ordered_quantity,
     )
   
   @strawberry.mutation

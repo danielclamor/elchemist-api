@@ -1121,7 +1121,7 @@ def set_production_order_priority(db: Session, identifier: "ProductionOrderIdent
     )
   )
 
-def set_production_order_quantity(db: Session, identifier: "ProductionOrderIdentifierInput", quantity: int) -> ProductionOrderUpdatePayload:
+def set_production_order_ordered_quantity(db: Session, identifier: "ProductionOrderIdentifierInput", ordered_quantity: int | None) -> ProductionOrderUpdatePayload:
   po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
   
   if po is None:
@@ -1137,7 +1137,7 @@ def set_production_order_quantity(db: Session, identifier: "ProductionOrderIdent
   
   today = get_today("UTC")
   
-  po.ordered_quantity = quantity
+  po.ordered_quantity = ordered_quantity
   po.updated_at = today
   db.flush()
   
