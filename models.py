@@ -331,6 +331,10 @@ class ProductionOrder(Base):
   )
   
   @property
+  def is_open(self) -> bool:
+    return self.status != ProductionOrderStatus.DELIVERED and self.status != ProductionOrderStatus.CANCELLED
+  
+  @property
   def hq_quantity(self) -> int | None:
     total = self.fulfilled_quantity if self.fulfilled_quantity is not None else self.ordered_quantity
 
