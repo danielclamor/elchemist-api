@@ -647,7 +647,7 @@ class Mutation:
   ) -> ProductionOrderAssignJobPayload:
     db = info.context["db"]
     return assign_production_order_job(
-      db=db, identifier=identifier, ordered_quantity=ordered_quantity if ordered_quantity is not strawberry.UNSET else None, job_type=job_type,
+      db=db, identifier=identifier, ordered_quantity=ordered_quantity, job_type=job_type,
     )
 
   @strawberry.mutation

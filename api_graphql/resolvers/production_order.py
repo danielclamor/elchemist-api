@@ -39,6 +39,7 @@ from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 from api_graphql.types.eliquid import EliquidIdentifierInput
 
 from api_graphql.types.production_order import (
+  ProductionOrderIdentifierInput,
   ProductionOrderAssignJobPayload,
   ProductionOrderJobCreatePayload,
   MixJobType,
@@ -56,7 +57,6 @@ from api_graphql.types.production_order import (
 from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
   from api_graphql.types.production_order import (
-    ProductionOrderIdentifierInput,
     MixJobMarkMixedInput,
     RepatJobMarkCompletedInput,
     ProductionOrderCreateInput,
@@ -169,10 +169,8 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
         message=f"ProductionOrder {identifier.provided[1]} is already assigned to {job_type.name}"
       )
     )
-  
-  effective_quantity = ordered_quantity if ordered_quantity is not None else po.ordered_quantity
 
-  if new_job == ProductionOrderJobType.MIX and effective_quantity is None:
+  if new_job == ProductionOrderJobType.MIX and ordered_quantity is None:
     return ProductionOrderAssignJobPayload(
       production_order=ProductionOrderType.from_model(po),
       created_production_order_job=None,
@@ -192,6 +190,23 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
   #       message=f"Quantity must be greater than 0. Currently, {effective_quantity}",
   #     ),
   #   )
+  
+  if ordered_quantity is not strawberry.UNSET:
+    set_qty_feedback = set_production_order_ordered_quantity(
+      db, 
+      ProductionOrderIdentifierInput(order_number=po.order_number), 
+      ordered_quantity=ordered_quantity,
+    ).feedback
+    
+    if set_qty_feedback.status == FeedbackStatusEnum.FAILED:
+      return ProductionOrderAssignJobPayload(
+        production_order=ProductionOrderType.from_model(po),
+        created_production_order_job=None,
+        feedback=Feedback(
+          status=FeedbackStatusEnum.FAILED,
+          message=f"Failed setting ordered quantity. {set_qty_feedback.message}",
+        ),
+      )
   
   today_as_utc = get_today("UTC")
   
@@ -226,14 +241,14 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
       db=db,
       production_order=po,
       created_at=today_as_utc,
-      ordered_quantity=effective_quantity,
+      ordered_quantity=ordered_quantity,
     ).production_order_job
   else:
     created_job = create_repat_job(
       db=db,
       production_order=po,
       created_at=today_as_utc,
-      ordered_quantity=effective_quantity,
+      ordered_quantity=ordered_quantity,
     ).production_order_job
     
   po.job_type = new_job
@@ -247,8 +262,7 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
     old_value=f"{old_job.name if old_job is not None else None}",
     new_value=f"{new_job.name}"
   )
-  
-  from api_graphql.types.production_order import ProductionOrderIdentifierInput
+
   mark_production_order_in_progress(db=db, identifier=ProductionOrderIdentifierInput(order_number=po.order_number))
   
   db.commit()
@@ -819,7 +833,6 @@ def mark_mix_job_completed(db: Session, identifier: "MixJobIdentifierInput") -> 
   
   db.flush()
   
-  from api_graphql.types.production_order import ProductionOrderIdentifierInput
   mark_production_order_fulfilled(db=db, identifier=ProductionOrderIdentifierInput(order_number=job.production_order.order_number), fulfilled_quantity=job.produced_quantity)
  
   db.commit()
@@ -971,11 +984,10 @@ def mark_repat_job_completed(db: Session, identifier: "RepatJobIdentifierInput",
   
   db.flush()
   
-  from api_graphql.types.production_order import ProductionOrderIdentifierInput
   mark_production_order_fulfilled(
     db=db, 
     identifier=ProductionOrderIdentifierInput(order_number=job.production_order.order_number), 
-    fulfilled_quantity=job.incoming_quantity
+    fulfilled_quantity=job.incoming_quantity,
   )
  
   db.commit()
@@ -1132,6 +1144,27 @@ def set_production_order_ordered_quantity(db: Session, identifier: "ProductionOr
         message=f"ProductionOrder {identifier.provided[1]} not found"
       )
     )
+  
+  if ordered_quantity == po.ordered_quantity:
+    return ProductionOrderUpdatePayload(
+      production_order=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.CANCELLED,
+        message=f"Quantity {ordered_quantity} is the same"
+      )
+    )
+  
+  if po.allocated_quantity > 0:
+    allocated = po.allocated_quantity
+    if ordered_quantity is None or ordered_quantity < allocated:
+      return ProductionOrderUpdatePayload(
+        production_order=None,
+        feedback=Feedback(
+          status=FeedbackStatusEnum.FAILED,
+          message=f"Ordered quantity ({ordered_quantity}) cannot be less than allocated quantity ({allocated})"
+        )
+      )
+    
   
   old_value = f"{po.ordered_quantity}"
   

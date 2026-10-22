@@ -504,6 +504,22 @@ class ProductionOrderAllocation(Base):
   def __repr__(self):
     return f"<{self.__class__.__name__} {self.quantity}>"
 
+# class MixBatch(Base):
+#   __tablename__ = "mix_batches"
+  
+#   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+#   nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="SET NULL"), index=True)
+#   nic_profile_slug_snapshot: Mapped[str] = mapped_column(String(255))
+#   batch_number: Mapped[str | None] = mapped_column(String(255))
+#   recipe_snapshot: Mapped[dict | None] = mapped_column(JSONB)
+#   total_volume_ml: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+#   total_weight_g: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+#   mixed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+#   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+#   updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+#   mix_jobs: Mapped[list["MixJob"]] = relationship(back_populates="mix_batch")
+  
 class Location(Base):
   __tablename__ = "locations"
   
