@@ -173,7 +173,7 @@ from api_graphql.resolvers.production_order import (
   mark_repat_job_completed,
   set_production_order_archived,
   set_production_order_priority,
-  set_production_order_quantity,
+  set_production_order_ordered_quantity,
   update_production_order,
 )
 
