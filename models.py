@@ -247,6 +247,8 @@ class NicProfile(Base):
     back_populates="nic_profile", cascade="all, delete-orphan"
   )
   
+  mix_batches: Mapped[list["MixBatch"]] = relationship(back_populates="nic_profile", passive_deletes=True)
+  
   @property
   def full_name(self) -> str:
     suffix = " - Old Mix" if self.is_old_mix else ""
@@ -303,6 +305,7 @@ class ProductionOrder(Base):
   is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
   is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
   hq_location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("locations.id"), index=True)
+  mix_batch_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mix_batches.id", ondelete="SET NULL"), index=True)
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -322,13 +325,15 @@ class ProductionOrder(Base):
     order_by=lambda: (ProductionOrderActivityLog.triggered_at, ProductionOrderActivityLog.id),
   )
   
-  # repat_jobs: Mapped[list["RepatJob"]] = relationship(
-  #   back_populates="production_order", cascade="all, delete-orphan"
-  # )
+  repat_jobs: Mapped[list["RepatJob"]] = relationship(
+    back_populates="production_order", cascade="all, delete-orphan"
+  )
   
   mix_jobs: Mapped[list["MixJob"]] = relationship(
     back_populates="production_order", cascade="all, delete-orphan"
   )
+
+  mix_batch: Mapped["MixBatch | None"] = relationship(back_populates="production_orders")
   
   @property
   def is_open(self) -> bool:
@@ -504,21 +509,32 @@ class ProductionOrderAllocation(Base):
   def __repr__(self):
     return f"<{self.__class__.__name__} {self.quantity}>"
 
-# class MixBatch(Base):
-#   __tablename__ = "mix_batches"
+class MixBatchStatus(enum.Enum):
+  CANCELLED = "cancelled"
+  COMPLETED = "completed"
+  IN_PROGRESS = "in_progress"
+  MIXED = "mixed"
   
-#   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-#   nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="SET NULL"), index=True)
-#   nic_profile_slug_snapshot: Mapped[str] = mapped_column(String(255))
-#   batch_number: Mapped[str | None] = mapped_column(String(255))
-#   recipe_snapshot: Mapped[dict | None] = mapped_column(JSONB)
-#   total_volume_ml: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
-#   total_weight_g: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
-#   mixed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-#   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-#   updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+mix_batch_status_enum = Enum(MixBatchStatus, name="mixbatchstatus")
 
-#   mix_jobs: Mapped[list["MixJob"]] = relationship(back_populates="mix_batch")
+class MixBatch(Base):
+  __tablename__ = "mix_batches"
+  
+  id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+  nic_profile_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("nic_profiles.id", ondelete="SET NULL"), index=True)
+  nic_profile_slug_snapshot: Mapped[str] = mapped_column(String(255))
+  status: Mapped[MixBatchStatus] = mapped_column(mix_batch_status_enum, default=MixBatchStatus.IN_PROGRESS, index=True)
+  batch_number: Mapped[str | None] = mapped_column(String(255), index=True)
+  recipe_snapshot: Mapped[dict | None] = mapped_column(JSONB)
+  total_volume_ml: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+  total_weight_g: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+  mixed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+  created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+  updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+  nic_profile: Mapped["NicProfile | None"] = relationship(back_populates="mix_batches")
+  
+  production_orders: Mapped[list["ProductionOrder"]] = relationship(back_populates="mix_batch", passive_deletes=True)
   
 class Location(Base):
   __tablename__ = "locations"
