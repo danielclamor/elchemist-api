@@ -379,6 +379,7 @@ class ProductionOrderCreateInput:
   quantity: Optional[int] = strawberry.UNSET
   is_priority: bool = False
   allocations: Optional[list[ProductionOrderAllocationInput]] = strawberry.UNSET
+  job_type: Optional[ProductionOrderJobTypeEnum] = strawberry.UNSET
 
 @strawberry.type
 class ProductionOrderCreatePayload:
