@@ -167,6 +167,7 @@ from api_graphql.resolvers.production_order import (
   get_production_order_status_counts,
   mark_production_order_cancelled,
   mark_production_order_delivered,
+  mark_production_order_fulfilled,
   mark_production_order_in_progress,
   mark_mix_job_completed,
   mark_mix_job_mixed,
@@ -695,6 +696,15 @@ class Mutation:
     db = info.context["db"]
     return mark_production_order_in_progress(
       db=db, identifier=identifier,
+    )
+    
+  @strawberry.mutation
+  def productionOrderMarkFulfilled(
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, fulfilled_quantity: int,
+  ) -> ProductionOrderUpdatePayload:
+    db = info.context["db"]
+    return mark_production_order_fulfilled(
+      db=db, identifier=identifier, fulfilled_quantity=fulfilled_quantity,
     )
   
   @strawberry.mutation
