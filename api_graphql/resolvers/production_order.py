@@ -436,12 +436,13 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
     
     db.commit()
     
-    assign_production_order_job(
-      db, 
-      ProductionOrderIdentifierInput(order_number=po.order_number), 
-      ordered_quantity=po.ordered_quantity, 
-      job_type=job_type
-    )
+    if job_type is not None:
+      assign_production_order_job(
+        db, 
+        ProductionOrderIdentifierInput(order_number=po.order_number), 
+        ordered_quantity=po.ordered_quantity, 
+        job_type=job_type
+      )
   except IntegrityError:
     db.rollback()
     logger.exception("Integrity error creating production order")
