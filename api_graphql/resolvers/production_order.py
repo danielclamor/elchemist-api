@@ -26,8 +26,8 @@ from models import (
   ProductionOrderJobType,
   MixJob,
   MixJobStatus,
-  RepatJob,
-  RepatJobStatus,
+  # RepatJob,
+  # RepatJobStatus,
   ProductionOrderStatus,
   ProductionOrderActivityLog,
   ProductionOrderActivityType,
@@ -45,9 +45,9 @@ from api_graphql.types.production_order import (
   MixJobType,
   MixJobIdentifierInput,
   MixJobUpdatePayload,
-  RepatJobType,
-  RepatJobIdentifierInput,
-  RepatJobUpdatePayload,
+  # RepatJobType,
+  # RepatJobIdentifierInput,
+  # RepatJobUpdatePayload,
   ProductionOrderType,
   ProductionOrderCreatePayload,
   ProductionOrderDeletePayload,
@@ -60,7 +60,7 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
   from api_graphql.types.production_order import (
     MixJobMarkMixedInput,
-    RepatJobMarkCompletedInput,
+    # RepatJobMarkCompletedInput,
     ProductionOrderCreateInput,
     ProductionOrderUpdateInput,
   )
@@ -87,7 +87,7 @@ def get_all_production_orders(db: Session, job_type: "ProductionOrderJobType"=No
       selectinload(ProductionOrder.allocations).selectinload(ProductionOrderAllocation.location),
       selectinload(ProductionOrder.hq_location),
       selectinload(ProductionOrder.mix_jobs),
-      selectinload(ProductionOrder.repat_jobs),
+      # selectinload(ProductionOrder.repat_jobs),
     )
     .order_by(ProductionOrder.created_at.desc(), ProductionOrder.id)
   )
@@ -104,10 +104,10 @@ def get_all_mix_jobs(db: Session) -> list[MixJob]:
     db.scalars(select(MixJob)).unique().all()
   )
   
-def get_all_repat_jobs(db: Session) -> list[RepatJob]:
-  return (
-    db.scalars(select(RepatJob)).unique().all()
-  )
+# def get_all_repat_jobs(db: Session) -> list[RepatJob]:
+#   return (
+#     db.scalars(select(RepatJob)).unique().all()
+#   )
 
 def get_production_order(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrder | None:
   return (
@@ -119,10 +119,10 @@ def get_mix_job(db: Session, identifier: "MixJobIdentifierInput") -> MixJob | No
     db.scalar(select(MixJob).where(identifier.query_condition))
   )
 
-def get_repat_job(db: Session, identifier: "RepatJobIdentifierInput") -> RepatJob | None:
-  return (
-    db.scalar(select(RepatJob).where(identifier.query_condition))
-  )
+# def get_repat_job(db: Session, identifier: "RepatJobIdentifierInput") -> RepatJob | None:
+#   return (
+#     db.scalar(select(RepatJob).where(identifier.query_condition))
+#   )
 
 # Mutations
 def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentifierInput", ordered_quantity: Optional[int], job_type: "ProductionOrderJobTypeEnum") -> ProductionOrderAssignJobPayload: 
@@ -219,11 +219,11 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
       db=db,
       identifier=MixJobIdentifierInput(job_number=current_job.job_number),
     ).mix_job
-  elif old_job == ProductionOrderJobType.REPAT:
-    reassigned_job = mark_repat_job_reassigned(
-      db=db,
-      identifier=RepatJobIdentifierInput(job_number=current_job.job_number),
-    ).repat_job
+  # elif old_job == ProductionOrderJobType.REPAT:
+  #   reassigned_job = mark_repat_job_reassigned(
+  #     db=db,
+  #     identifier=RepatJobIdentifierInput(job_number=current_job.job_number),
+  #   ).repat_job
   else:
     reassigned_job = None
     
@@ -245,13 +245,13 @@ def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentif
       created_at=today_as_utc,
       ordered_quantity=ordered_quantity,
     ).production_order_job
-  else:
-    created_job = create_repat_job(
-      db=db,
-      production_order=po,
-      created_at=today_as_utc,
-      ordered_quantity=ordered_quantity,
-    ).production_order_job
+  # else:
+  #   created_job = create_repat_job(
+  #     db=db,
+  #     production_order=po,
+  #     created_at=today_as_utc,
+  #     ordered_quantity=ordered_quantity,
+  #   ).production_order_job
     
   po.job_type = new_job
   db.flush()
@@ -539,29 +539,29 @@ def create_mix_job(db: Session, production_order: ProductionOrder, ordered_quant
     )
   )
 
-def create_repat_job(db: Session, production_order: ProductionOrder, ordered_quantity: Optional[int], created_at: datetime) -> ProductionOrderJobCreatePayload:
-  sequence = db.scalar(
-    select(func.count()).select_from(RepatJob).where(RepatJob.production_order_id == production_order.id)
-  ) + 1
+# def create_repat_job(db: Session, production_order: ProductionOrder, ordered_quantity: Optional[int], created_at: datetime) -> ProductionOrderJobCreatePayload:
+#   sequence = db.scalar(
+#     select(func.count()).select_from(RepatJob).where(RepatJob.production_order_id == production_order.id)
+#   ) + 1
   
-  po_job = RepatJob(
-    job_number=generate_job_number(production_order.order_number, "RJ", sequence),
-    production_order_id=production_order.id,
-    ordered_quantity=ordered_quantity,
-    created_at=created_at,
-    updated_at=created_at,
-  )
+#   po_job = RepatJob(
+#     job_number=generate_job_number(production_order.order_number, "RJ", sequence),
+#     production_order_id=production_order.id,
+#     ordered_quantity=ordered_quantity,
+#     created_at=created_at,
+#     updated_at=created_at,
+#   )
   
-  db.add(po_job)
-  db.flush()
+#   db.add(po_job)
+#   db.flush()
   
-  return ProductionOrderJobCreatePayload(
-    production_order_job=RepatJobType.from_model(po_job),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=None,
-    )
-  )
+#   return ProductionOrderJobCreatePayload(
+#     production_order_job=RepatJobType.from_model(po_job),
+#     feedback=Feedback(
+#       status=FeedbackStatusEnum.SUCCESS,
+#       message=None,
+#     )
+#   )
   
 def delete_production_order(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrderDeletePayload:
   po = get_production_order(db=db, identifier=identifier)
@@ -625,11 +625,11 @@ def mark_production_order_cancelled(db: Session, identifier: "ProductionOrderIde
       db=db, 
       identifier=MixJobIdentifierInput(job_number=current_job.job_number),
     )
-  elif po.job_type == ProductionOrderJobType.REPAT and current_job is not None:
-    mark_repat_job_cancelled(
-      db=db, 
-      identifier=RepatJobIdentifierInput(job_number=current_job.job_number),
-    )
+  # elif po.job_type == ProductionOrderJobType.REPAT and current_job is not None:
+  #   mark_repat_job_cancelled(
+  #     db=db, 
+  #     identifier=RepatJobIdentifierInput(job_number=current_job.job_number),
+  #   )
   
   create_production_order_activity_log(
     db=db,
@@ -943,117 +943,117 @@ def mark_mix_job_reassigned(db: Session, identifier: "MixJobIdentifierInput", ) 
     )
   )
 
-def mark_repat_job_cancelled(db: Session, identifier: "RepatJobIdentifierInput") -> RepatJobUpdatePayload:
-  job = db.scalar(
-    select(RepatJob).where(
-      and_(
-        identifier.query_condition,
-        RepatJob.status == RepatJobStatus.IN_PROGRESS,
-      )
-    )
-  )
+# def mark_repat_job_cancelled(db: Session, identifier: "RepatJobIdentifierInput") -> RepatJobUpdatePayload:
+#   job = db.scalar(
+#     select(RepatJob).where(
+#       and_(
+#         identifier.query_condition,
+#         RepatJob.status == RepatJobStatus.IN_PROGRESS,
+#       )
+#     )
+#   )
   
-  if job is None:
-    return RepatJobUpdatePayload(
-      repat_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"RepatJob {identifier.provided[1]} with {RepatJobStatus.IN_PROGRESS.name} status not found"
-      )
-    )
+#   if job is None:
+#     return RepatJobUpdatePayload(
+#       repat_job=None,
+#       feedback=Feedback(
+#         status=FeedbackStatusEnum.FAILED,
+#         message=f"RepatJob {identifier.provided[1]} with {RepatJobStatus.IN_PROGRESS.name} status not found"
+#       )
+#     )
   
-  today_as_utc = get_today("UTC")
+#   today_as_utc = get_today("UTC")
   
-  job.status = RepatJobStatus.CANCELLED
-  job.updated_at = today_as_utc
-  db.flush()
+#   job.status = RepatJobStatus.CANCELLED
+#   job.updated_at = today_as_utc
+#   db.flush()
     
-  return RepatJobUpdatePayload(
-    repat_job=RepatJobType.from_model(job),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=f"RepatJob {job.job_number} cancelled"
-    )
-  )
+#   return RepatJobUpdatePayload(
+#     repat_job=RepatJobType.from_model(job),
+#     feedback=Feedback(
+#       status=FeedbackStatusEnum.SUCCESS,
+#       message=f"RepatJob {job.job_number} cancelled"
+#     )
+#   )
 
-def mark_repat_job_completed(db: Session, identifier: "RepatJobIdentifierInput", input: "RepatJobMarkCompletedInput") -> RepatJobUpdatePayload:
-  job = db.scalar(
-    select(RepatJob).where(
-      and_(
-        identifier.query_condition,
-        RepatJob.status == RepatJobStatus.IN_PROGRESS,
-      )
-    )
-  )
+# def mark_repat_job_completed(db: Session, identifier: "RepatJobIdentifierInput", input: "RepatJobMarkCompletedInput") -> RepatJobUpdatePayload:
+#   job = db.scalar(
+#     select(RepatJob).where(
+#       and_(
+#         identifier.query_condition,
+#         RepatJob.status == RepatJobStatus.IN_PROGRESS,
+#       )
+#     )
+#   )
   
-  if job is None:
-    return RepatJobUpdatePayload(
-      repat_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"RepatJob {identifier.provided[1]} with {RepatJobStatus.IN_PROGRESS.name} status not found"
-      )
-    )
+#   if job is None:
+#     return RepatJobUpdatePayload(
+#       repat_job=None,
+#       feedback=Feedback(
+#         status=FeedbackStatusEnum.FAILED,
+#         message=f"RepatJob {identifier.provided[1]} with {RepatJobStatus.IN_PROGRESS.name} status not found"
+#       )
+#     )
   
-  today_as_utc = get_today("UTC")
+#   today_as_utc = get_today("UTC")
   
-  job.status = RepatJobStatus.COMPLETED
+#   job.status = RepatJobStatus.COMPLETED
   
-  job.incoming_quantity = input.incoming_quantity
+#   job.incoming_quantity = input.incoming_quantity
   
-  job.updated_at = today_as_utc
+#   job.updated_at = today_as_utc
   
-  db.flush()
+#   db.flush()
   
-  mark_production_order_fulfilled(
-    db=db, 
-    identifier=ProductionOrderIdentifierInput(order_number=job.production_order.order_number), 
-    fulfilled_quantity=job.incoming_quantity,
-  )
+#   mark_production_order_fulfilled(
+#     db=db, 
+#     identifier=ProductionOrderIdentifierInput(order_number=job.production_order.order_number), 
+#     fulfilled_quantity=job.incoming_quantity,
+#   )
  
-  db.commit()
-  db.refresh(job)
+#   db.commit()
+#   db.refresh(job)
     
-  return RepatJobUpdatePayload(
-    repat_job=RepatJobType.from_model(job),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=f"RepatJob {job.job_number} completed"
-    )
-  )
+#   return RepatJobUpdatePayload(
+#     repat_job=RepatJobType.from_model(job),
+#     feedback=Feedback(
+#       status=FeedbackStatusEnum.SUCCESS,
+#       message=f"RepatJob {job.job_number} completed"
+#     )
+#   )
 
-def mark_repat_job_reassigned(db: Session, identifier: "RepatJobIdentifierInput") -> RepatJobUpdatePayload:
-  job = db.scalar(
-    select(RepatJob).where(
-      and_(
-        identifier.query_condition,
-        RepatJob.status == RepatJobStatus.IN_PROGRESS,
-      )
-    )
-  )
+# def mark_repat_job_reassigned(db: Session, identifier: "RepatJobIdentifierInput") -> RepatJobUpdatePayload:
+#   job = db.scalar(
+#     select(RepatJob).where(
+#       and_(
+#         identifier.query_condition,
+#         RepatJob.status == RepatJobStatus.IN_PROGRESS,
+#       )
+#     )
+#   )
   
-  if job is None:
-    return RepatJobUpdatePayload(
-      repat_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"RepatJob {identifier.provided[1]} not found"
-      )
-    )
+#   if job is None:
+#     return RepatJobUpdatePayload(
+#       repat_job=None,
+#       feedback=Feedback(
+#         status=FeedbackStatusEnum.FAILED,
+#         message=f"RepatJob {identifier.provided[1]} not found"
+#       )
+#     )
   
-  today_as_utc = get_today("UTC")
+#   today_as_utc = get_today("UTC")
   
-  job.status = RepatJobStatus.REASSIGNED
-  job.updated_at = today_as_utc
-  db.flush()
+#   job.status = RepatJobStatus.REASSIGNED
+#   job.updated_at = today_as_utc
+#   db.flush()
   
-  return RepatJobUpdatePayload(
-    repat_job=RepatJobType.from_model(job),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=None
-    )
-  )
+#   return RepatJobUpdatePayload(
+#     repat_job=RepatJobType.from_model(job),
+#     feedback=Feedback(
+#       status=FeedbackStatusEnum.SUCCESS,
+#       message=None
+#     )
+#   )
   
 
 def set_production_order_archived(db: Session, identifier: "ProductionOrderIdentifierInput", is_archived: bool) -> ProductionOrderUpdatePayload:

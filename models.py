@@ -322,9 +322,9 @@ class ProductionOrder(Base):
     order_by=lambda: (ProductionOrderActivityLog.triggered_at, ProductionOrderActivityLog.id),
   )
   
-  repat_jobs: Mapped[list["RepatJob"]] = relationship(
-    back_populates="production_order", cascade="all, delete-orphan"
-  )
+  # repat_jobs: Mapped[list["RepatJob"]] = relationship(
+  #   back_populates="production_order", cascade="all, delete-orphan"
+  # )
   
   mix_jobs: Mapped[list["MixJob"]] = relationship(
     back_populates="production_order", cascade="all, delete-orphan"
@@ -359,16 +359,16 @@ class ProductionOrder(Base):
 
     return max(self.allocated_quantity - self.fulfilled_quantity, 0)
   
-  @property
-  def current_job(self) -> "MixJob | RepatJob | None":
-    if self.job_type == ProductionOrderJobType.MIX:
-      jobs = [j for j in self.mix_jobs if j.status != MixJobStatus.REASSIGNED]
-    elif self.job_type == ProductionOrderJobType.REPAT:
-      jobs = [j for j in self.repat_jobs if j.status != RepatJobStatus.REASSIGNED]
-    else:
-      return None
+  # @property
+  # def current_job(self) -> "MixJob | RepatJob | None":
+  #   if self.job_type == ProductionOrderJobType.MIX:
+  #     jobs = [j for j in self.mix_jobs if j.status != MixJobStatus.REASSIGNED]
+  #   elif self.job_type == ProductionOrderJobType.REPAT:
+  #     jobs = [j for j in self.repat_jobs if j.status != RepatJobStatus.REASSIGNED]
+  #   else:
+  #     return None
 
-    return max(jobs, key=lambda j: j.created_at, default=None)
+  #   return max(jobs, key=lambda j: j.created_at, default=None)
 
   def __repr__(self) -> str:
     return f"<ProductionOrder {self.order_number!r} eliquid={self.eliquid.description!r} quantity={self.ordered_quantity} status={self.status.value}>"
