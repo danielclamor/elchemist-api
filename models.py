@@ -523,7 +523,7 @@ class MixBatch(Base):
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   mix_number: Mapped[str] = mapped_column(String(32), index=True, unique=True)
   nic_profile_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("nic_profiles.id", ondelete="SET NULL"), index=True)
-  nic_profile_slug_snapshot: Mapped[str] = mapped_column(String(255))
+  nic_profile_full_name_snapshot: Mapped[str | None] = mapped_column(String(255))
   status: Mapped[MixBatchStatus] = mapped_column(mix_batch_status_enum, default=MixBatchStatus.IN_PROGRESS, index=True)
   batch_code: Mapped[str | None] = mapped_column(String(255))
   recipe_snapshot: Mapped[dict | None] = mapped_column(JSONB)
