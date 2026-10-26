@@ -280,11 +280,11 @@ class ProductionOrderType(relay.Node):
     return EliquidType.from_model(self._model.eliquid)
 
   @strawberry.field
-  def activity_logs(self) -> list["ProductionOrderActivityLogType"]:
+  def activity_logs(self) -> list[ProductionOrderActivityLogType]:
     return [ProductionOrderActivityLogType.from_model(l) for l in self._model.activity_logs]
   
-  @relay.connection(relay.ListConnection["MixJobType"])
-  def mix_jobs(self) -> list["MixJobType"]:
+  @relay.connection(relay.ListConnection[MixJobType])
+  def mix_jobs(self) -> list[MixJobType]:
     return [MixJobType.from_model(j) for j in self._model.mix_jobs]
   
   # @relay.connection(relay.ListConnection["RepatJobType"])
@@ -317,7 +317,7 @@ class ProductionOrderType(relay.Node):
     )
   
   @strawberry.field
-  def allocations(self) -> list["ProductionOrderAllocationType"]:
+  def allocations(self) -> list[ProductionOrderAllocationType]:
     return [ProductionOrderAllocationType.from_model(a) for a in self._model.allocations]
 
   @strawberry.field
