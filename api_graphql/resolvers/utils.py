@@ -30,6 +30,9 @@ def generate_production_order_number(date: date, counter: int) -> str:
 def generate_job_number(order_number: str, prefix: str, sequence: int) -> str:
   return f"{order_number}-{prefix}{sequence}"
 
+def generate_mix_number(counter: int) -> str:
+  return f"MIX-{counter:02d}"
+
 def convert_strawberry_input_to_dict(input_obj):
     data = dataclasses.asdict(input_obj)
     return {k: v for k, v in data.items() if v is not strawberry.UNSET}
