@@ -5,6 +5,7 @@ import strawberry
 from strawberry import relay
 from typing import List, Optional
 
+from api_graphql.resolvers.mix_batch import create_mix_batch, get_all_mix_batches, get_mix_batch
 from api_graphql.types.connections import ListConnectionWithTotalCount
 from api_graphql.types.brand import BrandEdge, BrandConnection
 from api_graphql.types.eliquid import (
@@ -35,6 +36,7 @@ from api_graphql.types.formula import (
   FormulaUpdateInput,
   FormulaUpdatePayload,
 )
+from api_graphql.types.mix_batch import MixBatchCreatePayload, MixBatchIdentifierInput, MixBatchType
 from api_graphql.types.nic_base_option import (
   NicBaseOptionType,
   NicBaseOptionIdentifierInput,
@@ -387,7 +389,22 @@ class Query:
   ) -> List[MixJobType]:
     db = info.context["db"]
     return [MixJobType.from_model(j) for j in get_all_mix_jobs(db)]
-
+  
+  @strawberry.field
+  def mixBatch(
+    self, info: strawberry.Info, identifier: MixBatchIdentifierInput,
+  ) -> MixBatchType | None:
+    db = info.context["db"]
+    b = get_mix_batch(db, identifier=identifier)
+    return MixBatchType.from_model(b) if b else None
+  
+  @relay.connection(relay.ListConnection[MixBatchType])
+  def mixBatches(
+    self, info: strawberry.Info,
+  ) -> List[MixBatchType]:
+    db = info.context["db"]
+    return [MixBatchType.from_model(b) for b in get_all_mix_batches(db)]
+  
   # @strawberry.field
   # def repatJob(
   #   self, info: strawberry.Info, identifier: RepatJobIdentifierInput,
@@ -534,6 +551,15 @@ class Mutation:
     db = info.context["db"]
     return update_formula(
       db=db, identifier=identifier, input=formula,
+    )
+    
+  @strawberry.mutation
+  def mixBatchCreate(
+    self, info: strawberry.Info, nic_profile_identifier: NicProfileIdentifierInput,
+  ) -> MixBatchCreatePayload:
+    db = info.context["db"]
+    return create_mix_batch(
+      db=db, nic_profile_identifier=nic_profile_identifier,
     )
 
   @strawberry.mutation
