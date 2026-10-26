@@ -536,7 +536,18 @@ class MixBatch(Base):
   nic_profile: Mapped["NicProfile | None"] = relationship(back_populates="mix_batches")
   
   production_orders: Mapped[list["ProductionOrder"]] = relationship(back_populates="mix_batch", passive_deletes=True)
-  
+
+  def __repr__(self) -> str:
+    return f"<MixBatch {self.mix_number!r}>"
+
+class MixBatchCounter(Base):
+  __tablename__ = "mix_batch_counter"
+
+  last_number: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False, default=0)
+
+  def __repr__(self) -> str:
+    return f"<MixBatchCounter {self.last_number!r}>"
+
 class Location(Base):
   __tablename__ = "locations"
   
