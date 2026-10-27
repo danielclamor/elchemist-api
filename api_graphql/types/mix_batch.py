@@ -108,3 +108,8 @@ class MixBatchIdentifierInput:
 class MixBatchCreatePayload:
   mix_batch: MixBatchType | None
   feedback: Feedback
+  
+@strawberry.type
+class MixBatchUpdatePayload:
+  mix_batch: MixBatch | None
+  feedback: Feedback
