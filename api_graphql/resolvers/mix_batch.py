@@ -172,3 +172,28 @@ def mark_mix_batch_completed(db: Session, identifier: "MixBatchIdentifierInput")
       message=None,
     )
   )
+
+def mark_mix_batch_mixed(db: Session, identifier: "MixBatchIdentifierInput") -> MixBatchUpdatePayload:
+  batch = db.scalar(select(MixBatch).where(identifier.query_condition))
+  
+  if batch is None:
+    return MixBatchUpdatePayload(
+      mix_batch=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.CANCELLED,
+        message=f"MixBatch {identifier.provided[1]} not found",
+      )
+    )
+    
+  change_mix_batch_status(batch, MixBatchStatus.MIXED)
+  
+  db.commit()
+  db.refresh()
+  
+  return MixBatchUpdatePayload(
+    mix_batch=MixBatchType.from_model(batch),
+    feedback=Feedback(
+      status=FeedbackStatusEnum.SUCCESS,
+      message=None,
+    )
+  )
