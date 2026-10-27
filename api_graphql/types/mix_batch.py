@@ -111,5 +111,5 @@ class MixBatchCreatePayload:
   
 @strawberry.type
 class MixBatchUpdatePayload:
-  mix_batch: MixBatch | None
+  mix_batch: MixBatchType | None
   feedback: Feedback
