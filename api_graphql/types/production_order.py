@@ -468,5 +468,5 @@ class RepatJobMarkCompletedInput:
 @strawberry.type
 class ProductionOrderAssignJobPayload:
   production_order: ProductionOrderType | None
-  created_production_order_job: MixJobType | None # | RepatJobType
+  # created_production_order_job: MixJobType | None # | RepatJobType
   feedback: Feedback
