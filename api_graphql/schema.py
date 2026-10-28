@@ -398,7 +398,7 @@ class Query:
     b = get_mix_batch(db, identifier=identifier)
     return MixBatchType.from_model(b) if b else None
   
-  @relay.connection(relay.ListConnection[MixBatchType])
+  @relay.connection(ListConnectionWithTotalCount[MixBatchType])
   def mixBatches(
     self, info: strawberry.Info,
   ) -> List[MixBatchType]:
