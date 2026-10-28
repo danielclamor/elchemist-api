@@ -84,7 +84,7 @@ class MixBatchIdentifierInput:
     
     if self.id is not strawberry.UNSET:
       type_name = self.id.type_name
-      expected_name = ProductionOrderType.__strawberry_definition__.name
+      expected_name = MixBatchType.__strawberry_definition__.name
       if type_name != expected_name:
         raise GraphQLError(
           f"Expected {expected_name} ID, got {type_name} ID",
