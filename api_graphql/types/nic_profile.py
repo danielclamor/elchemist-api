@@ -64,11 +64,13 @@ class NicProfileType(relay.Node):
     from api_graphql.types.formula import FormulaType
     return FormulaType.from_model(self._model.formula)
 
-  @relay.connection(relay.ListConnection["NicProfileFlavoringType"])
+  # @relay.connection(relay.ListConnection["NicProfileFlavoringType"])
+  @strawberry.field
   def flavorings(self) -> list["NicProfileFlavoringType"]:
     return [NicProfileFlavoringType.from_model(b) for b in self._model.flavorings]
 
-  @relay.connection(relay.ListConnection["NicProfileNicBaseType"])
+  # @relay.connection(relay.ListConnection["NicProfileNicBaseType"])
+  @strawberry.field
   def nic_bases(self) -> list["NicProfileNicBaseType"]:
     return [NicProfileNicBaseType.from_model(b) for b in self._model.nic_bases]
   
