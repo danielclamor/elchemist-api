@@ -29,6 +29,7 @@ if TYPE_CHECKING:
   from api_graphql.types.eliquid import EliquidType
   from api_graphql.types.location import LocationType
   from api_graphql.types.production_order import ProductionOrderType
+  from api_graphql.types.mix_batch import MixBatchType
 
 @strawberry.type
 class ProductionOrderActivityLogType(relay.Node):
@@ -286,6 +287,11 @@ class ProductionOrderType(relay.Node):
   @relay.connection(relay.ListConnection[MixJobType])
   def mix_jobs(self) -> list[MixJobType]:
     return [MixJobType.from_model(j) for j in self._model.mix_jobs]
+  
+  @strawberry.field
+  def mix_batch(self) -> Annotated["MixBatchType", strawberry.lazy("api_graphql.types.mix_batch")] | None:
+    from api_graphql.types.mix_batch import MixBatchType
+    return MixBatchType.from_model(self._model.mix_batch)
   
   # @relay.connection(relay.ListConnection["RepatJobType"])
   # def repat_jobs(self) -> list["RepatJobType"]:
