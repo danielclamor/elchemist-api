@@ -46,7 +46,7 @@ from api_graphql.types.nic_profile import (
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-  from api_graphql.types.formula import FormulaIdentifierInput
+  from api_graphql.types.flavor import FormulaIdentifierInput
   
   from api_graphql.types.nic_profile import (
     NicProfileIdentifierInput,

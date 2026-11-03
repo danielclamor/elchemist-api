@@ -27,14 +27,14 @@ from api_graphql.types.flavoring_option import (
   FlavoringOptionCreatePayload,
   FlavoringOptionsBulkCreatePayload,
 )
-from api_graphql.types.formula import (
-  FormulaType,
-  FormulaIdentifierInput,
-  FormulaCreateInput,
-  FormulaCreatePayload,
-  FormulaDeletePayload,
-  FormulaUpdateInput,
-  FormulaUpdatePayload,
+from api_graphql.types.flavor import (
+  FlavorType,
+  FlavorIdentifierInput,
+  FlavorCreateInput,
+  FlavorCreatePayload,
+  FlavorDeletePayload,
+  FlavorUpdateInput,
+  FlavorUpdatePayload,
 )
 from api_graphql.types.mix_batch import MixBatchCreatePayload, MixBatchIdentifierInput, MixBatchType, MixBatchUpdatePayload
 from api_graphql.types.nic_base_option import (
@@ -112,12 +112,12 @@ from api_graphql.resolvers.eliquid import (
   update_eliquid,
 )
 
-from api_graphql.resolvers.formula import (
-  create_formula,
-  delete_formula,
-  get_all_formulas,
-  get_formula,
-  update_formula,
+from api_graphql.resolvers.flavor import (
+  create_flavor,
+  delete_flavor,
+  get_all_flavors,
+  get_flavor,
+  update_flavor,
 )
 
 from api_graphql.resolvers.nic_profile import (
@@ -285,19 +285,19 @@ class Query:
     return [FlavoringOptionType.from_model(o) for o in get_all_flavoring_options(db)]
 
   @strawberry.field
-  def formula(
-    self, info: strawberry.Info, identifier: FormulaIdentifierInput,
-  ) -> FormulaType | None:
+  def flavor(
+    self, info: strawberry.Info, identifier: FlavorIdentifierInput,
+  ) -> FlavorType | None:
     db = info.context["db"]
-    f = get_formula(db=db, identifier=identifier)
-    return FormulaType.from_model(f) if f else None
+    f = get_flavor(db=db, identifier=identifier)
+    return FlavorType.from_model(f) if f else None
 
-  @relay.connection(relay.ListConnection[FormulaType])
-  def formulas(
+  @relay.connection(relay.ListConnection[FlavorType])
+  def flavors(
     self, info: strawberry.Info,
-  ) -> List[FormulaType]:
+  ) -> List[FlavorType]:
     db = info.context["db"]
-    return [FormulaType.from_model(f) for f in get_all_formulas(db)]
+    return [FlavorType.from_model(f) for f in get_all_flavors(db)]
   
   @strawberry.field
   def nicBaseOption(
@@ -527,30 +527,30 @@ class Mutation:
     )
 
   @strawberry.mutation
-  def formulaCreate(
-    self, info: strawberry.Info, formula: FormulaCreateInput,
-  ) -> FormulaCreatePayload:
+  def flavorCreate(
+    self, info: strawberry.Info, flavor: FlavorCreateInput,
+  ) -> FlavorCreatePayload:
     db = info.context["db"]
-    return create_formula(
-      db=db, input=formula,
+    return create_flavor(
+      db=db, input=flavor,
     )
 
   @strawberry.mutation
-  def formulaDelete(
-    self, info: strawberry.Info, identifier: FormulaIdentifierInput,
-  ) -> FormulaDeletePayload:
+  def flavorDelete(
+    self, info: strawberry.Info, identifier: FlavorIdentifierInput,
+  ) -> FlavorDeletePayload:
     db = info.context["db"]
-    return delete_formula(
+    return delete_flavor(
       db=db, identifier=identifier,
     )
 
   @strawberry.mutation
-  def formulaUpdate(
-    self, info: strawberry.Info, identifier: FormulaIdentifierInput, formula: FormulaUpdateInput,
-  ) -> FormulaUpdatePayload:
+  def flavorUpdate(
+    self, info: strawberry.Info, identifier: FlavorIdentifierInput, flavor: FlavorUpdateInput,
+  ) -> FlavorUpdatePayload:
     db = info.context["db"]
-    return update_formula(
-      db=db, identifier=identifier, input=formula,
+    return update_flavor(
+      db=db, identifier=identifier, input=flavor,
     )
     
   @strawberry.mutation
@@ -600,11 +600,11 @@ class Mutation:
     
   @strawberry.mutation
   def nicProfileCreate(
-    self, info: strawberry.Info, formula_identifier: FormulaIdentifierInput, nic_profile: NicProfileCreateInput,
+    self, info: strawberry.Info, flavor_identifier: FlavorIdentifierInput, nic_profile: NicProfileCreateInput,
   ) -> NicProfileCreatePayload:
     db = info.context["db"]
     return create_nic_profile(
-      db=db, formula_identifier=formula_identifier, nic_profile=nic_profile,
+      db=db, flavor_identifier=flavor_identifier, nic_profile=nic_profile,
     )
 
   @strawberry.mutation

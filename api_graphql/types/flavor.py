@@ -8,7 +8,7 @@ from typing import Annotated, TYPE_CHECKING, Optional
 import strawberry
 from strawberry import relay
 
-from models import Formula, ChillType, NicType
+from models import Flavor
 
 from api_graphql.types.enums import ChillTypeEnum, NicTypeEnum
 from api_graphql.types.feedback import Feedback
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
   from api_graphql.types.flavoring_option import FlavoringOptionType
 
 @strawberry.type
-class FormulaType(relay.Node):
+class FlavorType(relay.Node):
   id: relay.NodeID[str]
   slug: str
   name: str
@@ -28,10 +28,10 @@ class FormulaType(relay.Node):
   created_at: datetime
   updated_at: datetime
 
-  _model: strawberry.Private[Formula]
+  _model: strawberry.Private[Flavor]
 
   @classmethod
-  def from_model(cls, f: Formula) -> "FormulaType":
+  def from_model(cls, f: Flavor) -> "FlavorType":
     return cls(
       id=f.id,
       slug=f.slug,
@@ -59,7 +59,7 @@ class FormulaType(relay.Node):
     return [FlavoringOptionType.from_model(o) for o in list(set(flavoring_options))]
 
 @strawberry.input
-class FormulaIdentifierInput:
+class FlavorIdentifierInput:
   id: Optional[relay.GlobalID] = strawberry.UNSET
   slug: Optional[str] = strawberry.UNSET
   
@@ -79,7 +79,7 @@ class FormulaIdentifierInput:
     
     if self.id is not strawberry.UNSET:
       type_name = self.id.type_name
-      expected_name = FormulaType.__strawberry_definition__.name
+      expected_name = FlavorType.__strawberry_definition__.name
       if type_name != expected_name:
         raise GraphQLError(
           f"Expected {expected_name} ID, got {type_name} ID",
@@ -95,30 +95,30 @@ class FormulaIdentifierInput:
     attr, value = self.provided
     
     if attr == "id":
-      return Formula.id == value.node_id
+      return Flavor.id == value.node_id
     else:
-      return getattr(Formula, attr) == value
+      return getattr(Flavor, attr) == value
   
 @strawberry.input
-class FormulaCreateInput:
+class FlavorCreateInput:
   name: str
   brand: str
   chill_type: ChillTypeEnum
   nic_type: NicTypeEnum
 
 @strawberry.type
-class FormulaCreatePayload:
-  formula: FormulaType
+class FlavorCreatePayload:
+  flavor: FlavorType
   feedback: Feedback
 
 @strawberry.type
-class FormulaDeletePayload:
+class FlavorDeletePayload:
   deleted_slug: str | None
   deleted_name: str | None
   feedback: Feedback
 
 @strawberry.input
-class FormulaUpdateInput:
+class FlavorUpdateInput:
   slug: Optional[str] = strawberry.UNSET
   name: Optional[str] = strawberry.UNSET
   brand: Optional[str] = strawberry.UNSET
@@ -126,6 +126,6 @@ class FormulaUpdateInput:
   nic_type: Optional[NicTypeEnum] = strawberry.UNSET
 
 @strawberry.type
-class FormulaUpdatePayload:
-  formula: FormulaType | None
+class FlavorUpdatePayload:
+  flavor: FlavorType | None
   feedback: Feedback
