@@ -91,14 +91,14 @@ class Eliquid(Base):
   bottle_size: Mapped[BottleSize] = mapped_column(bottle_size_enum)
   nic_level: Mapped[NicLevel] = mapped_column(nic_level_enum)
   bottle_color: Mapped[BottleColor] = mapped_column(bottle_color_enum)
-  nic_profile_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("nic_profiles.id", ondelete="SET NULL"), index=True)
+  formula_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("formulas.id", ondelete="SET NULL"), index=True)
 
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
   )
   
-  nic_profile: Mapped["NicProfile"] = relationship()
+  formula: Mapped["Formula"] = relationship()
   
   production_orders: Mapped[list["ProductionOrder"]] = relationship(back_populates="eliquid")
 
@@ -106,8 +106,8 @@ class Eliquid(Base):
     return f"<Eliquid {self.description!r}>"
 
 
-class Formula(Base):
-  __tablename__ = "formulas"
+class Flavor(Base):
+  __tablename__ = "flavors"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
@@ -121,12 +121,12 @@ class Formula(Base):
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
   )
 
-  nic_profiles: Mapped[list["NicProfile"]] = relationship(
-    back_populates="formula", cascade="all, delete-orphan"
+  formulas: Mapped[list["Formula"]] = relationship(
+    back_populates="flavor", cascade="all, delete-orphan"
   )
 
   def __repr__(self) -> str:
-    return f"<Formula {self.slug!r}>"
+    return f"<Flavor {self.slug!r}>"
 
 
 class FlavoringOption(Base):
@@ -144,13 +144,13 @@ class Flavoring(Base):
   __tablename__ = "flavorings"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="CASCADE"), index=True)
+  formula_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("formulas.id", ondelete="CASCADE"), index=True)
   flavoring_option_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("flavoring_options.id"), index=True)
   ratio: Mapped[float] = mapped_column(Numeric(7, 6))
   
   flavoring_option: Mapped["FlavoringOption"] = relationship()
 
-  nic_profile: Mapped["NicProfile"] = relationship(back_populates="flavorings")
+  formula: Mapped["Formula"] = relationship(back_populates="flavorings")
 
   @property
   def percentage(self) -> float:
@@ -188,11 +188,11 @@ class NicBase(Base):
   __tablename__ = "nic_bases"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="CASCADE"), index=True)
+  formula_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("formulas.id", ondelete="CASCADE"), index=True)
   nic_base_option_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_base_options.id"), index=True)
   ratio: Mapped[float] = mapped_column(Numeric(7, 6))
 
-  nic_profile: Mapped["NicProfile"] = relationship(back_populates="nic_bases")
+  formula: Mapped["Formula"] = relationship(back_populates="nic_bases")
   nic_base_option: Mapped["NicBaseOption"] = relationship()
 
   @property
@@ -215,11 +215,11 @@ class NicBase(Base):
     return f"<NicBase {self.code!r} ratio={self.ratio}>"
   
 
-class NicProfile(Base):
-  __tablename__ = "nic_profiles"
+class Formula(Base):
+  __tablename__ = "formulas"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  formula_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("formulas.id", ondelete="CASCADE"), index=True)
+  flavor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("flavors.id", ondelete="CASCADE"), index=True)
 
   slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
   name: Mapped[str] = mapped_column(String(255))
@@ -238,24 +238,24 @@ class NicProfile(Base):
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
   )
 
-  formula: Mapped["Formula"] = relationship(back_populates="nic_profiles")
+  flavor: Mapped["Flavor"] = relationship(back_populates="formulas")
 
   nic_bases: Mapped[list["NicBase"]] = relationship(
-    back_populates="nic_profile", cascade="all, delete-orphan"
+    back_populates="formula", cascade="all, delete-orphan"
   )
   flavorings: Mapped[list["Flavoring"]] = relationship(
-    back_populates="nic_profile", cascade="all, delete-orphan"
+    back_populates="formula", cascade="all, delete-orphan"
   )
   
-  mix_batches: Mapped[list["MixBatch"]] = relationship(back_populates="nic_profile", passive_deletes=True)
+  mix_batches: Mapped[list["MixBatch"]] = relationship(back_populates="formula", passive_deletes=True)
   
   @property
   def full_name(self) -> str:
     suffix = " - Old Mix" if self.is_old_mix else ""
-    return f"{self.formula.name} - {self.name}{suffix}"
+    return f"{self.flavor.name} - {self.name}{suffix}"
 
   def __repr__(self) -> str:
-    return f"<NicProfile {self.slug!r}>"
+    return f"<Formula {self.slug!r}>"
   
  
 class ProductionOrderCounter(Base):
@@ -522,8 +522,8 @@ class MixBatch(Base):
   
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   mix_number: Mapped[str] = mapped_column(String(32), index=True, unique=True)
-  nic_profile_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("nic_profiles.id", ondelete="SET NULL"), index=True)
-  nic_profile_full_name_snapshot: Mapped[str | None] = mapped_column(String(255))
+  formula_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("formulas.id", ondelete="SET NULL"), index=True)
+  formula_full_name_snapshot: Mapped[str | None] = mapped_column(String(255))
   status: Mapped[MixBatchStatus] = mapped_column(mix_batch_status_enum, default=MixBatchStatus.IN_PROGRESS, index=True)
   batch_code: Mapped[str | None] = mapped_column(String(255))
   recipe_snapshot: Mapped[dict | None] = mapped_column(JSONB)
@@ -533,7 +533,7 @@ class MixBatch(Base):
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-  nic_profile: Mapped["NicProfile | None"] = relationship(back_populates="mix_batches")
+  formula: Mapped["Formula | None"] = relationship(back_populates="mix_batches")
   
   production_orders: Mapped[list["ProductionOrder"]] = relationship(back_populates="mix_batch", passive_deletes=True)
 
