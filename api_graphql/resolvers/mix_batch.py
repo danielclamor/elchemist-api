@@ -14,11 +14,11 @@ from typing import TYPE_CHECKING, Optional
 from api_graphql.resolvers.utils import generate_mix_number
 from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 from api_graphql.types.mix_batch import MixBatchCreatePayload, MixBatchType, MixBatchUpdatePayload
-from models import MixBatch, MixBatchCounter, MixBatchStatus, NicProfile
+from models import MixBatch, MixBatchCounter, MixBatchStatus, Formula
 
 if TYPE_CHECKING:
   from api_graphql.types.mix_batch import MixBatchIdentifierInput
-  from api_graphql.types.nic_profile import NicProfileIdentifierInput
+  from api_graphql.types.formula import FormulaIdentifierInput
 
 # Queries
 def get_all_mix_batches(db: Session) -> list[MixBatch]:
@@ -30,26 +30,26 @@ def get_mix_batch(db: Session, identifier: "MixBatchIdentifierInput") -> MixBatc
 # Mutations
 def create_mix_batch(
   db: Session, 
-  nic_profile_identifier: Optional["NicProfileIdentifierInput"] = None, 
-  nic_profile: Optional["NicProfile"] = None,
+  formula_identifier: Optional["FormulaIdentifierInput"] = None, 
+  formula: Optional["Formula"] = None,
 ) -> MixBatchCreatePayload:
-  if nic_profile is None:
-    if nic_profile_identifier is None:
+  if formula is None:
+    if formula_identifier is None:
       return MixBatchCreatePayload(
         mix_batch=None,
         feedback=Feedback(
           status=FeedbackStatusEnum.FAILED,
-          message=f"NicProfile or identifier must be provided"
+          message=f"Formula or identifier must be provided"
         )
       )
       
-    nic_profile = db.scalar(select(NicProfile).where(nic_profile_identifier.query_condition))
-    if nic_profile is None:
+    formula = db.scalar(select(Formula).where(formula_identifier.query_condition))
+    if formula is None:
       return MixBatchCreatePayload(
         mix_batch=None,
         feedback=Feedback(
           status=FeedbackStatusEnum.FAILED,
-          message=f"Nic Profile {nic_profile_identifier.provided[1]} not found"
+          message=f"Nic Profile {formula_identifier.provided[1]} not found"
         )
       )
   
@@ -70,8 +70,8 @@ def create_mix_batch(
     
     mix_batch = MixBatch(
       mix_number=mix_number,
-      nic_profile_id=nic_profile.id,
-      nic_profile_full_name_snapshot=nic_profile.full_name,
+      formula_id=formula.id,
+      formula_full_name_snapshot=formula.full_name,
       status=MixBatchStatus.IN_PROGRESS,
     )
     

@@ -14,15 +14,15 @@ from api_graphql.types.recipe import (
   RecipeIngredientGroup,
 )
 
-from api_graphql.types.nic_profile import NicProfileType
+from api_graphql.types.formula import FormulaType
 
-from api_graphql.resolvers.nic_profile import get_nic_profile
+from api_graphql.resolvers.formula import get_formula
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
   from api_graphql.types.recipe import RecipeInput, RecipeDiyInput
-  from api_graphql.types.nic_profile import NicProfileIdentifierInput
+  from api_graphql.types.formula import FormulaIdentifierInput
 
 VG_FLAVOR_DENSITY = 1.16065
 PG_FLAVOR_DENSITY = 1.04865
@@ -30,24 +30,24 @@ VG_DENSITY = 1.26130
 PG_DENSITY = 1.03730
 NIC_DENSITY = 1.00925  
 
-def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput", input: "RecipeInput") -> RecipeType | None:
-  nic_profile = get_nic_profile(db=db, identifier=nic_profile_identifier)
+def get_recipe(db: Session, formula_identifier: "FormulaIdentifierInput", input: "RecipeInput") -> RecipeType | None:
+  formula = get_formula(db=db, identifier=formula_identifier)
     
-  if nic_profile is None:
+  if formula is None:
     return None
   
   mix_parameters = MixParametersType(
     batch_volume_ml=input.batch_volume_ml,
-    target_nic_str=float(nic_profile.target_nic_str),
-    target_vg=float(nic_profile.target_vg),
-    target_pg=float(nic_profile.target_pg),
-    nic_base_nic_str=float(nic_profile.nic_base_nic_str),
+    target_nic_str=float(formula.target_nic_str),
+    target_vg=float(formula.target_vg),
+    target_pg=float(formula.target_pg),
+    nic_base_nic_str=float(formula.nic_base_nic_str),
     flavorings=[
       MixParametersFlavoringsType(
         name=f.flavoring_option.name,
         is_vg=f.flavoring_option.is_vg,
         ratio=float(f.ratio),
-      ) for f in nic_profile.flavorings
+      ) for f in formula.flavorings
     ],
     nic_bases=[
       MixParametersNicBasesType(
@@ -55,7 +55,7 @@ def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput",
         name=b.nic_base_option.name,
         is_vg=b.nic_base_option.is_vg,
         ratio=float(b.ratio),
-      ) for b in nic_profile.nic_bases
+      ) for b in formula.nic_bases
     ]
   )
   
@@ -96,7 +96,7 @@ def get_recipe(db: Session, nic_profile_identifier: "NicProfileIdentifierInput",
     total_ratio=sum(i.ratio for i in ingredients),
     total_volume_ml=sum(i.volume_ml for i in ingredients),
     total_weight_g=sum(i.weight_g for i in ingredients),
-    nic_profile=NicProfileType.from_model(nic_profile)
+    formula=FormulaType.from_model(formula)
   )
 
 def get_recipe_diy(input: RecipeDiyInput) -> RecipeDiyType:

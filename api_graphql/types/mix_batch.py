@@ -14,7 +14,7 @@ from api_graphql.types.feedback import Feedback
 from models import MixBatch
 
 if TYPE_CHECKING:
-  from api_graphql.types.nic_profile import NicProfileType
+  from api_graphql.types.formula import FormulaType
   from api_graphql.types.production_order import ProductionOrderType
 
 @strawberry.type
@@ -27,7 +27,7 @@ class MixBatchType(relay.Node):
   total_volume_ml: float | None
   total_weight_g: float | None
   mixed_at: datetime | None
-  nic_profile_full_name_snapshot: str | None
+  formula_full_name_snapshot: str | None
   created_at: datetime
   updated_at: datetime
   
@@ -44,17 +44,17 @@ class MixBatchType(relay.Node):
       total_volume_ml=b.total_volume_ml,
       total_weight_g=b.total_weight_g,
       mixed_at=b.mixed_at,
-      nic_profile_full_name_snapshot=b.nic_profile_full_name_snapshot,
+      formula_full_name_snapshot=b.formula_full_name_snapshot,
       created_at=b.created_at,
       updated_at=b.updated_at,
       _model=b,
     )
     
   @strawberry.field
-  def nic_profile(self) -> Annotated["NicProfileType", strawberry.lazy("api_graphql.types.nic_profile")] | None:
-    if self._model.nic_profile:
-      from api_graphql.types.nic_profile import NicProfileType
-      return NicProfileType.from_model(self._model.nic_profile)
+  def formula(self) -> Annotated["FormulaType", strawberry.lazy("api_graphql.types.formula")] | None:
+    if self._model.formula:
+      from api_graphql.types.formula import FormulaType
+      return FormulaType.from_model(self._model.formula)
     
     return None
   

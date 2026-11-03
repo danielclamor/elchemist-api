@@ -291,7 +291,7 @@ class ProductionOrderType(relay.Node):
   @strawberry.field
   def mix_batch(self) -> Annotated["MixBatchType", strawberry.lazy("api_graphql.types.mix_batch")] | None:
     from api_graphql.types.mix_batch import MixBatchType
-    return MixBatchType.from_model(self._model.mix_batch)
+    return MixBatchType.from_model(self._model.mix_batch) if self._model.mix_batch else None
   
   # @relay.connection(relay.ListConnection["RepatJobType"])
   # def repat_jobs(self) -> list["RepatJobType"]:

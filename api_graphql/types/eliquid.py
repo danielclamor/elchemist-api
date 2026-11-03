@@ -11,7 +11,7 @@ from models import Eliquid
 
 from api_graphql.types.connections import ListConnectionWithTotalCount
 from api_graphql.types.feedback import Feedback
-from api_graphql.types.nic_profile import NicProfileIdentifierInput
+from api_graphql.types.formula import FormulaIdentifierInput
 
 from api_graphql.types.enums import (
   ChillTypeEnum, 
@@ -22,7 +22,7 @@ from api_graphql.types.enums import (
 )
 
 if TYPE_CHECKING:
-  from api_graphql.types.nic_profile import NicProfileType
+  from api_graphql.types.formula import FormulaType
   from api_graphql.types.production_order import ProductionOrderType
 
 @strawberry.type
@@ -59,10 +59,10 @@ class EliquidType(relay.Node):
     )
     
   @strawberry.field
-  def nic_profile(self) -> Annotated["NicProfileType", strawberry.lazy("api_graphql.types.nic_profile")] | None:
-    if self._model.nic_profile:
-      from api_graphql.types.nic_profile import NicProfileType
-      return NicProfileType.from_model(self._model.nic_profile)
+  def formula(self) -> Annotated["FormulaType", strawberry.lazy("api_graphql.types.formula")] | None:
+    if self._model.formula:
+      from api_graphql.types.formula import FormulaType
+      return FormulaType.from_model(self._model.formula)
 
     return None
   
@@ -123,7 +123,7 @@ class EliquidCreateInput:
   bottle_size: BottleSizeEnum
   nic_level: NicLevelEnum
   bottle_color: BottleColorEnum
-  nic_profile: Optional[NicProfileIdentifierInput] = strawberry.UNSET
+  formula: Optional[FormulaIdentifierInput] = strawberry.UNSET
   
 @strawberry.type
 class EliquidCreatePayload:

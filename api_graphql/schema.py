@@ -27,14 +27,14 @@ from api_graphql.types.flavoring_option import (
   FlavoringOptionCreatePayload,
   FlavoringOptionsBulkCreatePayload,
 )
-from api_graphql.types.formula import (
-  FormulaType,
-  FormulaIdentifierInput,
-  FormulaCreateInput,
-  FormulaCreatePayload,
-  FormulaDeletePayload,
-  FormulaUpdateInput,
-  FormulaUpdatePayload,
+from api_graphql.types.flavor import (
+  FlavorType,
+  FlavorIdentifierInput,
+  FlavorCreateInput,
+  FlavorCreatePayload,
+  FlavorDeletePayload,
+  FlavorUpdateInput,
+  FlavorUpdatePayload,
 )
 from api_graphql.types.mix_batch import MixBatchCreatePayload, MixBatchIdentifierInput, MixBatchType, MixBatchUpdatePayload
 from api_graphql.types.nic_base_option import (
@@ -46,23 +46,23 @@ from api_graphql.types.nic_base_option import (
   NicBaseOptionDeletePayload,
   NicBaseOptionsBulkDeletePayload,
 )
-from api_graphql.types.nic_profile import (
-  NicProfileNicBasesSetPayload,
-  NicProfileType,
-  NicProfileIdentifierInput,
-  NicProfileCreateInput,
-  NicProfileCreatePayload,
-  NicProfileDeletePayload,
-  NicProfileUpdateInput,
-  NicProfileUpdatePayload,
-  NicProfileFlavoringInput,
-  NicProfileFlavoringIdentifierInput,
-  NicProfileFlavoringsBulkAddPayload,
-  NicProfileFlavoringsBulkRemovePayload,
-  NicProfileNicBaseInput,
-  NicProfileNicBaseIdentifierInput,
-  NicProfileNicBasesBulkAddPayload,
-  NicProfileNicBasesBulkRemovePayload,
+from api_graphql.types.formula import (
+  FormulaNicBasesSetPayload,
+  FormulaType,
+  FormulaIdentifierInput,
+  FormulaCreateInput,
+  FormulaCreatePayload,
+  FormulaDeletePayload,
+  FormulaUpdateInput,
+  FormulaUpdatePayload,
+  FormulaFlavoringInput,
+  FormulaFlavoringIdentifierInput,
+  FormulaFlavoringsBulkAddPayload,
+  FormulaFlavoringsBulkRemovePayload,
+  FormulaNicBaseInput,
+  FormulaNicBaseIdentifierInput,
+  FormulaNicBasesBulkAddPayload,
+  FormulaNicBasesBulkRemovePayload,
 )
 
 from api_graphql.types.recipe import (
@@ -107,30 +107,30 @@ from api_graphql.resolvers.eliquid import (
   delete_eliquid,
   get_all_eliquids,
   get_eliquid,
-  set_eliquid_nic_profile,
-  unset_eliquid_nic_profile,
+  set_eliquid_formula,
+  unset_eliquid_formula,
   update_eliquid,
 )
 
+from api_graphql.resolvers.flavor import (
+  create_flavor,
+  delete_flavor,
+  get_all_flavors,
+  get_flavor,
+  update_flavor,
+)
+
 from api_graphql.resolvers.formula import (
+  bulk_add_formula_flavorings,
+  bulk_add_formula_nic_bases,
+  bulk_remove_formula_flavorings,
+  bulk_remove_formula_nic_bases,
   create_formula,
   delete_formula,
   get_all_formulas,
   get_formula,
+  set_formula_nic_bases,
   update_formula,
-)
-
-from api_graphql.resolvers.nic_profile import (
-  bulk_add_nic_profile_flavorings,
-  bulk_add_nic_profile_nic_bases,
-  bulk_remove_nic_profile_flavorings,
-  bulk_remove_nic_profile_nic_bases,
-  create_nic_profile,
-  delete_nic_profile,
-  get_all_nic_profiles,
-  get_nic_profile,
-  set_nic_profile_nic_bases,
-  update_nic_profile,
 )
 
 from api_graphql.resolvers.flavoring_option import (
@@ -285,19 +285,19 @@ class Query:
     return [FlavoringOptionType.from_model(o) for o in get_all_flavoring_options(db)]
 
   @strawberry.field
-  def formula(
-    self, info: strawberry.Info, identifier: FormulaIdentifierInput,
-  ) -> FormulaType | None:
+  def flavor(
+    self, info: strawberry.Info, identifier: FlavorIdentifierInput,
+  ) -> FlavorType | None:
     db = info.context["db"]
-    f = get_formula(db=db, identifier=identifier)
-    return FormulaType.from_model(f) if f else None
+    f = get_flavor(db=db, identifier=identifier)
+    return FlavorType.from_model(f) if f else None
 
-  @relay.connection(relay.ListConnection[FormulaType])
-  def formulas(
+  @relay.connection(relay.ListConnection[FlavorType])
+  def flavors(
     self, info: strawberry.Info,
-  ) -> List[FormulaType]:
+  ) -> List[FlavorType]:
     db = info.context["db"]
-    return [FormulaType.from_model(f) for f in get_all_formulas(db)]
+    return [FlavorType.from_model(f) for f in get_all_flavors(db)]
   
   @strawberry.field
   def nicBaseOption(
@@ -315,26 +315,26 @@ class Query:
     return [NicBaseOptionType.from_model(o) for o in get_all_nic_base_options(db)]
 
   @strawberry.field
-  def nicProfile(
-    self, info: strawberry.Info, identifier: NicProfileIdentifierInput,
-  ) -> NicProfileType | None:
+  def formula(
+    self, info: strawberry.Info, identifier: FormulaIdentifierInput,
+  ) -> FormulaType | None:
     db = info.context["db"]
-    p = get_nic_profile(db=db, identifier=identifier)
-    return NicProfileType.from_model(p) if p else None
+    p = get_formula(db=db, identifier=identifier)
+    return FormulaType.from_model(p) if p else None
   
-  @relay.connection(relay.ListConnection[NicProfileType])
-  def nicProfiles(
+  @relay.connection(relay.ListConnection[FormulaType])
+  def formulas(
     self, info: strawberry.Info,
-  ) -> List[NicProfileType]:
+  ) -> List[FormulaType]:
     db = info.context["db"]
-    return [NicProfileType.from_model(p) for p in get_all_nic_profiles(db)]
+    return [FormulaType.from_model(p) for p in get_all_formulas(db)]
   
   @strawberry.field
   def recipe(
-    self, info: strawberry.Info, nic_profile_identifier: NicProfileIdentifierInput, input: RecipeInput,
+    self, info: strawberry.Info, formula_identifier: FormulaIdentifierInput, input: RecipeInput,
   ) -> RecipeType | None:
     db = info.context["db"]
-    return get_recipe(db=db, nic_profile_identifier=nic_profile_identifier, input=input)
+    return get_recipe(db=db, formula_identifier=formula_identifier, input=input)
   
   @strawberry.field
   def recipeDiy(
@@ -464,20 +464,20 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def eliquidNicProfileSet(
-    self, info: strawberry.Info, identifier: EliquidIdentifierInput, nic_profile_identifier: NicProfileIdentifierInput,
+  def eliquidFormulaSet(
+    self, info: strawberry.Info, identifier: EliquidIdentifierInput, formula_identifier: FormulaIdentifierInput,
   ) -> EliquidUpdatePayload:
     db = info.context["db"]
-    return set_eliquid_nic_profile(
-      db=db, identifier=identifier, nic_profile_identifier=nic_profile_identifier,
+    return set_eliquid_formula(
+      db=db, identifier=identifier, formula_identifier=formula_identifier,
     )
   
   @strawberry.mutation
-  def eliquidNicProfileUnset(
+  def eliquidFormulaUnset(
     self, info: strawberry.Info, identifier: EliquidIdentifierInput,
   ) -> EliquidUpdatePayload:
     db = info.context["db"]
-    return unset_eliquid_nic_profile(
+    return unset_eliquid_formula(
       db=db, identifier=identifier,
     )
   
@@ -527,39 +527,39 @@ class Mutation:
     )
 
   @strawberry.mutation
-  def formulaCreate(
-    self, info: strawberry.Info, formula: FormulaCreateInput,
-  ) -> FormulaCreatePayload:
+  def flavorCreate(
+    self, info: strawberry.Info, flavor: FlavorCreateInput,
+  ) -> FlavorCreatePayload:
     db = info.context["db"]
-    return create_formula(
-      db=db, input=formula,
+    return create_flavor(
+      db=db, input=flavor,
     )
 
   @strawberry.mutation
-  def formulaDelete(
-    self, info: strawberry.Info, identifier: FormulaIdentifierInput,
-  ) -> FormulaDeletePayload:
+  def flavorDelete(
+    self, info: strawberry.Info, identifier: FlavorIdentifierInput,
+  ) -> FlavorDeletePayload:
     db = info.context["db"]
-    return delete_formula(
+    return delete_flavor(
       db=db, identifier=identifier,
     )
 
   @strawberry.mutation
-  def formulaUpdate(
-    self, info: strawberry.Info, identifier: FormulaIdentifierInput, formula: FormulaUpdateInput,
-  ) -> FormulaUpdatePayload:
+  def flavorUpdate(
+    self, info: strawberry.Info, identifier: FlavorIdentifierInput, flavor: FlavorUpdateInput,
+  ) -> FlavorUpdatePayload:
     db = info.context["db"]
-    return update_formula(
-      db=db, identifier=identifier, input=formula,
+    return update_flavor(
+      db=db, identifier=identifier, input=flavor,
     )
     
   @strawberry.mutation
   def mixBatchCreate(
-    self, info: strawberry.Info, nic_profile_identifier: NicProfileIdentifierInput,
+    self, info: strawberry.Info, formula_identifier: FormulaIdentifierInput,
   ) -> MixBatchCreatePayload:
     db = info.context["db"]
     return create_mix_batch(
-      db=db, nic_profile_identifier=nic_profile_identifier,
+      db=db, formula_identifier=formula_identifier,
     )
 
   @strawberry.mutation
@@ -599,75 +599,75 @@ class Mutation:
     )
     
   @strawberry.mutation
-  def nicProfileCreate(
-    self, info: strawberry.Info, formula_identifier: FormulaIdentifierInput, nic_profile: NicProfileCreateInput,
-  ) -> NicProfileCreatePayload:
+  def formulaCreate(
+    self, info: strawberry.Info, flavor_identifier: FlavorIdentifierInput, formula: FormulaCreateInput,
+  ) -> FormulaCreatePayload:
     db = info.context["db"]
-    return create_nic_profile(
-      db=db, formula_identifier=formula_identifier, nic_profile=nic_profile,
+    return create_formula(
+      db=db, flavor_identifier=flavor_identifier, formula=formula,
     )
 
   @strawberry.mutation
-  def nicProfileDelete(
-    self, info: strawberry.Info, identifier: NicProfileIdentifierInput,
-  ) -> NicProfileDeletePayload:
+  def formulaDelete(
+    self, info: strawberry.Info, identifier: FormulaIdentifierInput,
+  ) -> FormulaDeletePayload:
     db = info.context["db"]
-    return delete_nic_profile(
+    return delete_formula(
       db=db, identifier=identifier,
     )
 
   @strawberry.mutation
-  def nicProfileFlavoringsBulkAdd(
-    self, info: strawberry.Info, identifier: NicProfileIdentifierInput, flavorings: list[NicProfileFlavoringInput],
-  ) -> NicProfileFlavoringsBulkAddPayload:
+  def formulaFlavoringsBulkAdd(
+    self, info: strawberry.Info, identifier: FormulaIdentifierInput, flavorings: list[FormulaFlavoringInput],
+  ) -> FormulaFlavoringsBulkAddPayload:
     db = info.context["db"]
-    return bulk_add_nic_profile_flavorings(
+    return bulk_add_formula_flavorings(
       db=db, identifier=identifier, inputs=flavorings,
     )
   
   @strawberry.mutation
-  def nicProfileFlavoringsBulkRemove(
-    self, info: strawberry.Info, flavorings: list[NicProfileFlavoringIdentifierInput],
-  ) -> NicProfileFlavoringsBulkRemovePayload:
+  def formulaFlavoringsBulkRemove(
+    self, info: strawberry.Info, flavorings: list[FormulaFlavoringIdentifierInput],
+  ) -> FormulaFlavoringsBulkRemovePayload:
     db = info.context["db"]
-    return bulk_remove_nic_profile_flavorings(
+    return bulk_remove_formula_flavorings(
       db=db, identifiers=flavorings,
     )
 
   @strawberry.mutation
-  def nicProfileNicBasesBulkAdd(
-   self, info: strawberry.Info, identifier: NicProfileIdentifierInput, nic_bases: list[NicProfileNicBaseInput],
-  ) -> NicProfileNicBasesBulkAddPayload:
+  def formulaNicBasesBulkAdd(
+   self, info: strawberry.Info, identifier: FormulaIdentifierInput, nic_bases: list[FormulaNicBaseInput],
+  ) -> FormulaNicBasesBulkAddPayload:
     db = info.context["db"]
-    return bulk_add_nic_profile_nic_bases(
+    return bulk_add_formula_nic_bases(
       db=db, identifier=identifier, inputs=nic_bases,
     )
   
   @strawberry.mutation
-  def nicProfileNicBasesSet(
-    self, info: strawberry.Info, identifier: NicProfileIdentifierInput, nic_bases: list[NicProfileNicBaseInput],
-  ) -> NicProfileNicBasesSetPayload:
+  def formulaNicBasesSet(
+    self, info: strawberry.Info, identifier: FormulaIdentifierInput, nic_bases: list[FormulaNicBaseInput],
+  ) -> FormulaNicBasesSetPayload:
     db = info.context["db"]
-    return set_nic_profile_nic_bases(
+    return set_formula_nic_bases(
       db=db, identifier=identifier, inputs=nic_bases,
     )
   
   @strawberry.mutation
-  def nicProfileNicBasesBulkRemove(
-    self, info: strawberry.Info, nic_bases: list[NicProfileNicBaseIdentifierInput],
-  ) -> NicProfileNicBasesBulkRemovePayload:
+  def formulaNicBasesBulkRemove(
+    self, info: strawberry.Info, nic_bases: list[FormulaNicBaseIdentifierInput],
+  ) -> FormulaNicBasesBulkRemovePayload:
     db = info.context["db"]
-    return bulk_remove_nic_profile_nic_bases(
+    return bulk_remove_formula_nic_bases(
       db=db, identifiers=nic_bases,
     )
 
   @strawberry.mutation
-  def nicProfileUpdate(
-    self, info: strawberry.Info, identifier: NicProfileIdentifierInput, nic_profile: NicProfileUpdateInput,
-  ) -> NicProfileUpdatePayload:
+  def formulaUpdate(
+    self, info: strawberry.Info, identifier: FormulaIdentifierInput, formula: FormulaUpdateInput,
+  ) -> FormulaUpdatePayload:
     db = info.context["db"]
-    return update_nic_profile(
-      db=db, identifier=identifier, nic_profile=nic_profile,
+    return update_formula(
+      db=db, identifier=identifier, formula=formula,
     )
     
   @strawberry.mutation
