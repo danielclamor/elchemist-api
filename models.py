@@ -247,6 +247,8 @@ class NicProfile(Base):
     back_populates="nic_profile", cascade="all, delete-orphan"
   )
   
+  mix_batches: Mapped[list["MixBatch"]] = relationship(back_populates="nic_profile", passive_deletes=True)
+  
   @property
   def full_name(self) -> str:
     suffix = " - Old Mix" if self.is_old_mix else ""
@@ -303,6 +305,7 @@ class ProductionOrder(Base):
   is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
   is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
   hq_location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("locations.id"), index=True)
+  mix_batch_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mix_batches.id", ondelete="SET NULL"), index=True)
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -329,6 +332,8 @@ class ProductionOrder(Base):
   mix_jobs: Mapped[list["MixJob"]] = relationship(
     back_populates="production_order", cascade="all, delete-orphan"
   )
+
+  mix_batch: Mapped["MixBatch | None"] = relationship(back_populates="production_orders")
   
   @property
   def is_open(self) -> bool:
@@ -359,16 +364,16 @@ class ProductionOrder(Base):
 
     return max(self.allocated_quantity - self.fulfilled_quantity, 0)
   
-  @property
-  def current_job(self) -> "MixJob | RepatJob | None":
-    if self.job_type == ProductionOrderJobType.MIX:
-      jobs = [j for j in self.mix_jobs if j.status != MixJobStatus.REASSIGNED]
-    elif self.job_type == ProductionOrderJobType.REPAT:
-      jobs = [j for j in self.repat_jobs if j.status != RepatJobStatus.REASSIGNED]
-    else:
-      return None
+  # @property
+  # def current_job(self) -> "MixJob | RepatJob | None":
+  #   if self.job_type == ProductionOrderJobType.MIX:
+  #     jobs = [j for j in self.mix_jobs if j.status != MixJobStatus.REASSIGNED]
+  #   elif self.job_type == ProductionOrderJobType.REPAT:
+  #     jobs = [j for j in self.repat_jobs if j.status != RepatJobStatus.REASSIGNED]
+  #   else:
+  #     return None
 
-    return max(jobs, key=lambda j: j.created_at, default=None)
+  #   return max(jobs, key=lambda j: j.created_at, default=None)
 
   def __repr__(self) -> str:
     return f"<ProductionOrder {self.order_number!r} eliquid={self.eliquid.description!r} quantity={self.ordered_quantity} status={self.status.value}>"
@@ -504,22 +509,45 @@ class ProductionOrderAllocation(Base):
   def __repr__(self):
     return f"<{self.__class__.__name__} {self.quantity}>"
 
-# class MixBatch(Base):
-#   __tablename__ = "mix_batches"
+class MixBatchStatus(enum.Enum):
+  CANCELLED = "cancelled"
+  COMPLETED = "completed"
+  IN_PROGRESS = "in_progress"
+  MIXED = "mixed"
   
-#   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-#   nic_profile_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("nic_profiles.id", ondelete="SET NULL"), index=True)
-#   nic_profile_slug_snapshot: Mapped[str] = mapped_column(String(255))
-#   batch_number: Mapped[str | None] = mapped_column(String(255))
-#   recipe_snapshot: Mapped[dict | None] = mapped_column(JSONB)
-#   total_volume_ml: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
-#   total_weight_g: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
-#   mixed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-#   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-#   updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+mix_batch_status_enum = Enum(MixBatchStatus, name="mixbatchstatus")
 
-#   mix_jobs: Mapped[list["MixJob"]] = relationship(back_populates="mix_batch")
+class MixBatch(Base):
+  __tablename__ = "mix_batches"
   
+  id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+  mix_number: Mapped[str] = mapped_column(String(32), index=True, unique=True)
+  nic_profile_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("nic_profiles.id", ondelete="SET NULL"), index=True)
+  nic_profile_full_name_snapshot: Mapped[str | None] = mapped_column(String(255))
+  status: Mapped[MixBatchStatus] = mapped_column(mix_batch_status_enum, default=MixBatchStatus.IN_PROGRESS, index=True)
+  batch_code: Mapped[str | None] = mapped_column(String(255))
+  recipe_snapshot: Mapped[dict | None] = mapped_column(JSONB)
+  total_volume_ml: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+  total_weight_g: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+  mixed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+  created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+  updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+  nic_profile: Mapped["NicProfile | None"] = relationship(back_populates="mix_batches")
+  
+  production_orders: Mapped[list["ProductionOrder"]] = relationship(back_populates="mix_batch", passive_deletes=True)
+
+  def __repr__(self) -> str:
+    return f"<MixBatch {self.mix_number!r}>"
+
+class MixBatchCounter(Base):
+  __tablename__ = "mix_batch_counter"
+
+  last_number: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False, default=0)
+
+  def __repr__(self) -> str:
+    return f"<MixBatchCounter {self.last_number!r}>"
+
 class Location(Base):
   __tablename__ = "locations"
   

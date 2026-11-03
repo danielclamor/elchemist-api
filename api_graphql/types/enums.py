@@ -67,3 +67,10 @@ class ProductionOrderJobStatusEnum(enum.Enum):
   IN_PROGRESS = "in_progress"
   MIXED = "mixed"
   REASSIGNED = "reassigned"
+  
+@strawberry.enum
+class MixBatchStatusEnum(enum.Enum):
+  CANCELLED = "cancelled"
+  COMPLETED = "completed"
+  IN_PROGRESS = "in_progress"
+  MIXED = "mixed"

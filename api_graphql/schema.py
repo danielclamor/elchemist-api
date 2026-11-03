@@ -5,6 +5,7 @@ import strawberry
 from strawberry import relay
 from typing import List, Optional
 
+from api_graphql.resolvers.mix_batch import create_mix_batch, get_all_mix_batches, get_mix_batch, mark_mix_batch_completed
 from api_graphql.types.connections import ListConnectionWithTotalCount
 from api_graphql.types.brand import BrandEdge, BrandConnection
 from api_graphql.types.eliquid import (
@@ -35,6 +36,7 @@ from api_graphql.types.formula import (
   FormulaUpdateInput,
   FormulaUpdatePayload,
 )
+from api_graphql.types.mix_batch import MixBatchCreatePayload, MixBatchIdentifierInput, MixBatchType, MixBatchUpdatePayload
 from api_graphql.types.nic_base_option import (
   NicBaseOptionType,
   NicBaseOptionIdentifierInput,
@@ -76,10 +78,10 @@ from api_graphql.types.production_order import (
   MixJobMarkMixedInput,
   MixJobType,
   MixJobUpdatePayload,
-  RepatJobIdentifierInput,
+  # RepatJobIdentifierInput,
   RepatJobMarkCompletedInput,
-  RepatJobType,
-  RepatJobUpdatePayload,
+  # RepatJobType,
+  # RepatJobUpdatePayload,
   ProductionOrderStatusCountType,
   ProductionOrderType,
   ProductionOrderIdentifierInput,
@@ -160,10 +162,10 @@ from api_graphql.resolvers.production_order import (
   delete_production_order,
   get_all_production_orders,
   get_all_mix_jobs,
-  get_all_repat_jobs,
+  # get_all_repat_jobs,
   get_production_order,
   get_mix_job,
-  get_repat_job,
+  # get_repat_job,
   get_production_order_status_counts,
   mark_production_order_cancelled,
   mark_production_order_delivered,
@@ -171,7 +173,7 @@ from api_graphql.resolvers.production_order import (
   mark_production_order_in_progress,
   mark_mix_job_completed,
   mark_mix_job_mixed,
-  mark_repat_job_completed,
+  # mark_repat_job_completed,
   set_production_order_archived,
   set_production_order_priority,
   set_production_order_ordered_quantity,
@@ -387,21 +389,36 @@ class Query:
   ) -> List[MixJobType]:
     db = info.context["db"]
     return [MixJobType.from_model(j) for j in get_all_mix_jobs(db)]
-
+  
   @strawberry.field
-  def repatJob(
-    self, info: strawberry.Info, identifier: RepatJobIdentifierInput,
-  ) -> RepatJobType | None:
+  def mixBatch(
+    self, info: strawberry.Info, identifier: MixBatchIdentifierInput,
+  ) -> MixBatchType | None:
     db = info.context["db"]
-    j = get_repat_job(db, identifier=identifier)
-    return RepatJobType.from_model(j) if j else None
-
-  @relay.connection(relay.ListConnection[RepatJobType])
-  def repatJobs(
+    b = get_mix_batch(db, identifier=identifier)
+    return MixBatchType.from_model(b) if b else None
+  
+  @relay.connection(ListConnectionWithTotalCount[MixBatchType])
+  def mixBatches(
     self, info: strawberry.Info,
-  ) -> List[RepatJobType]:
+  ) -> List[MixBatchType]:
     db = info.context["db"]
-    return [RepatJobType.from_model(j) for j in get_all_repat_jobs(db)]
+    return [MixBatchType.from_model(b) for b in get_all_mix_batches(db)]
+  
+  # @strawberry.field
+  # def repatJob(
+  #   self, info: strawberry.Info, identifier: RepatJobIdentifierInput,
+  # ) -> RepatJobType | None:
+  #   db = info.context["db"]
+  #   j = get_repat_job(db, identifier=identifier)
+  #   return RepatJobType.from_model(j) if j else None
+
+  # @relay.connection(relay.ListConnection[RepatJobType])
+  # def repatJobs(
+  #   self, info: strawberry.Info,
+  # ) -> List[RepatJobType]:
+  #   db = info.context["db"]
+  #   return [RepatJobType.from_model(j) for j in get_all_repat_jobs(db)]
   
   @strawberry.field
   def location(
@@ -534,6 +551,15 @@ class Mutation:
     db = info.context["db"]
     return update_formula(
       db=db, identifier=identifier, input=formula,
+    )
+    
+  @strawberry.mutation
+  def mixBatchCreate(
+    self, info: strawberry.Info, nic_profile_identifier: NicProfileIdentifierInput,
+  ) -> MixBatchCreatePayload:
+    db = info.context["db"]
+    return create_mix_batch(
+      db=db, nic_profile_identifier=nic_profile_identifier,
     )
 
   @strawberry.mutation
@@ -726,13 +752,31 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def repatJobMarkCompleted(
-    self, info: strawberry.Info, identifier: RepatJobIdentifierInput, input: RepatJobMarkCompletedInput,
-  ) -> RepatJobUpdatePayload:
+  def mixBatchMarkCompleted(
+    self, info: strawberry.Info, identifier: MixBatchIdentifierInput,
+  ) -> MixBatchUpdatePayload:
     db = info.context["db"]
-    return mark_repat_job_completed(
-      db=db, identifier=identifier, input=input,
+    return mark_mix_batch_completed(
+      db=db, identifier=identifier,
     )
+    
+  @strawberry.mutation
+  def mixBatchMarkMixed(
+    self, info: strawberry.Info, identifier: MixBatchIdentifierInput,
+  ) -> MixBatchUpdatePayload:
+    db = info.context["db"]
+    return mark_mix_job_mixed(
+      db=db, identifier=identifier,
+    )
+  
+  # @strawberry.mutation
+  # def repatJobMarkCompleted(
+  #   self, info: strawberry.Info, identifier: RepatJobIdentifierInput, input: RepatJobMarkCompletedInput,
+  # ) -> RepatJobUpdatePayload:
+  #   db = info.context["db"]
+  #   return mark_repat_job_completed(
+  #     db=db, identifier=identifier, input=input,
+  #   )
   
   @strawberry.mutation
   def productionOrderSetArchived(
