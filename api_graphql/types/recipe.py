@@ -5,7 +5,7 @@ from typing import Optional
 from graphql import GraphQLError
 import strawberry
 
-from api_graphql.types.nic_profile import NicProfileType
+from api_graphql.types.formula import FormulaType
 
 @strawberry.type
 class MixParametersType:
@@ -37,7 +37,7 @@ class RecipeType:
   total_ratio: float
   total_volume_ml: float
   total_weight_g: float
-  nic_profile: NicProfileType
+  formula: FormulaType
 
 @strawberry.input
 class RecipeInput:

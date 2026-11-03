@@ -6,7 +6,7 @@ import strawberry
 
 from models import (
   Eliquid, 
-  NicProfile, 
+  Formula, 
   ChillType, 
   NicType, 
   BottleSize, 
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     EliquidUpdateInput,
   )
   
-  from api_graphql.types.nic_profile import NicProfileIdentifierInput
+  from api_graphql.types.formula import FormulaIdentifierInput
 
 # Queries
 def get_all_eliquids(db: Session) -> list[Eliquid]:
@@ -59,16 +59,16 @@ def create_eliquid(db: Session, input: "EliquidCreateInput") -> EliquidCreatePay
       )
     )
   
-  nic_profile_id = None
+  formula_id = None
   feedback_message = None
   
-  nic_profile_identifier = input.nic_profile
-  if nic_profile_identifier is not strawberry.UNSET:
-    nic_profile = db.scalar(select(NicProfile).where(nic_profile_identifier.query_condition))
-    if nic_profile is not None:
-      nic_profile_id = nic_profile.id
+  formula_identifier = input.formula
+  if formula_identifier is not strawberry.UNSET:
+    formula = db.scalar(select(Formula).where(formula_identifier.query_condition))
+    if formula is not None:
+      formula_id = formula.id
     else:
-      feedback_message = f"Failed to connect NicProfile. NicProfile {nic_profile_identifier.provided[1]} not found."
+      feedback_message = f"Failed to connect Formula. Formula {formula_identifier.provided[1]} not found."
   
   eliquid = Eliquid(
     upc=input.upc,
@@ -79,7 +79,7 @@ def create_eliquid(db: Session, input: "EliquidCreateInput") -> EliquidCreatePay
     bottle_size=BottleSize[input.bottle_size.name],
     nic_level=NicLevel[input.nic_level.name],
     bottle_color=BottleColor[input.bottle_color.name],
-    nic_profile_id=nic_profile_id,
+    formula_id=formula_id,
   )
   
   db.add(eliquid)
@@ -122,7 +122,7 @@ def delete_eliquid(db: Session, identifier: "EliquidIdentifierInput") -> Eliquid
     )
   )
   
-def set_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifierInput", nic_profile_identifier: "NicProfileIdentifierInput") -> EliquidUpdatePayload:
+def set_eliquid_formula(db: Session, identifier: "EliquidIdentifierInput", formula_identifier: "FormulaIdentifierInput") -> EliquidUpdatePayload:
   eliquid = get_eliquid(db=db, identifier=identifier)
   
   if eliquid is None:
@@ -134,27 +134,27 @@ def set_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifierInput", n
       )
     )
 
-  nic_profile = db.scalar(select(NicProfile).where(nic_profile_identifier.query_condition))
+  formula = db.scalar(select(Formula).where(formula_identifier.query_condition))
   
-  if nic_profile is None:
+  if formula is None:
     return EliquidUpdatePayload(
       eliquid=EliquidType.from_model(eliquid),
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
-        message=f"NicProfile {nic_profile_identifier.provided[1]} not found."
+        message=f"Formula {formula_identifier.provided[1]} not found."
       )
     )
   
-  if eliquid.nic_profile_id == nic_profile.id:
+  if eliquid.formula_id == formula.id:
     return EliquidUpdatePayload(
       eliquid=EliquidType.from_model(eliquid),
       feedback=Feedback(
         status=FeedbackStatusEnum.CANCELLED,
-        message=f"Eliquid {eliquid.description} already connected to NicProfile {nic_profile.slug}."
+        message=f"Eliquid {eliquid.description} already connected to Formula {formula.slug}."
       )
     )
     
-  eliquid.nic_profile_id = nic_profile.id
+  eliquid.formula_id = formula.id
   
   db.commit()
   db.refresh(eliquid)
@@ -167,7 +167,7 @@ def set_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifierInput", n
     )
   )
 
-def unset_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifierInput") -> EliquidUpdatePayload:
+def unset_eliquid_formula(db: Session, identifier: "EliquidIdentifierInput") -> EliquidUpdatePayload:
   eliquid = get_eliquid(db=db, identifier=identifier)
   
   if eliquid is None:
@@ -179,16 +179,16 @@ def unset_eliquid_nic_profile(db: Session, identifier: "EliquidIdentifierInput")
       )
     )
   
-  if eliquid.nic_profile_id is None:
+  if eliquid.formula_id is None:
     return EliquidUpdatePayload(
       eliquid=EliquidType.from_model(eliquid),
       feedback=Feedback(
         status=FeedbackStatusEnum.CANCELLED,
-        message=f"Eliquid {eliquid.description} is not connected to any NicProfile."
+        message=f"Eliquid {eliquid.description} is not connected to any Formula."
       )
     )
   
-  eliquid.nic_profile_id = None
+  eliquid.formula_id = None
   
   db.commit()
   db.refresh(eliquid)

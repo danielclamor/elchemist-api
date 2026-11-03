@@ -8,7 +8,7 @@ import strawberry
 from strawberry import relay
 
 from models import (
-  NicProfile, 
+  Formula, 
   Flavoring, 
   NicBase
 )
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
   from api_graphql.types.nic_base_option import NicBaseOptionType
 
 @strawberry.type
-class NicProfileType(relay.Node):
+class FormulaType(relay.Node):
   id: relay.NodeID[str]
   slug: str
   name: str
@@ -36,10 +36,10 @@ class NicProfileType(relay.Node):
   created_at: datetime
   updated_at: datetime
 
-  _model: strawberry.Private[NicProfile]
+  _model: strawberry.Private[Formula]
 
   @classmethod
-  def from_model(cls, p: NicProfile) -> "NicProfileType":
+  def from_model(cls, p: Formula) -> "FormulaType":
     return cls(
       id=p.id,
       slug=p.slug,
@@ -64,18 +64,18 @@ class NicProfileType(relay.Node):
     from api_graphql.types.flavor import FlavorType
     return FlavorType.from_model(self._model.flavor)
 
-  # @relay.connection(relay.ListConnection["NicProfileFlavoringType"])
+  # @relay.connection(relay.ListConnection["FormulaFlavoringType"])
   @strawberry.field
-  def flavorings(self) -> list["NicProfileFlavoringType"]:
-    return [NicProfileFlavoringType.from_model(b) for b in self._model.flavorings]
+  def flavorings(self) -> list["FormulaFlavoringType"]:
+    return [FormulaFlavoringType.from_model(b) for b in self._model.flavorings]
 
-  # @relay.connection(relay.ListConnection["NicProfileNicBaseType"])
+  # @relay.connection(relay.ListConnection["FormulaNicBaseType"])
   @strawberry.field
-  def nic_bases(self) -> list["NicProfileNicBaseType"]:
-    return [NicProfileNicBaseType.from_model(b) for b in self._model.nic_bases]
+  def nic_bases(self) -> list["FormulaNicBaseType"]:
+    return [FormulaNicBaseType.from_model(b) for b in self._model.nic_bases]
   
 @strawberry.input
-class NicProfileIdentifierInput:
+class FormulaIdentifierInput:
   id: Optional[relay.GlobalID] = strawberry.UNSET
   slug: Optional[str] = strawberry.UNSET
   
@@ -95,7 +95,7 @@ class NicProfileIdentifierInput:
     
     if self.id is not strawberry.UNSET:
       type_name = self.id.type_name
-      expected_name = NicProfileType.__strawberry_definition__.name
+      expected_name = FormulaType.__strawberry_definition__.name
       if type_name != expected_name:
         raise GraphQLError(
           f"Expected {expected_name} ID, got {type_name} ID",
@@ -111,39 +111,39 @@ class NicProfileIdentifierInput:
     attr, value = self.provided
     
     if attr == "id":
-      return NicProfile.id == value.node_id
+      return Formula.id == value.node_id
     else:
-      return getattr(NicProfile, attr) == value
+      return getattr(Formula, attr) == value
 
 @strawberry.input
-class NicProfileIdentifier:
+class FormulaIdentifier:
   slug: str
 
 @strawberry.input
-class NicProfileAddFlavoringInput:
+class FormulaAddFlavoringInput:
   flavoring_option_name: str
   flavoring_option_is_vg: bool | None = None
   ratio: float
 
 @strawberry.type
-class NicProfileAddFlavoringPayload:
-  nic_profile: NicProfileType | None
+class FormulaAddFlavoringPayload:
+  formula: FormulaType | None
   feedback: Feedback
 
 @strawberry.input
-class NicProfileAddNicBaseInput:
+class FormulaAddNicBaseInput:
   nic_base_option_code: str
   nic_base_option_name: str | None = None
   nic_base_option_is_vg: bool | None = None
   ratio: float
 
 @strawberry.type
-class NicProfileAddNicBasePayload:
-  nic_profile: NicProfileType | None
+class FormulaAddNicBasePayload:
+  formula: FormulaType | None
   feedback: Feedback
 
 @strawberry.input
-class NicProfileCreateInput:
+class FormulaCreateInput:
   name: str
   nic_base_nic_str: float
   is_pre_mix: bool
@@ -160,18 +160,18 @@ class NicProfileCreateInput:
       )
 
 @strawberry.type
-class NicProfileCreatePayload:
-  nic_profile: NicProfileType | None
+class FormulaCreatePayload:
+  formula: FormulaType | None
   feedback: Feedback
 
 @strawberry.type
-class NicProfileDeletePayload:
+class FormulaDeletePayload:
   deleted_slug: str | None
   deleted_full_name: str | None
   feedback: Feedback
 
 @strawberry.input
-class NicProfileUpdateInput:
+class FormulaUpdateInput:
   slug: Optional[str] = strawberry.UNSET
   name: Optional[str] = strawberry.UNSET
   nic_base_nic_str: Optional[float] = strawberry.UNSET
@@ -181,19 +181,19 @@ class NicProfileUpdateInput:
   target_pg: Optional[float] = strawberry.UNSET
 
 @strawberry.type
-class NicProfileUpdatePayload:
-  nic_profile: NicProfileType | None
+class FormulaUpdatePayload:
+  formula: FormulaType | None
   feedback: Feedback
   
 @strawberry.type
-class NicProfileFlavoringType(relay.Node):
+class FormulaFlavoringType(relay.Node):
   id: relay.NodeID[str]
   ratio: float
 
   _model: strawberry.Private[Flavoring]
 
   @classmethod
-  def from_model(cls, f: Flavoring) -> "NicProfileFlavoringType":
+  def from_model(cls, f: Flavoring) -> "FormulaFlavoringType":
     return cls(
       id=f.id,
       ratio=f.ratio,
@@ -206,7 +206,7 @@ class NicProfileFlavoringType(relay.Node):
     return FlavoringOptionType.from_model(self._model.flavoring_option)
 
 @strawberry.input
-class NicProfileFlavoringIdentifierInput:
+class FormulaFlavoringIdentifierInput:
   id: relay.GlobalID
   
   @property
@@ -214,41 +214,41 @@ class NicProfileFlavoringIdentifierInput:
     return Flavoring.id == self.id.node_id
 
 @strawberry.input
-class NicProfileFlavoringInput:
+class FormulaFlavoringInput:
   flavoring_option_identifier: FlavoringOptionIdentifierInput
   ratio: float
 
 @strawberry.type
-class NicProfileFlavoringAddPayload:
-  nic_profile_flavoring: NicProfileFlavoringType | None
+class FormulaFlavoringAddPayload:
+  formula_flavoring: FormulaFlavoringType | None
   feedback: Feedback
 
 @strawberry.type
-class NicProfileFlavoringsBulkAddPayload:
-  nic_profile_flavorings: list[NicProfileFlavoringAddPayload]
+class FormulaFlavoringsBulkAddPayload:
+  formula_flavorings: list[FormulaFlavoringAddPayload]
   feedback: Feedback
   
 @strawberry.type
-class NicProfileFlavoringRemovePayload:
+class FormulaFlavoringRemovePayload:
   removed_slug: str | None
   removed_name: str | None
   removed_ratio: float | None
   feedback: Feedback
 
 @strawberry.type
-class NicProfileFlavoringsBulkRemovePayload:
-  nic_profile_flavorings: list[NicProfileFlavoringRemovePayload]
+class FormulaFlavoringsBulkRemovePayload:
+  formula_flavorings: list[FormulaFlavoringRemovePayload]
   feedback: Feedback
   
 @strawberry.type
-class NicProfileNicBaseType(relay.Node):
+class FormulaNicBaseType(relay.Node):
   id: relay.NodeID[str]
   ratio: float
 
   _model: strawberry.Private[NicBase]
 
   @classmethod
-  def from_model(cls, b: NicBase) -> "NicProfileNicBaseType":
+  def from_model(cls, b: NicBase) -> "FormulaNicBaseType":
     return cls(
       id=b.id,
       ratio=b.ratio,
@@ -261,7 +261,7 @@ class NicProfileNicBaseType(relay.Node):
     return NicBaseOptionType.from_model(self._model.nic_base_option)
 
 @strawberry.input
-class NicProfileNicBaseIdentifierInput:
+class FormulaNicBaseIdentifierInput:
   id: relay.GlobalID
   
   @property
@@ -269,33 +269,33 @@ class NicProfileNicBaseIdentifierInput:
     return NicBase.id == self.id.node_id
   
 @strawberry.input
-class NicProfileNicBaseInput:
+class FormulaNicBaseInput:
   nic_base_option_identifier: NicBaseOptionIdentifierInput
   ratio: float
 
 @strawberry.type
-class NicProfileNicBasesSetPayload:
-  nic_profile_nic_bases: list[NicProfileNicBaseType] | None
+class FormulaNicBasesSetPayload:
+  formula_nic_bases: list[FormulaNicBaseType] | None
   feedback: Feedback
 
 @strawberry.type
-class NicProfileNicBaseAddPayload:
-  nic_profile_nic_base: NicProfileNicBaseType | None
+class FormulaNicBaseAddPayload:
+  formula_nic_base: FormulaNicBaseType | None
   feedback: Feedback
   
 @strawberry.type
-class NicProfileNicBasesBulkAddPayload:
-  nic_profile_nic_bases: list[NicProfileNicBaseAddPayload]
+class FormulaNicBasesBulkAddPayload:
+  formula_nic_bases: list[FormulaNicBaseAddPayload]
   feedback: Feedback
   
 @strawberry.type
-class NicProfileNicBaseRemovePayload:
+class FormulaNicBaseRemovePayload:
   removed_code: str | None
   removed_name: str | None
   removed_ratio: float | None
   feedback: Feedback
   
 @strawberry.type
-class NicProfileNicBasesBulkRemovePayload:
-  nic_profile_nic_bases: list[NicProfileNicBaseRemovePayload]
+class FormulaNicBasesBulkRemovePayload:
+  formula_nic_bases: list[FormulaNicBaseRemovePayload]
   feedback: Feedback

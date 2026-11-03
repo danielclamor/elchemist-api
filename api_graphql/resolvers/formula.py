@@ -11,7 +11,6 @@ from .utils import generate_slug
 
 from models import (
   Formula,
-  NicProfile,
   Flavoring,
   NicBase,
 )
@@ -26,60 +25,58 @@ from api_graphql.resolvers.nic_base_option import (
 
 from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 
-from api_graphql.types.nic_profile import (
-  NicProfileType,
-  NicProfileCreatePayload,
-  NicProfileDeletePayload,
-  NicProfileUpdatePayload,
-  NicProfileFlavoringType,
-  NicProfileFlavoringAddPayload,
-  NicProfileFlavoringsBulkAddPayload,
-  NicProfileFlavoringsBulkRemovePayload,
-  NicProfileFlavoringRemovePayload,
-  NicProfileNicBaseType,
-  NicProfileNicBaseAddPayload,
-  NicProfileNicBasesBulkAddPayload,
-  NicProfileNicBasesBulkRemovePayload,
-  NicProfileNicBaseRemovePayload,
-  NicProfileNicBasesSetPayload,
+from api_graphql.types.formula import (
+  FormulaType,
+  FormulaCreatePayload,
+  FormulaDeletePayload,
+  FormulaUpdatePayload,
+  FormulaFlavoringType,
+  FormulaFlavoringAddPayload,
+  FormulaFlavoringsBulkAddPayload,
+  FormulaFlavoringsBulkRemovePayload,
+  FormulaFlavoringRemovePayload,
+  FormulaNicBaseType,
+  FormulaNicBaseAddPayload,
+  FormulaNicBasesBulkAddPayload,
+  FormulaNicBasesBulkRemovePayload,
+  FormulaNicBaseRemovePayload,
+  FormulaNicBasesSetPayload,
 )
 
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-  from api_graphql.types.flavor import FormulaIdentifierInput
-  
-  from api_graphql.types.nic_profile import (
-    NicProfileIdentifierInput,
-    NicProfileCreateInput,
-    NicProfileUpdateInput,
-    NicProfileFlavoringIdentifierInput,
-    NicProfileFlavoringInput,
-    NicProfileNicBaseIdentifierInput,
-    NicProfileNicBaseInput,
+if TYPE_CHECKING: 
+  from api_graphql.types.formula import (
+    FormulaIdentifierInput,
+    FormulaCreateInput,
+    FormulaUpdateInput,
+    FormulaFlavoringIdentifierInput,
+    FormulaFlavoringInput,
+    FormulaNicBaseIdentifierInput,
+    FormulaNicBaseInput,
   )
   
   
 # Queries
-def get_all_nic_profiles(db: Session) -> list[NicProfile]:
+def get_all_formulas(db: Session) -> list[Formula]:
   return (
-    db.scalars(select(NicProfile))
+    db.scalars(select(Formula))
     .unique()
     .all()
   )
 
-def get_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> NicProfile | None:
+def get_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula | None:
   return (
-    db.scalar(select(NicProfile).where(identifier.query_condition))
+    db.scalar(select(Formula).where(identifier.query_condition))
   )
   
   
 # Mutations
-def add_nic_profile_flavoring(db: Session, id: uuid.UUID, input: "NicProfileFlavoringInput") -> NicProfileFlavoringAddPayload:
+def add_formula_flavoring(db: Session, id: uuid.UUID, input: "FormulaFlavoringInput") -> FormulaFlavoringAddPayload:
   flavoring_option = get_flavoring_option(db=db, identifier=input.flavoring_option_identifier)
   
   if flavoring_option is None:
-    return NicProfileFlavoringAddPayload(
-      nic_profile_flavoring=None,
+    return FormulaFlavoringAddPayload(
+      formula_flavoring=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
         message=f"FlavoringOption {input.flavoring_option_identifier.provided[1]} not found."
@@ -90,14 +87,14 @@ def add_nic_profile_flavoring(db: Session, id: uuid.UUID, input: "NicProfileFlav
     select(Flavoring).where(
       and_(
         Flavoring.flavoring_option_id == flavoring_option.id,
-        Flavoring.nic_profile_id == id,
+        Flavoring.formula_id == id,
       )
     )
   )
   
   if existing is not None:
-    return NicProfileFlavoringAddPayload(
-      nic_profile_flavoring=NicProfileFlavoringType.from_model(existing),
+    return FormulaFlavoringAddPayload(
+      formula_flavoring=FormulaFlavoringType.from_model(existing),
       feedback=Feedback(
         status=FeedbackStatusEnum.CANCELLED,
         message=f"Flavoring {existing.name} is already connected with ratio {existing.ratio}"
@@ -105,7 +102,7 @@ def add_nic_profile_flavoring(db: Session, id: uuid.UUID, input: "NicProfileFlav
     )
 
   flavoring = Flavoring(
-    nic_profile_id=id,
+    formula_id=id,
     flavoring_option_id=flavoring_option.id,
     ratio=input.ratio,
   )
@@ -114,20 +111,20 @@ def add_nic_profile_flavoring(db: Session, id: uuid.UUID, input: "NicProfileFlav
   db.commit()
   db.refresh(flavoring)
   
-  return NicProfileFlavoringAddPayload(
-    nic_profile_flavoring=NicProfileFlavoringType.from_model(flavoring),
+  return FormulaFlavoringAddPayload(
+    formula_flavoring=FormulaFlavoringType.from_model(flavoring),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
 
-def add_nic_profile_nic_base(db: Session, id: uuid.UUID, input: "NicProfileNicBaseInput") -> NicProfileNicBaseAddPayload:
+def add_formula_nic_base(db: Session, id: uuid.UUID, input: "FormulaNicBaseInput") -> FormulaNicBaseAddPayload:
   nic_base_option = get_nic_base_option(db=db, identifier=input.nic_base_option_identifier)
   
   if nic_base_option is None:
-    return NicProfileNicBaseAddPayload(
-      nic_profile_nic_base=None,
+    return FormulaNicBaseAddPayload(
+      formula_nic_base=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
         message=f"NicBaseOption {input.nic_base_option_identifier.provided[1]} not found."
@@ -138,14 +135,14 @@ def add_nic_profile_nic_base(db: Session, id: uuid.UUID, input: "NicProfileNicBa
     select(NicBase).where(
       and_(
         NicBase.nic_base_option_id == nic_base_option.id,
-        NicBase.nic_profile_id == id,
+        NicBase.formula_id == id,
       )
     )
   )
   
   if existing is not None:
-    return NicProfileNicBaseAddPayload(
-      nic_profile_nic_base=NicProfileNicBaseType.from_model(existing),
+    return FormulaNicBaseAddPayload(
+      formula_nic_base=FormulaNicBaseType.from_model(existing),
       feedback=Feedback(
         status=FeedbackStatusEnum.CANCELLED,
         message=f"NicBase {existing.name} is already connected with ratio {existing.ratio}"
@@ -153,7 +150,7 @@ def add_nic_profile_nic_base(db: Session, id: uuid.UUID, input: "NicProfileNicBa
     )
   
   nic_base = NicBase(
-    nic_profile_id=id,
+    formula_id=id,
     nic_base_option_id=nic_base_option.id,
     ratio=input.ratio,
   )
@@ -162,29 +159,29 @@ def add_nic_profile_nic_base(db: Session, id: uuid.UUID, input: "NicProfileNicBa
   db.commit()
   db.refresh(nic_base)
   
-  return NicProfileNicBaseAddPayload(
-    nic_profile_nic_base=NicProfileNicBaseType.from_model(nic_base),
+  return FormulaNicBaseAddPayload(
+    formula_nic_base=FormulaNicBaseType.from_model(nic_base),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
 
-def bulk_add_nic_profile_flavorings(db: Session, identifier: "NicProfileIdentifierInput", inputs: list["NicProfileFlavoringInput"]) -> NicProfileFlavoringsBulkAddPayload:
-  nic_profile = get_nic_profile(db=db, identifier=identifier)
+def bulk_add_formula_flavorings(db: Session, identifier: "FormulaIdentifierInput", inputs: list["FormulaFlavoringInput"]) -> FormulaFlavoringsBulkAddPayload:
+  formula = get_formula(db=db, identifier=identifier)
   
-  if nic_profile is None:
-    return NicProfileFlavoringsBulkAddPayload(
-      nic_profile_flavorings=[],
+  if formula is None:
+    return FormulaFlavoringsBulkAddPayload(
+      formula_flavorings=[],
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
-        message=f"NicProfile {identifier.provided[1]} not found."
+        message=f"Formula {identifier.provided[1]} not found."
       )
     )
   
   if len(inputs) == 0:
-    return NicProfileFlavoringsBulkAddPayload(
-      nic_profile_flavorings=[],
+    return FormulaFlavoringsBulkAddPayload(
+      formula_flavorings=[],
       feedback=Feedback(
         status=FeedbackStatusEnum.CANCELLED,
         message="Nothing to add"
@@ -194,31 +191,31 @@ def bulk_add_nic_profile_flavorings(db: Session, identifier: "NicProfileIdentifi
   flavorings = []
   
   for input in inputs:
-    flavorings.append(add_nic_profile_flavoring(db=db, id=nic_profile.id, input=input))
+    flavorings.append(add_formula_flavoring(db=db, id=formula.id, input=input))
     
-  return NicProfileFlavoringsBulkAddPayload(
-    nic_profile_flavorings=flavorings,
+  return FormulaFlavoringsBulkAddPayload(
+    formula_flavorings=flavorings,
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
 
-def bulk_add_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifierInput", inputs: list["NicProfileNicBaseInput"]) -> NicProfileNicBasesBulkAddPayload:
-  nic_profile = get_nic_profile(db=db, identifier=identifier)
+def bulk_add_formula_nic_bases(db: Session, identifier: "FormulaIdentifierInput", inputs: list["FormulaNicBaseInput"]) -> FormulaNicBasesBulkAddPayload:
+  formula = get_formula(db=db, identifier=identifier)
   
-  if nic_profile is None:
-    return NicProfileNicBasesBulkAddPayload(
-      nic_profile_nic_bases=[],
+  if formula is None:
+    return FormulaNicBasesBulkAddPayload(
+      formula_nic_bases=[],
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
-        message=f"NicProfile {identifier.provided[1]} not found."
+        message=f"Formula {identifier.provided[1]} not found."
       )
     )
     
   if len(inputs) == 0:
-    return NicProfileNicBasesBulkAddPayload(
-      nic_profile_nic_bases=[],
+    return FormulaNicBasesBulkAddPayload(
+      formula_nic_bases=[],
       feedback=Feedback(
         status=FeedbackStatusEnum.CANCELLED,
         message="Nothing to add"
@@ -228,22 +225,22 @@ def bulk_add_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifie
   nic_bases = []
   
   for input in inputs:
-    nic_bases.append(add_nic_profile_nic_base(db=db, id=nic_profile.id, input=input))
+    nic_bases.append(add_formula_nic_base(db=db, id=formula.id, input=input))
     
-  return NicProfileNicBasesBulkAddPayload(
-    nic_profile_nic_bases=nic_bases,
+  return FormulaNicBasesBulkAddPayload(
+    formula_nic_bases=nic_bases,
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
 
-def bulk_remove_nic_profile_flavorings(db: Session, identifiers: list[NicProfileFlavoringIdentifierInput]) -> NicProfileFlavoringsBulkRemovePayload:
+def bulk_remove_formula_flavorings(db: Session, identifiers: list[FormulaFlavoringIdentifierInput]) -> FormulaFlavoringsBulkRemovePayload:
   removed = []
   
   if len(identifiers) == 0:
-    return NicProfileFlavoringsBulkRemovePayload(
-      nic_profile_flavorings=[],
+    return FormulaFlavoringsBulkRemovePayload(
+      formula_flavorings=[],
       feedback=Feedback(
         status=FeedbackStatusEnum.CANCELLED,
         message="Nothing to remove.",
@@ -251,22 +248,22 @@ def bulk_remove_nic_profile_flavorings(db: Session, identifiers: list[NicProfile
     )
   
   for identifier in identifiers:
-    removed.append(remove_nic_profile_flavoring(db=db, identifier=identifier))
+    removed.append(remove_formula_flavoring(db=db, identifier=identifier))
     
-  return NicProfileFlavoringsBulkRemovePayload(
-    nic_profile_flavorings=removed,
+  return FormulaFlavoringsBulkRemovePayload(
+    formula_flavorings=removed,
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
 
-def bulk_remove_nic_profile_nic_bases(db: Session, identifiers: list[NicProfileNicBaseIdentifierInput]) -> NicProfileNicBasesBulkRemovePayload:
+def bulk_remove_formula_nic_bases(db: Session, identifiers: list[FormulaNicBaseIdentifierInput]) -> FormulaNicBasesBulkRemovePayload:
   removed = []
   
   if len(identifiers) == 0:
-    return NicProfileNicBasesBulkRemovePayload(
-      nic_profile_nic_bases=[],
+    return FormulaNicBasesBulkRemovePayload(
+      formula_nic_bases=[],
       feedback=Feedback(
         status=FeedbackStatusEnum.CANCELLED,
         message="Nothing to remove.",
@@ -274,79 +271,79 @@ def bulk_remove_nic_profile_nic_bases(db: Session, identifiers: list[NicProfileN
     )
   
   for identifier in identifiers:
-    removed.append(remove_nic_profile_nic_base(db=db, identifier=identifier))
+    removed.append(remove_formula_nic_base(db=db, identifier=identifier))
     
-  return NicProfileNicBasesBulkRemovePayload(
-    nic_profile_nic_bases=removed,
+  return FormulaNicBasesBulkRemovePayload(
+    formula_nic_bases=removed,
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
   
-def create_nic_profile(db: Session, formula_identifier: "FormulaIdentifierInput", nic_profile: "NicProfileCreateInput") -> NicProfileCreatePayload:
+def create_formula(db: Session, formula_identifier: "FormulaIdentifierInput", formula: "FormulaCreateInput") -> FormulaCreatePayload:
   formula = db.scalar(select(Formula).where(formula_identifier.query_condition))
   
   if formula is None:
-    return NicProfileCreatePayload(
-      nic_profile=None,
+    return FormulaCreatePayload(
+      formula=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
         message=f"Formula {formula_identifier.provided[1]} not found.",
       )
     )
 
-  suffix = " - Old Mix" if nic_profile.is_old_mix else ""
-  full_name = f"{formula.name} - {nic_profile.name}{suffix}"
+  suffix = " - Old Mix" if formula.is_old_mix else ""
+  full_name = f"{formula.name} - {formula.name}{suffix}"
   slug = generate_slug(full_name)
 
   existing = db.scalar(
-    select(NicProfile).where(
+    select(Formula).where(
       and_(
-        NicProfile.slug == slug,
-        NicProfile.formula_id == formula.id
+        Formula.slug == slug,
+        Formula.formula_id == formula.id
       )
     )
   )
   
   if existing is not None:
-    return NicProfileCreatePayload(
-      nic_profile=NicProfileType.from_model(existing),
+    return FormulaCreatePayload(
+      formula=FormulaType.from_model(existing),
       feedback=Feedback(
         status=FeedbackStatusEnum.CANCELLED,
         message=f"Nic Profile {slug} already exists",
       )
     )
 
-  nic_profile = NicProfile(
+  formula = Formula(
     formula_id=formula.id,
     slug=slug,
-    name=nic_profile.name,
-    is_pre_mix=nic_profile.is_pre_mix,
-    is_old_mix=nic_profile.is_old_mix,
-    nic_base_nic_str=nic_profile.nic_base_nic_str,
-    target_nic_str=nic_profile.target_nic_str,
-    target_vg=nic_profile.target_vg,
-    target_pg=nic_profile.target_pg,
+    name=formula.name,
+    is_pre_mix=formula.is_pre_mix,
+    is_old_mix=formula.is_old_mix,
+    nic_base_nic_str=formula.nic_base_nic_str,
+    target_nic_str=formula.target_nic_str,
+    target_vg=formula.target_vg,
+    target_pg=formula.target_pg,
   )
 
-  db.add(nic_profile)
+  db.add(formula)
   db.commit()
-  db.refresh(nic_profile)
+  db.refresh(formula)
   
-  return NicProfileCreatePayload(
-    nic_profile=NicProfileType.from_model(nic_profile),
+  return FormulaCreatePayload(
+    formula=FormulaType.from_model(formula),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
 
-def delete_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> NicProfileDeletePayload:
-  nic_profile = get_nic_profile(db=db, identifier=identifier)
+def delete_formula(db: Session, identifier: "FormulaIdentifierInput") -> FormulaDeletePayload:
+  formula = get_formula(db=db, identifier=identifier)
 
-  if nic_profile is None:
-    return NicProfileDeletePayload(
+  if formula is None:
+    return FormulaDeletePayload(
       deleted_slug=None,
       deleted_full_name=None,
       feedback=Feedback(
@@ -355,13 +352,13 @@ def delete_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> 
       )
     )
     
-  slug = nic_profile.slug
-  full_name = nic_profile.full_name
+  slug = formula.slug
+  full_name = formula.full_name
 
-  db.delete(nic_profile)
+  db.delete(formula)
   db.commit()
 
-  return NicProfileDeletePayload(
+  return FormulaDeletePayload(
     deleted_slug=slug,
     deleted_full_name=full_name,
     feedback=Feedback(
@@ -370,11 +367,11 @@ def delete_nic_profile(db: Session, identifier: "NicProfileIdentifierInput") -> 
     )
   )
 
-def remove_nic_profile_flavoring(db: Session, identifier: "NicProfileFlavoringIdentifierInput") -> NicProfileFlavoringRemovePayload:
+def remove_formula_flavoring(db: Session, identifier: "FormulaFlavoringIdentifierInput") -> FormulaFlavoringRemovePayload:
   flavoring = db.scalar(select(Flavoring).where(identifier.query_condition))
   
   if flavoring is None:
-    return NicProfileFlavoringRemovePayload(
+    return FormulaFlavoringRemovePayload(
       removed_slug=None,
       removed_name=None,
       removed_ratio=None,
@@ -391,7 +388,7 @@ def remove_nic_profile_flavoring(db: Session, identifier: "NicProfileFlavoringId
   db.delete(flavoring)
   db.commit()
   
-  return NicProfileFlavoringRemovePayload(
+  return FormulaFlavoringRemovePayload(
     removed_slug=slug,
     removed_name=name,
     removed_ratio=ratio,
@@ -401,11 +398,11 @@ def remove_nic_profile_flavoring(db: Session, identifier: "NicProfileFlavoringId
     )
   )
 
-def remove_nic_profile_nic_base(db: Session, identifier: "NicProfileNicBaseIdentifierInput") -> NicProfileNicBaseRemovePayload:
+def remove_formula_nic_base(db: Session, identifier: "FormulaNicBaseIdentifierInput") -> FormulaNicBaseRemovePayload:
   nic_base = db.scalar(select(NicBase).where(identifier.query_condition))
   
   if nic_base is None:
-    return NicProfileNicBaseRemovePayload(
+    return FormulaNicBaseRemovePayload(
       removed_code=None,
       removed_name=None,
       removed_ratio=None,
@@ -422,7 +419,7 @@ def remove_nic_profile_nic_base(db: Session, identifier: "NicProfileNicBaseIdent
   db.delete(nic_base)
   db.commit()
   
-  return NicProfileNicBaseRemovePayload(
+  return FormulaNicBaseRemovePayload(
     removed_code=code,
     removed_name=name,
     removed_ratio=ratio,
@@ -432,27 +429,27 @@ def remove_nic_profile_nic_base(db: Session, identifier: "NicProfileNicBaseIdent
     )
   )
 
-def set_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifierInput", inputs: list["NicProfileNicBaseInput"]) -> NicProfileNicBasesSetPayload:
+def set_formula_nic_bases(db: Session, identifier: "FormulaIdentifierInput", inputs: list["FormulaNicBaseInput"]) -> FormulaNicBasesSetPayload:
   if sum(i.ratio for i in inputs) != 1:
     raise GraphQLError(
       "sum of nicBases must be 1",
-      extensions={"code": "INPUT_ERROR", "inputObjectType": "[NicProfileNicBaseInput]"}
+      extensions={"code": "INPUT_ERROR", "inputObjectType": "[FormulaNicBaseInput]"}
     )
   
-  nic_profile = get_nic_profile(db=db, identifier=identifier)
+  formula = get_formula(db=db, identifier=identifier)
   
-  if nic_profile is None:
-    return NicProfileNicBasesSetPayload(
-      nic_profile_nic_bases=None,
+  if formula is None:
+    return FormulaNicBasesSetPayload(
+      formula_nic_bases=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
-        message=f"NicProfile {identifier.provided[1]} not found."
+        message=f"Formula {identifier.provided[1]} not found."
       )
     )
   
   if len(inputs) == 0:
-    return NicProfileNicBasesSetPayload(
-      nic_profile_nic_bases=None,
+    return FormulaNicBasesSetPayload(
+      formula_nic_bases=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.CANCELLED,
         message="Nothing to set"
@@ -465,8 +462,8 @@ def set_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifierInpu
     nic_base_option = get_nic_base_option(db=db, identifier=input.nic_base_option_identifier)
     
     if nic_base_option is None:
-      return NicProfileNicBasesSetPayload(
-        nic_profile_nic_bases=None,
+      return FormulaNicBasesSetPayload(
+        formula_nic_bases=None,
         feedback=Feedback(
           status=FeedbackStatusEnum.FAILED,
           message=f"NicBaseOption {input.nic_base_option_identifier.provided[1]} not found."
@@ -475,38 +472,38 @@ def set_nic_profile_nic_bases(db: Session, identifier: "NicProfileIdentifierInpu
     
     nic_bases.append(
       NicBase(
-        nic_profile_id=nic_profile.id,
+        formula_id=formula.id,
         nic_base_option_id=nic_base_option.id,
         ratio=input.ratio,
       )
     )
   
-  db.execute(delete(NicBase).where(NicBase.nic_profile_id == nic_profile.id))
+  db.execute(delete(NicBase).where(NicBase.formula_id == formula.id))
   db.flush()
   
-  nic_base_types: list[NicProfileNicBaseType] = []
+  nic_base_types: list[FormulaNicBaseType] = []
   for nic_base in nic_bases:
     db.add(nic_base)
     db.flush()
-    nic_base_types.append(NicProfileNicBaseType.from_model(nic_base))
+    nic_base_types.append(FormulaNicBaseType.from_model(nic_base))
   
   db.commit()
-  db.refresh(nic_profile)
+  db.refresh(formula)
   
-  return NicProfileNicBasesSetPayload(
-    nic_profile_nic_bases=nic_base_types,
+  return FormulaNicBasesSetPayload(
+    formula_nic_bases=nic_base_types,
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=None,
     )
   )
 
-def update_nic_profile(db: Session, identifier: "NicProfileIdentifierInput", input: "NicProfileUpdateInput") -> NicProfileUpdatePayload:
-  nic_profile = get_nic_profile(db=db, identifier=identifier)
+def update_formula(db: Session, identifier: "FormulaIdentifierInput", input: "FormulaUpdateInput") -> FormulaUpdatePayload:
+  formula = get_formula(db=db, identifier=identifier)
 
-  if nic_profile is None:
-    return NicProfileUpdatePayload(
-      nic_profile=None,
+  if formula is None:
+    return FormulaUpdatePayload(
+      formula=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
         message=f"Nic profile not found."
@@ -516,7 +513,7 @@ def update_nic_profile(db: Session, identifier: "NicProfileIdentifierInput", inp
   updated_columns = []
   
   for attr, value in vars(input).items():
-    current = getattr(nic_profile, attr, None)
+    current = getattr(formula, attr, None)
     
     if value is strawberry.UNSET:
       continue
@@ -525,7 +522,7 @@ def update_nic_profile(db: Session, identifier: "NicProfileIdentifierInput", inp
       current = current.name if current else None
       
     if value != current:
-      setattr(nic_profile, attr, value)
+      setattr(formula, attr, value)
       db.flush()
       updated_columns.append(attr)
   
@@ -533,14 +530,14 @@ def update_nic_profile(db: Session, identifier: "NicProfileIdentifierInput", inp
     message = "Nothing to update"
   else:
     db.commit()
-    db.refresh(nic_profile)
+    db.refresh(formula)
     message = f"Updated {', '.join(updated_columns)}"
   
   db.commit()
-  db.refresh(nic_profile)
+  db.refresh(formula)
   
-  return NicProfileUpdatePayload(
-    nic_profile=NicProfileType.from_model(nic_profile),
+  return FormulaUpdatePayload(
+    formula=FormulaType.from_model(formula),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=message
