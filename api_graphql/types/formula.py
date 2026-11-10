@@ -31,6 +31,7 @@ class FormulaType(relay.Node):
   id: relay.NodeID[str]
   slug: str
   name: str
+  nic_level: float
   brand: str
   chill_type: ChillTypeEnum
   nic_type: NicTypeEnum
@@ -51,6 +52,7 @@ class FormulaType(relay.Node):
       id=f.id,
       slug=f.slug,
       name=f.name,
+      nic_level= f.nic_level,
       brand=f.brand,
       chill_type=ChillTypeEnum[f.chill_type.name],
       nic_type=NicTypeEnum[f.nic_type.name],
@@ -144,6 +146,10 @@ class FormulaAddNicBasePayload:
 @strawberry.input
 class FormulaCreateInput:
   name: str
+  nic_level: float
+  brand: str
+  chill_type: ChillTypeEnum
+  nic_type: NicTypeEnum
   nic_base_nic_str: float
   is_pre_mix: bool
   is_old_mix: bool

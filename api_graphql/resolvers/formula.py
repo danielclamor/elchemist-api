@@ -10,9 +10,11 @@ import strawberry
 from .utils import generate_slug
 
 from models import (
+  ChillType,
   Formula,
   Flavoring,
   NicBase,
+  NicType,
 )
 
 from api_graphql.resolvers.flavoring_option import (
@@ -304,6 +306,10 @@ def create_formula(db: Session, formula: "FormulaCreateInput") -> FormulaCreateP
   formula = Formula(
     slug=slug,
     name=formula.name,
+    nic_level=formula.nic_level,
+    brand=formula.brand,
+    chill_type=ChillType[formula.chill_type.name],
+    nic_type=NicType[formula.nic_type.name],
     is_pre_mix=formula.is_pre_mix,
     is_old_mix=formula.is_old_mix,
     nic_base_nic_str=formula.nic_base_nic_str,
