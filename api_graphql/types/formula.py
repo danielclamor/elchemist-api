@@ -13,6 +13,11 @@ from models import (
   NicBase
 )
 
+from api_graphql.types.enums import (
+  ChillTypeEnum,
+  NicTypeEnum,
+)
+
 from api_graphql.types.feedback import Feedback
 from api_graphql.types.flavoring_option import FlavoringOptionIdentifierInput
 from api_graphql.types.nic_base_option import NicBaseOptionIdentifierInput
@@ -26,6 +31,9 @@ class FormulaType(relay.Node):
   id: relay.NodeID[str]
   slug: str
   name: str
+  brand: str
+  chill_type: ChillTypeEnum
+  nic_type: NicTypeEnum
   is_pre_mix: bool
   is_old_mix: bool
   target_nic_str: float
@@ -38,31 +46,29 @@ class FormulaType(relay.Node):
   _model: strawberry.Private[Formula]
 
   @classmethod
-  def from_model(cls, p: Formula) -> "FormulaType":
+  def from_model(cls, f: Formula) -> "FormulaType":
     return cls(
-      id=p.id,
-      slug=p.slug,
-      name=p.name,
-      is_pre_mix=p.is_pre_mix,
-      is_old_mix=p.is_old_mix,
-      target_nic_str=p.target_nic_str,
-      target_vg=p.target_vg,
-      target_pg=p.target_pg,
-      nic_base_nic_str=p.nic_base_nic_str,
-      created_at=p.created_at,
-      updated_at=p.updated_at,
-      _model=p,
+      id=f.id,
+      slug=f.slug,
+      name=f.name,
+      brand=f.brand,
+      chill_type=ChillTypeEnum[f.chill_type.name],
+      nic_type=NicTypeEnum[f.nic_type.name],
+      is_pre_mix=f.is_pre_mix,
+      is_old_mix=f.is_old_mix,
+      target_nic_str=f.target_nic_str,
+      target_vg=f.target_vg,
+      target_pg=f.target_pg,
+      nic_base_nic_str=f.nic_base_nic_str,
+      created_at=f.created_at,
+      updated_at=f.updated_at,
+      _model=f,
     )
-    
-  @strawberry.field
-  def full_name(self) -> str:
-    return self._model.full_name
     
   @strawberry.field
   def flavorings(self) -> list["FormulaFlavoringType"]:
     return [FormulaFlavoringType.from_model(b) for b in self._model.flavorings]
-
-  # @relay.connection(relay.ListConnection["FormulaNicBaseType"])
+  
   @strawberry.field
   def nic_bases(self) -> list["FormulaNicBaseType"]:
     return [FormulaNicBaseType.from_model(b) for b in self._model.nic_bases]
