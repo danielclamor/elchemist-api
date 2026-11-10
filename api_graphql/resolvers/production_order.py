@@ -76,8 +76,6 @@ def get_all_production_orders(db: Session, job_type: "ProductionOrderJobType"=No
       selectinload(ProductionOrder.activity_logs),
       selectinload(ProductionOrder.allocations).selectinload(ProductionOrderAllocation.location),
       selectinload(ProductionOrder.hq_location),
-      # selectinload(ProductionOrder.mix_jobs),
-      # selectinload(ProductionOrder.repat_jobs),
     )
     .order_by(ProductionOrder.created_at.desc(), ProductionOrder.id)
   )
