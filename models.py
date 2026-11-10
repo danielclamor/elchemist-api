@@ -198,7 +198,8 @@ class Formula(Base):
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
-  name: Mapped[str] = mapped_column(String(255))
+  flavor_name: Mapped[str] = mapped_column(String(255))
+  nic_level: Mapped[str] = mapped_column(String(10))
   brand: Mapped[str] = mapped_column(String(255))
   chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
   nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
@@ -223,6 +224,10 @@ class Formula(Base):
   )
   
   mix_batches: Mapped[list["MixBatch"]] = relationship(back_populates="formula", passive_deletes=True)
+  
+  @property
+  def full_name(self) -> str:
+    return f"{self.brand} {self.flavor_name} {self.nic_type.value.title()}{" Old Mix" if self.is_old_mix else ""}"
 
   def __repr__(self) -> str:
     return f"<Formula {self.slug!r}>"
