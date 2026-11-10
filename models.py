@@ -223,7 +223,9 @@ class Formula(Base):
 
   slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
   name: Mapped[str] = mapped_column(String(255))
-  
+  brand: Mapped[str] = mapped_column(String(255))
+  chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
+  nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
   is_pre_mix: Mapped[bool] = mapped_column(Boolean, default=False)
 
   is_old_mix: Mapped[bool] = mapped_column(Boolean, default=False)
