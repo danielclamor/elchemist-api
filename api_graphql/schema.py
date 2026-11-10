@@ -26,15 +26,6 @@ from api_graphql.types.flavoring_option import (
   FlavoringOptionCreatePayload,
   FlavoringOptionsBulkCreatePayload,
 )
-from api_graphql.types.flavor import (
-  FlavorType,
-  FlavorIdentifierInput,
-  FlavorCreateInput,
-  FlavorCreatePayload,
-  FlavorDeletePayload,
-  FlavorUpdateInput,
-  FlavorUpdatePayload,
-)
 from api_graphql.types.mix_batch import MixBatchCreatePayload, MixBatchIdentifierInput, MixBatchType, MixBatchUpdatePayload
 from api_graphql.types.nic_base_option import (
   NicBaseOptionType,
@@ -100,14 +91,6 @@ from api_graphql.resolvers.eliquid import (
   set_eliquid_formula,
   unset_eliquid_formula,
   update_eliquid,
-)
-
-from api_graphql.resolvers.flavor import (
-  create_flavor,
-  delete_flavor,
-  get_all_flavors,
-  get_flavor,
-  update_flavor,
 )
 
 from api_graphql.resolvers.formula import (
@@ -274,21 +257,6 @@ class Query:
   ) -> List[FlavoringOptionType]:
     db = info.context["db"]
     return [FlavoringOptionType.from_model(o) for o in get_all_flavoring_options(db)]
-
-  @strawberry.field
-  def flavor(
-    self, info: strawberry.Info, identifier: FlavorIdentifierInput,
-  ) -> FlavorType | None:
-    db = info.context["db"]
-    f = get_flavor(db=db, identifier=identifier)
-    return FlavorType.from_model(f) if f else None
-
-  @relay.connection(relay.ListConnection[FlavorType])
-  def flavors(
-    self, info: strawberry.Info,
-  ) -> List[FlavorType]:
-    db = info.context["db"]
-    return [FlavorType.from_model(f) for f in get_all_flavors(db)]
   
   @strawberry.field
   def nicBaseOption(
@@ -486,33 +454,6 @@ class Mutation:
     return bulk_delete_flavoring_options(
       db=db, identifiers=identifiers,
     )
-
-  @strawberry.mutation
-  def flavorCreate(
-    self, info: strawberry.Info, flavor: FlavorCreateInput,
-  ) -> FlavorCreatePayload:
-    db = info.context["db"]
-    return create_flavor(
-      db=db, input=flavor,
-    )
-
-  @strawberry.mutation
-  def flavorDelete(
-    self, info: strawberry.Info, identifier: FlavorIdentifierInput,
-  ) -> FlavorDeletePayload:
-    db = info.context["db"]
-    return delete_flavor(
-      db=db, identifier=identifier,
-    )
-
-  @strawberry.mutation
-  def flavorUpdate(
-    self, info: strawberry.Info, identifier: FlavorIdentifierInput, flavor: FlavorUpdateInput,
-  ) -> FlavorUpdatePayload:
-    db = info.context["db"]
-    return update_flavor(
-      db=db, identifier=identifier, input=flavor,
-    )
     
   @strawberry.mutation
   def mixBatchCreate(
@@ -561,11 +502,11 @@ class Mutation:
     
   @strawberry.mutation
   def formulaCreate(
-    self, info: strawberry.Info, flavor_identifier: FlavorIdentifierInput, formula: FormulaCreateInput,
+    self, info: strawberry.Info, formula: FormulaCreateInput,
   ) -> FormulaCreatePayload:
     db = info.context["db"]
     return create_formula(
-      db=db, flavor_identifier=flavor_identifier, formula=formula,
+      db=db, formula=formula,
     )
 
   @strawberry.mutation
