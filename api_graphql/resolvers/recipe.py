@@ -179,6 +179,10 @@ def get_flavoring_ingredients(flavorings: list[MixParametersFlavoringsType], bat
   
   for flavoring in flavorings:
     flavoring_ratio = flavoring.ratio
+    
+    if flavoring_ratio <= 0:
+      continue
+    
     volume_ml = flavoring_ratio * batch_volume_ml
     
     if flavoring.is_vg is True:
@@ -217,6 +221,9 @@ def get_nic_base_ingredients(nic_bases: list[MixParametersNicBasesType], batch_v
   
   for nic_base in nic_bases:
     nic_base_ratio = nic_base.ratio
+    
+    if nic_base_ratio <= 0:
+      continue
     
     nic_base_batch_ratio = (target_nic_str / nic_base_nic_str) * nic_base_ratio
     nic_base_nic_batch_ratio = target_nic_str * nic_base_ratio
