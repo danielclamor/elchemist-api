@@ -28,8 +28,8 @@ from models import (
   ProductionOrder,
   ProductionOrderAllocation,
   ProductionOrderJobType,
-  MixJob,
-  MixJobStatus,
+  # MixJob,
+  # MixJobStatus,
   # RepatJob,
   # RepatJobStatus,
   ProductionOrderStatus,
@@ -44,11 +44,11 @@ from api_graphql.types.eliquid import EliquidIdentifierInput
 
 from api_graphql.types.production_order import (
   ProductionOrderIdentifierInput,
-  ProductionOrderAssignJobPayload,
-  ProductionOrderJobCreatePayload,
-  MixJobType,
-  MixJobIdentifierInput,
-  MixJobUpdatePayload,
+  # ProductionOrderAssignJobPayload,
+  # ProductionOrderJobCreatePayload,
+  # MixJobType,
+  # MixJobIdentifierInput,
+  # MixJobUpdatePayload,
   # RepatJobType,
   # RepatJobIdentifierInput,
   # RepatJobUpdatePayload,
@@ -63,7 +63,7 @@ from api_graphql.types.enums import ProductionOrderJobTypeEnum
 from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
   from api_graphql.types.production_order import (
-    MixJobMarkMixedInput,
+    # MixJobMarkMixedInput,
     # RepatJobMarkCompletedInput,
     ProductionOrderCreateInput,
     ProductionOrderUpdateInput,
@@ -90,7 +90,7 @@ def get_all_production_orders(db: Session, job_type: "ProductionOrderJobType"=No
       selectinload(ProductionOrder.activity_logs),
       selectinload(ProductionOrder.allocations).selectinload(ProductionOrderAllocation.location),
       selectinload(ProductionOrder.hq_location),
-      selectinload(ProductionOrder.mix_jobs),
+      # selectinload(ProductionOrder.mix_jobs),
       # selectinload(ProductionOrder.repat_jobs),
     )
     .order_by(ProductionOrder.created_at.desc(), ProductionOrder.id)
@@ -103,10 +103,10 @@ def get_production_order_status_counts(db: Session, created_from=None, created_t
   stmt = _filter_production_orders(stmt, None, created_from, created_to)
   return {status: count for status, count in db.execute(stmt).all()}
 
-def get_all_mix_jobs(db: Session) -> list[MixJob]:
-  return (
-    db.scalars(select(MixJob)).unique().all()
-  )
+# def get_all_mix_jobs(db: Session) -> list[MixJob]:
+#   return (
+#     db.scalars(select(MixJob)).unique().all()
+#   )
   
 # def get_all_repat_jobs(db: Session) -> list[RepatJob]:
 #   return (
@@ -118,10 +118,10 @@ def get_production_order(db: Session, identifier: "ProductionOrderIdentifierInpu
     db.scalar(select(ProductionOrder).where(identifier.query_condition))
   )
   
-def get_mix_job(db: Session, identifier: "MixJobIdentifierInput") -> MixJob | None:
-  return (
-    db.scalar(select(MixJob).where(identifier.query_condition))
-  )
+# def get_mix_job(db: Session, identifier: "MixJobIdentifierInput") -> MixJob | None:
+#   return (
+#     db.scalar(select(MixJob).where(identifier.query_condition))
+#   )
 
 # def get_repat_job(db: Session, identifier: "RepatJobIdentifierInput") -> RepatJob | None:
 #   return (
@@ -129,199 +129,199 @@ def get_mix_job(db: Session, identifier: "MixJobIdentifierInput") -> MixJob | No
 #   )
 
 # Mutations
-def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentifierInput", ordered_quantity: Optional[int], job_type: "ProductionOrderJobTypeEnum") -> ProductionOrderAssignJobPayload: 
-  po = db.scalar(select(ProductionOrder).where(identifier.query_condition).with_for_update())
+# def assign_production_order_job(db: Session, identifier: "ProductionOrderIdentifierInput", ordered_quantity: Optional[int], job_type: "ProductionOrderJobTypeEnum") -> ProductionOrderAssignJobPayload: 
+#   po = db.scalar(select(ProductionOrder).where(identifier.query_condition).with_for_update())
 
-  if po is None:
-    return ProductionOrderAssignJobPayload(
-      production_order=None,
-      created_production_order_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"ProductionOrder {identifier.provided[1]} not found"
-      )
-    )
+#   if po is None:
+#     return ProductionOrderAssignJobPayload(
+#       production_order=None,
+#       created_production_order_job=None,
+#       feedback=Feedback(
+#         status=FeedbackStatusEnum.FAILED,
+#         message=f"ProductionOrder {identifier.provided[1]} not found"
+#       )
+#     )
   
-  if po.status != ProductionOrderStatus.PENDING and po.status != ProductionOrderStatus.IN_PROGRESS:
-    return ProductionOrderAssignJobPayload(
-      production_order=ProductionOrderType.from_model(po),
-      created_production_order_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"Cannot assign ProductionOrder {identifier.provided[1]} in {po.status.name} status to a new job"
-      )
-    )
+#   if po.status != ProductionOrderStatus.PENDING and po.status != ProductionOrderStatus.IN_PROGRESS:
+#     return ProductionOrderAssignJobPayload(
+#       production_order=ProductionOrderType.from_model(po),
+#       created_production_order_job=None,
+#       feedback=Feedback(
+#         status=FeedbackStatusEnum.FAILED,
+#         message=f"Cannot assign ProductionOrder {identifier.provided[1]} in {po.status.name} status to a new job"
+#       )
+#     )
     
-  old_job = po.job_type
+#   old_job = po.job_type
   
-  try:
-    new_job = ProductionOrderJobType[job_type.name]
-  except KeyError:
-    return ProductionOrderAssignJobPayload(
-      production_order=ProductionOrderType.from_model(po),
-      created_production_order_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"Job type {job_type.name} not supported",
-      ),
-    )
+#   try:
+#     new_job = ProductionOrderJobType[job_type.name]
+#   except KeyError:
+#     return ProductionOrderAssignJobPayload(
+#       production_order=ProductionOrderType.from_model(po),
+#       created_production_order_job=None,
+#       feedback=Feedback(
+#         status=FeedbackStatusEnum.FAILED,
+#         message=f"Job type {job_type.name} not supported",
+#       ),
+#     )
   
-  if old_job == new_job:
-    return ProductionOrderAssignJobPayload(
-      production_order=ProductionOrderType.from_model(po),
-      created_production_order_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.CANCELLED,
-        message=f"ProductionOrder {identifier.provided[1]} is already assigned to {job_type.name}"
-      )
-    )
+#   if old_job == new_job:
+#     return ProductionOrderAssignJobPayload(
+#       production_order=ProductionOrderType.from_model(po),
+#       created_production_order_job=None,
+#       feedback=Feedback(
+#         status=FeedbackStatusEnum.CANCELLED,
+#         message=f"ProductionOrder {identifier.provided[1]} is already assigned to {job_type.name}"
+#       )
+#     )
 
-  if new_job == ProductionOrderJobType.MIX and ordered_quantity is None:
-    return ProductionOrderAssignJobPayload(
-      production_order=ProductionOrderType.from_model(po),
-      created_production_order_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message="Mix job needs an ordered quantity. Provide one, or set it on the production order",
-      ),
-    )
+#   if new_job == ProductionOrderJobType.MIX and ordered_quantity is None:
+#     return ProductionOrderAssignJobPayload(
+#       production_order=ProductionOrderType.from_model(po),
+#       created_production_order_job=None,
+#       feedback=Feedback(
+#         status=FeedbackStatusEnum.FAILED,
+#         message="Mix job needs an ordered quantity. Provide one, or set it on the production order",
+#       ),
+#     )
   
-  # don't require orderedQuantity for other jobs than mix
-  # if effective_quantity is not None and effective_quantity <= 0:
-  #   return ProductionOrderAssignJobPayload(
-  #     production_order=ProductionOrderType.from_model(po),
-  #     created_production_order_job=None,
-  #     feedback=Feedback(
-  #       status=FeedbackStatusEnum.FAILED,
-  #       message=f"Quantity must be greater than 0. Currently, {effective_quantity}",
-  #     ),
-  #   )
+#   # don't require orderedQuantity for other jobs than mix
+#   # if effective_quantity is not None and effective_quantity <= 0:
+#   #   return ProductionOrderAssignJobPayload(
+#   #     production_order=ProductionOrderType.from_model(po),
+#   #     created_production_order_job=None,
+#   #     feedback=Feedback(
+#   #       status=FeedbackStatusEnum.FAILED,
+#   #       message=f"Quantity must be greater than 0. Currently, {effective_quantity}",
+#   #     ),
+#   #   )
   
-  if ordered_quantity is not strawberry.UNSET:
-    set_qty_feedback = set_production_order_ordered_quantity(
-      db, 
-      ProductionOrderIdentifierInput(order_number=po.order_number), 
-      ordered_quantity=ordered_quantity,
-    ).feedback
+#   if ordered_quantity is not strawberry.UNSET:
+#     set_qty_feedback = set_production_order_ordered_quantity(
+#       db, 
+#       ProductionOrderIdentifierInput(order_number=po.order_number), 
+#       ordered_quantity=ordered_quantity,
+#     ).feedback
     
-    if set_qty_feedback.status == FeedbackStatusEnum.FAILED:
-      return ProductionOrderAssignJobPayload(
-        production_order=ProductionOrderType.from_model(po),
-        created_production_order_job=None,
-        feedback=Feedback(
-          status=FeedbackStatusEnum.FAILED,
-          message=f"Failed setting ordered quantity. {set_qty_feedback.message}",
-        ),
-      )
+#     if set_qty_feedback.status == FeedbackStatusEnum.FAILED:
+#       return ProductionOrderAssignJobPayload(
+#         production_order=ProductionOrderType.from_model(po),
+#         created_production_order_job=None,
+#         feedback=Feedback(
+#           status=FeedbackStatusEnum.FAILED,
+#           message=f"Failed setting ordered quantity. {set_qty_feedback.message}",
+#         ),
+#       )
   
-  today_as_utc = get_today("UTC")
+#   today_as_utc = get_today("UTC")
   
-  if old_job == ProductionOrderJobType.MIX:
-    remove_production_order_from_mix_batch(db=db, production_order=po)
-    # reassigned_job = mark_mix_job_reassigned(
-    #   db=db,
-    #   identifier=MixJobIdentifierInput(job_number=current_job.job_number),
-    # ).mix_job
-  # elif old_job == ProductionOrderJobType.REPAT:
-  #   reassigned_job = mark_repat_job_reassigned(
-  #     db=db,
-  #     identifier=RepatJobIdentifierInput(job_number=current_job.job_number),
-  #   ).repat_job
-  # else:
-  #   reassigned_job = None
+#   if old_job == ProductionOrderJobType.MIX:
+#     remove_production_order_from_mix_batch(db=db, production_order=po)
+#     # reassigned_job = mark_mix_job_reassigned(
+#     #   db=db,
+#     #   identifier=MixJobIdentifierInput(job_number=current_job.job_number),
+#     # ).mix_job
+#   # elif old_job == ProductionOrderJobType.REPAT:
+#   #   reassigned_job = mark_repat_job_reassigned(
+#   #     db=db,
+#   #     identifier=RepatJobIdentifierInput(job_number=current_job.job_number),
+#   #   ).repat_job
+#   # else:
+#   #   reassigned_job = None
     
-  # if old_job is not None and reassigned_job is None:
-  #   db.rollback()
-  #   return ProductionOrderAssignJobPayload(
-  #     production_order=ProductionOrderType.from_model(po),
-  #     created_production_order_job=None,
-  #     feedback=Feedback(
-  #       status=FeedbackStatusEnum.FAILED,
-  #       message=f"Failed to reassign ProductionOrder {identifier.provided[1]} old {old_job} job"
-  #     )
-  #   )
+#   # if old_job is not None and reassigned_job is None:
+#   #   db.rollback()
+#   #   return ProductionOrderAssignJobPayload(
+#   #     production_order=ProductionOrderType.from_model(po),
+#   #     created_production_order_job=None,
+#   #     feedback=Feedback(
+#   #       status=FeedbackStatusEnum.FAILED,
+#   #       message=f"Failed to reassign ProductionOrder {identifier.provided[1]} old {old_job} job"
+#   #     )
+#   #   )
    
-  if new_job == ProductionOrderJobType.MIX:   
-    nic_profile = po.eliquid.nic_profile
+#   if new_job == ProductionOrderJobType.MIX:   
+#     nic_profile = po.eliquid.nic_profile
     
-    if nic_profile is None:
-      return ProductionOrderAssignJobPayload(
-        production_order=ProductionOrderType.from_model(po),
-        created_production_order_job=None,
-        feedback=Feedback(
-          status=FeedbackStatusEnum.FAILED,
-          message=f"No NicProfile found for {po.eliquid.description}. Set it first before assigning ProductionOrder to Mix."
-        )
-      )
+#     if nic_profile is None:
+#       return ProductionOrderAssignJobPayload(
+#         production_order=ProductionOrderType.from_model(po),
+#         created_production_order_job=None,
+#         feedback=Feedback(
+#           status=FeedbackStatusEnum.FAILED,
+#           message=f"No NicProfile found for {po.eliquid.description}. Set it first before assigning ProductionOrder to Mix."
+#         )
+#       )
     
-    existing_mix_batch = db.scalar(
-      select(MixBatch).where(
-        and_(
-          MixBatch.nic_profile_id == nic_profile.id,
-          MixBatch.status == MixBatchStatus.IN_PROGRESS,
-        )
-      )
-    )
+#     existing_mix_batch = db.scalar(
+#       select(MixBatch).where(
+#         and_(
+#           MixBatch.nic_profile_id == nic_profile.id,
+#           MixBatch.status == MixBatchStatus.IN_PROGRESS,
+#         )
+#       )
+#     )
     
-    if existing_mix_batch is not None:
-      po.mix_batch_id = existing_mix_batch.id
+#     if existing_mix_batch is not None:
+#       po.mix_batch_id = existing_mix_batch.id
       
-    else:
-      created_mix_batch = create_mix_batch(
-        db=db,
-        nic_profile=nic_profile,
-      ).mix_batch
+#     else:
+#       created_mix_batch = create_mix_batch(
+#         db=db,
+#         nic_profile=nic_profile,
+#       ).mix_batch
 
-      if created_mix_batch is None:
-        return ProductionOrderAssignJobPayload(
-          production_order=ProductionOrderType.from_model(po),
-          created_production_order_job=None,
-          feedback=Feedback(
-            status=FeedbackStatusEnum.FAILED,
-            message=f"Failed to assign ProductionOrder to Mix"
-          )
-        )
+#       if created_mix_batch is None:
+#         return ProductionOrderAssignJobPayload(
+#           production_order=ProductionOrderType.from_model(po),
+#           created_production_order_job=None,
+#           feedback=Feedback(
+#             status=FeedbackStatusEnum.FAILED,
+#             message=f"Failed to assign ProductionOrder to Mix"
+#           )
+#         )
         
-      po.mix_batch_id = created_mix_batch._model.id
-    # created_job = create_mix_job(
-    #   db=db,
-    #   production_order=po,
-    #   created_at=today_as_utc,
-    #   ordered_quantity=ordered_quantity,
-    # ).production_order_job
-  # else:
-  #   created_job = create_repat_job(
-  #     db=db,
-  #     production_order=po,
-  #     created_at=today_as_utc,
-  #     ordered_quantity=ordered_quantity,
-  #   ).production_order_job
+#       po.mix_batch_id = created_mix_batch._model.id
+#     # created_job = create_mix_job(
+#     #   db=db,
+#     #   production_order=po,
+#     #   created_at=today_as_utc,
+#     #   ordered_quantity=ordered_quantity,
+#     # ).production_order_job
+#   # else:
+#   #   created_job = create_repat_job(
+#   #     db=db,
+#   #     production_order=po,
+#   #     created_at=today_as_utc,
+#   #     ordered_quantity=ordered_quantity,
+#   #   ).production_order_job
   
-  po.job_type = new_job
-  db.flush()
+#   po.job_type = new_job
+#   db.flush()
   
-  create_production_order_activity_log(
-    db=db, 
-    production_order_id=po.id,
-    type=ProductionOrderActivityType.ASSIGN_JOB,
-    triggered_at=today_as_utc,
-    old_value=f"{old_job.name if old_job is not None else None}",
-    new_value=f"{new_job.name}"
-  )
+#   create_production_order_activity_log(
+#     db=db, 
+#     production_order_id=po.id,
+#     type=ProductionOrderActivityType.ASSIGN_JOB,
+#     triggered_at=today_as_utc,
+#     old_value=f"{old_job.name if old_job is not None else None}",
+#     new_value=f"{new_job.name}"
+#   )
 
-  mark_production_order_in_progress(db=db, identifier=ProductionOrderIdentifierInput(order_number=po.order_number))
+#   mark_production_order_in_progress(db=db, identifier=ProductionOrderIdentifierInput(order_number=po.order_number))
   
-  db.commit()
-  db.refresh(po)
+#   db.commit()
+#   db.refresh(po)
   
-  return ProductionOrderAssignJobPayload(
-    production_order=ProductionOrderType.from_model(po),
-    # created_production_order_job=created_job,
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=f"Assigned to {new_job.name}"
-    )
-  )
+#   return ProductionOrderAssignJobPayload(
+#     production_order=ProductionOrderType.from_model(po),
+#     # created_production_order_job=created_job,
+#     feedback=Feedback(
+#       status=FeedbackStatusEnum.SUCCESS,
+#       message=f"Assigned to {new_job.name}"
+#     )
+#   )
 
 def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierInput", input: "ProductionOrderCreateInput") -> ProductionOrderCreatePayload: 
   eliquid = db.scalar(select(Eliquid).where(eliquid_identifier.query_condition))
@@ -480,13 +480,13 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
     
     db.commit()
     
-    if job_type is not None:
-      assign_production_order_job(
-        db, 
-        ProductionOrderIdentifierInput(order_number=po.order_number), 
-        ordered_quantity=po.ordered_quantity, 
-        job_type=job_type
-      )
+    # if job_type is not None:
+    #   assign_production_order_job(
+    #     db, 
+    #     ProductionOrderIdentifierInput(order_number=po.order_number), 
+    #     ordered_quantity=po.ordered_quantity, 
+    #     job_type=job_type
+    #   )
   except IntegrityError:
     db.rollback()
     logger.exception("Integrity error creating production order")
@@ -559,29 +559,29 @@ def create_production_order_allocation(
   
   return allocation
 
-def create_mix_job(db: Session, production_order: ProductionOrder, ordered_quantity: int, created_at: datetime) -> ProductionOrderJobCreatePayload:
-  sequence = db.scalar(
-    select(func.count()).select_from(MixJob).where(MixJob.production_order_id == production_order.id)
-  ) + 1
+# def create_mix_job(db: Session, production_order: ProductionOrder, ordered_quantity: int, created_at: datetime) -> ProductionOrderJobCreatePayload:
+#   sequence = db.scalar(
+#     select(func.count()).select_from(MixJob).where(MixJob.production_order_id == production_order.id)
+#   ) + 1
   
-  po_job = MixJob(
-    job_number=generate_job_number(production_order.order_number, "MJ", sequence),
-    production_order_id=production_order.id,
-    ordered_quantity=ordered_quantity,
-    created_at=created_at,
-    updated_at=created_at,
-  )
+#   po_job = MixJob(
+#     job_number=generate_job_number(production_order.order_number, "MJ", sequence),
+#     production_order_id=production_order.id,
+#     ordered_quantity=ordered_quantity,
+#     created_at=created_at,
+#     updated_at=created_at,
+#   )
   
-  db.add(po_job)
-  db.flush()
+#   db.add(po_job)
+#   db.flush()
   
-  return ProductionOrderJobCreatePayload(
-    production_order_job=MixJobType.from_model(po_job),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=None,
-    )
-  )
+#   return ProductionOrderJobCreatePayload(
+#     production_order_job=MixJobType.from_model(po_job),
+#     feedback=Feedback(
+#       status=FeedbackStatusEnum.SUCCESS,
+#       message=None,
+#     )
+#   )
 
 # def create_repat_job(db: Session, production_order: ProductionOrder, ordered_quantity: Optional[int], created_at: datetime) -> ProductionOrderJobCreatePayload:
 #   sequence = db.scalar(
@@ -644,15 +644,15 @@ def mark_production_order_cancelled(db: Session, identifier: "ProductionOrderIde
       )
     )
   
-  if po.status != ProductionOrderStatus.PENDING and po.status != ProductionOrderStatus.IN_PROGRESS:
-    return ProductionOrderAssignJobPayload(
-      production_order=ProductionOrderType.from_model(po),
-      created_production_order_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"Cannot cancel ProductionOrder {identifier.provided[1]} in {po.status.name} status"
-      )
-    )
+  # if po.status != ProductionOrderStatus.PENDING and po.status != ProductionOrderStatus.IN_PROGRESS:
+  #   return ProductionOrderAssignJobPayload(
+  #     production_order=ProductionOrderType.from_model(po),
+  #     created_production_order_job=None,
+  #     feedback=Feedback(
+  #       status=FeedbackStatusEnum.FAILED,
+  #       message=f"Cannot cancel ProductionOrder {identifier.provided[1]} in {po.status.name} status"
+  #     )
+  #   )
     
   old_value = f"{po.status.name}"
   
@@ -664,11 +664,11 @@ def mark_production_order_cancelled(db: Session, identifier: "ProductionOrderIde
   
   current_job = po.current_job
   
-  if po.job_type == ProductionOrderJobType.MIX and current_job is not None:
-    mark_mix_job_cancelled(
-      db=db, 
-      identifier=MixJobIdentifierInput(job_number=current_job.job_number),
-    )
+  # if po.job_type == ProductionOrderJobType.MIX and current_job is not None:
+  #   mark_mix_job_cancelled(
+  #     db=db, 
+  #     identifier=MixJobIdentifierInput(job_number=current_job.job_number),
+  #   )
   # elif po.job_type == ProductionOrderJobType.REPAT and current_job is not None:
   #   mark_repat_job_cancelled(
   #     db=db, 
@@ -839,153 +839,153 @@ def mark_production_order_in_progress(db: Session, identifier: "ProductionOrderI
     )
   )
 
-def mark_mix_job_cancelled(db: Session, identifier: "MixJobIdentifierInput") -> MixJobUpdatePayload:
-  job = db.scalar(
-    select(MixJob).where(
-      and_(
-        identifier.query_condition,
-        MixJob.status == MixJobStatus.IN_PROGRESS,
-      )
-    )
-  )
+# def mark_mix_job_cancelled(db: Session, identifier: "MixJobIdentifierInput") -> MixJobUpdatePayload:
+#   job = db.scalar(
+#     select(MixJob).where(
+#       and_(
+#         identifier.query_condition,
+#         MixJob.status == MixJobStatus.IN_PROGRESS,
+#       )
+#     )
+#   )
   
-  if job is None:
-    return MixJobUpdatePayload(
-      mix_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"MixJob {identifier.provided[1]} with {MixJobStatus.IN_PROGRESS.name} status not found"
-      )
-    )
+#   if job is None:
+#     return MixJobUpdatePayload(
+#       mix_job=None,
+#       feedback=Feedback(
+#         status=FeedbackStatusEnum.FAILED,
+#         message=f"MixJob {identifier.provided[1]} with {MixJobStatus.IN_PROGRESS.name} status not found"
+#       )
+#     )
   
-  today_as_utc = get_today("UTC")
+#   today_as_utc = get_today("UTC")
   
-  job.status = MixJobStatus.CANCELLED
-  job.updated_at = today_as_utc
-  db.flush()
+#   job.status = MixJobStatus.CANCELLED
+#   job.updated_at = today_as_utc
+#   db.flush()
   
-  return MixJobUpdatePayload(
-    mix_job=MixJobType.from_model(job),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=f"MixJob {job.job_number} cancelled",
-    )
-  )
+#   return MixJobUpdatePayload(
+#     mix_job=MixJobType.from_model(job),
+#     feedback=Feedback(
+#       status=FeedbackStatusEnum.SUCCESS,
+#       message=f"MixJob {job.job_number} cancelled",
+#     )
+#   )
 
-def mark_mix_job_completed(db: Session, identifier: "MixJobIdentifierInput") -> MixJobUpdatePayload:
-  job = db.scalar(
-    select(MixJob).where(
-      and_(
-        identifier.query_condition,
-        MixJob.status == MixJobStatus.MIXED,
-      )
-    )
-  )
+# def mark_mix_job_completed(db: Session, identifier: "MixJobIdentifierInput") -> MixJobUpdatePayload:
+#   job = db.scalar(
+#     select(MixJob).where(
+#       and_(
+#         identifier.query_condition,
+#         MixJob.status == MixJobStatus.MIXED,
+#       )
+#     )
+#   )
   
-  if job is None:
-    return MixJobUpdatePayload(
-      mix_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"MixJob {identifier.provided[1]} mixed not found"
-      )
-    )
+#   if job is None:
+#     return MixJobUpdatePayload(
+#       mix_job=None,
+#       feedback=Feedback(
+#         status=FeedbackStatusEnum.FAILED,
+#         message=f"MixJob {identifier.provided[1]} mixed not found"
+#       )
+#     )
   
-  today_as_utc = get_today("UTC")
+#   today_as_utc = get_today("UTC")
   
-  job.status = MixJobStatus.COMPLETED
-  job.updated_at = today_as_utc
+#   job.status = MixJobStatus.COMPLETED
+#   job.updated_at = today_as_utc
   
-  db.flush()
+#   db.flush()
   
-  mark_production_order_fulfilled(db=db, identifier=ProductionOrderIdentifierInput(order_number=job.production_order.order_number), fulfilled_quantity=job.produced_quantity)
+#   mark_production_order_fulfilled(db=db, identifier=ProductionOrderIdentifierInput(order_number=job.production_order.order_number), fulfilled_quantity=job.produced_quantity)
  
-  db.commit()
-  db.refresh(job)
+#   db.commit()
+#   db.refresh(job)
     
-  return MixJobUpdatePayload(
-    mix_job=MixJobType.from_model(job),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=f"MixJob {job.job_number} completed"
-    )
-  )
+#   return MixJobUpdatePayload(
+#     mix_job=MixJobType.from_model(job),
+#     feedback=Feedback(
+#       status=FeedbackStatusEnum.SUCCESS,
+#       message=f"MixJob {job.job_number} completed"
+#     )
+#   )
   
-def mark_mix_job_mixed(db: Session, identifier: "MixJobIdentifierInput", input: "MixJobMarkMixedInput") -> MixJobUpdatePayload:
-  job = db.scalar(
-    select(MixJob).where(
-      and_(
-        identifier.query_condition,
-        MixJob.status == MixJobStatus.IN_PROGRESS,
-      )
-    )
-  )
+# def mark_mix_job_mixed(db: Session, identifier: "MixJobIdentifierInput", input: "MixJobMarkMixedInput") -> MixJobUpdatePayload:
+#   job = db.scalar(
+#     select(MixJob).where(
+#       and_(
+#         identifier.query_condition,
+#         MixJob.status == MixJobStatus.IN_PROGRESS,
+#       )
+#     )
+#   )
   
-  if job is None:
-    return MixJobUpdatePayload(
-      mix_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"MixJob {identifier.provided[1]} in progress not found"
-      )
-    )
+#   if job is None:
+#     return MixJobUpdatePayload(
+#       mix_job=None,
+#       feedback=Feedback(
+#         status=FeedbackStatusEnum.FAILED,
+#         message=f"MixJob {identifier.provided[1]} in progress not found"
+#       )
+#     )
   
-  today_as_utc = get_today("UTC")
+#   today_as_utc = get_today("UTC")
   
-  job.status = MixJobStatus.MIXED
+#   job.status = MixJobStatus.MIXED
   
-  job.produced_quantity = input.produced_quantity
+#   job.produced_quantity = input.produced_quantity
   
-  recipe = input.recipe
-  job.recipe_snapshot = convert_strawberry_input_to_dict(recipe)
-  job.total_volume_ml = recipe.total_volume_ml
-  job.total_weight_g = recipe.total_weight_g
+#   recipe = input.recipe
+#   job.recipe_snapshot = convert_strawberry_input_to_dict(recipe)
+#   job.total_volume_ml = recipe.total_volume_ml
+#   job.total_weight_g = recipe.total_weight_g
   
-  job.updated_at = today_as_utc
+#   job.updated_at = today_as_utc
 
-  db.commit()
-  db.refresh(job)
+#   db.commit()
+#   db.refresh(job)
     
-  return MixJobUpdatePayload(
-    mix_job=MixJobType.from_model(job),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=f"MixJob {job.job_number} mixed"
-    )
-  )
+#   return MixJobUpdatePayload(
+#     mix_job=MixJobType.from_model(job),
+#     feedback=Feedback(
+#       status=FeedbackStatusEnum.SUCCESS,
+#       message=f"MixJob {job.job_number} mixed"
+#     )
+#   )
   
-def mark_mix_job_reassigned(db: Session, identifier: "MixJobIdentifierInput", ) -> MixJobUpdatePayload:
-  job = db.scalar(
-    select(MixJob).where(
-      and_(
-        identifier.query_condition,
-        MixJob.status == MixJobStatus.IN_PROGRESS,
-      )
-    )
-  )
+# def mark_mix_job_reassigned(db: Session, identifier: "MixJobIdentifierInput", ) -> MixJobUpdatePayload:
+#   job = db.scalar(
+#     select(MixJob).where(
+#       and_(
+#         identifier.query_condition,
+#         MixJob.status == MixJobStatus.IN_PROGRESS,
+#       )
+#     )
+#   )
   
-  if job is None:
-    return MixJobUpdatePayload(
-      mix_job=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"MixJob {identifier.provided[1]} with {MixJobStatus.IN_PROGRESS.name} status not found"
-      )
-    )
+#   if job is None:
+#     return MixJobUpdatePayload(
+#       mix_job=None,
+#       feedback=Feedback(
+#         status=FeedbackStatusEnum.FAILED,
+#         message=f"MixJob {identifier.provided[1]} with {MixJobStatus.IN_PROGRESS.name} status not found"
+#       )
+#     )
   
-  today_as_utc = get_today("UTC")
+#   today_as_utc = get_today("UTC")
   
-  job.status = MixJobStatus.REASSIGNED
-  job.updated_at = today_as_utc
-  db.flush()
+#   job.status = MixJobStatus.REASSIGNED
+#   job.updated_at = today_as_utc
+#   db.flush()
   
-  return MixJobUpdatePayload(
-    mix_job=MixJobType.from_model(job),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=None
-    )
-  )
+#   return MixJobUpdatePayload(
+#     mix_job=MixJobType.from_model(job),
+#     feedback=Feedback(
+#       status=FeedbackStatusEnum.SUCCESS,
+#       message=None
+#     )
+#   )
 
 # def mark_repat_job_cancelled(db: Session, identifier: "RepatJobIdentifierInput") -> RepatJobUpdatePayload:
 #   job = db.scalar(

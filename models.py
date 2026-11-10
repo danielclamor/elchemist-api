@@ -325,13 +325,13 @@ class ProductionOrder(Base):
     order_by=lambda: (ProductionOrderActivityLog.triggered_at, ProductionOrderActivityLog.id),
   )
   
-  repat_jobs: Mapped[list["RepatJob"]] = relationship(
-    back_populates="production_order", cascade="all, delete-orphan"
-  )
+  # repat_jobs: Mapped[list["RepatJob"]] = relationship(
+  #   back_populates="production_order", cascade="all, delete-orphan"
+  # )
   
-  mix_jobs: Mapped[list["MixJob"]] = relationship(
-    back_populates="production_order", cascade="all, delete-orphan"
-  )
+  # mix_jobs: Mapped[list["MixJob"]] = relationship(
+  #   back_populates="production_order", cascade="all, delete-orphan"
+  # )
 
   mix_batch: Mapped["MixBatch | None"] = relationship(back_populates="production_orders")
   
@@ -424,7 +424,7 @@ class MixJob(Base):
   __table_args__ = (
     Index(
       "ix_mix_jobs_one_active_per_order",
-      "production_order_id",
+      # "production_order_id",
       unique=True,
       postgresql_where=text("status = 'IN_PROGRESS'")
     ),
@@ -432,7 +432,7 @@ class MixJob(Base):
   
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   job_number: Mapped[str] = mapped_column(String(32), index=True, unique=True)
-  production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
+  # production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
   ordered_quantity: Mapped[int]
   produced_quantity: Mapped[int | None]
   batch_number: Mapped[str | None] = mapped_column(String(255))
@@ -445,7 +445,7 @@ class MixJob(Base):
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
   )
   
-  production_order: Mapped["ProductionOrder"] = relationship(back_populates="mix_jobs")
+  # production_order: Mapped["ProductionOrder"] = relationship(back_populates="mix_jobs")
   
   def __repr__(self):
     return f"<MixJob {self.job_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
@@ -466,7 +466,7 @@ class RepatJob(Base):
   __table_args__ = (
     Index(
       "ix_repat_jobs_one_active_per_order",
-      "production_order_id",
+      # "production_order_id",
       unique=True,
       postgresql_where=text("status = 'IN_PROGRESS'")
     ),
@@ -474,7 +474,7 @@ class RepatJob(Base):
   
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   job_number: Mapped[str] = mapped_column(String(32), index=True, unique=True)
-  production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
+  # production_order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("production_orders.id", ondelete="CASCADE"), index=True)
   ordered_quantity: Mapped[int | None]
   incoming_quantity: Mapped[int | None]
   status: Mapped[RepatJobStatus] = mapped_column(repat_job_status_enum, default=RepatJobStatus.IN_PROGRESS)
@@ -483,7 +483,7 @@ class RepatJob(Base):
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
   )
   
-  production_order: Mapped["ProductionOrder"] = relationship(back_populates="repat_jobs")
+  # production_order: Mapped["ProductionOrder"] = relationship(back_populates="repat_jobs")
   
   def __repr__(self):
     return f"<RepatJob {self.job_number!r} quantity={self.ordered_quantity} status={self.status.value}>"
