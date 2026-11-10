@@ -106,29 +106,6 @@ class Eliquid(Base):
     return f"<Eliquid {self.description!r}>"
 
 
-class Flavor(Base):
-  __tablename__ = "flavors"
-
-  id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
-  name: Mapped[str] = mapped_column(String(255))
-  brand: Mapped[str] = mapped_column(String(255))
-  chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
-  nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
-  
-  created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-  updated_at: Mapped[datetime] = mapped_column(
-    DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-  )
-
-  formulas: Mapped[list["Formula"]] = relationship(
-    back_populates="flavor", cascade="all, delete-orphan"
-  )
-
-  def __repr__(self) -> str:
-    return f"<Flavor {self.slug!r}>"
-
-
 class FlavoringOption(Base):
   __tablename__ = "flavoring_options"
   
@@ -139,6 +116,7 @@ class FlavoringOption(Base):
   
   def __repr__(self) -> str:
     return f"<FlavoringOption {self.slug!r}>"
+
 
 class Flavoring(Base):
   __tablename__ = "flavorings"
@@ -219,15 +197,12 @@ class Formula(Base):
   __tablename__ = "formulas"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  flavor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("flavors.id", ondelete="CASCADE"), index=True)
-
   slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
   name: Mapped[str] = mapped_column(String(255))
   brand: Mapped[str] = mapped_column(String(255))
   chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
   nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
   is_pre_mix: Mapped[bool] = mapped_column(Boolean, default=False)
-
   is_old_mix: Mapped[bool] = mapped_column(Boolean, default=False)
 
   target_nic_str: Mapped[float] = mapped_column(Numeric(7, 6))
@@ -240,8 +215,6 @@ class Formula(Base):
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
   )
 
-  flavor: Mapped["Flavor"] = relationship(back_populates="formulas")
-
   nic_bases: Mapped[list["NicBase"]] = relationship(
     back_populates="formula", cascade="all, delete-orphan"
   )
@@ -250,11 +223,6 @@ class Formula(Base):
   )
   
   mix_batches: Mapped[list["MixBatch"]] = relationship(back_populates="formula", passive_deletes=True)
-  
-  @property
-  def full_name(self) -> str:
-    suffix = " - Old Mix" if self.is_old_mix else ""
-    return f"{self.flavor.name} - {self.name}{suffix}"
 
   def __repr__(self) -> str:
     return f"<Formula {self.slug!r}>"
