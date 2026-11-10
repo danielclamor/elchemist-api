@@ -18,7 +18,6 @@ from api_graphql.types.flavoring_option import FlavoringOptionIdentifierInput
 from api_graphql.types.nic_base_option import NicBaseOptionIdentifierInput
 
 if TYPE_CHECKING:
-  from api_graphql.types.flavor import FlavorType
   from api_graphql.types.flavoring_option import FlavoringOptionType
   from api_graphql.types.nic_base_option import NicBaseOptionType
 
@@ -59,12 +58,6 @@ class FormulaType(relay.Node):
   def full_name(self) -> str:
     return self._model.full_name
     
-  @strawberry.field
-  def flavor(self) -> Annotated["FlavorType", strawberry.lazy("api_graphql.types.flavor")]:
-    from api_graphql.types.flavor import FlavorType
-    return FlavorType.from_model(self._model.flavor)
-
-  # @relay.connection(relay.ListConnection["FormulaFlavoringType"])
   @strawberry.field
   def flavorings(self) -> list["FormulaFlavoringType"]:
     return [FormulaFlavoringType.from_model(b) for b in self._model.flavorings]

@@ -281,27 +281,13 @@ def bulk_remove_formula_nic_bases(db: Session, identifiers: list[FormulaNicBaseI
     )
   )
   
-def create_formula(db: Session, formula_identifier: "FormulaIdentifierInput", formula: "FormulaCreateInput") -> FormulaCreatePayload:
-  formula = db.scalar(select(Formula).where(formula_identifier.query_condition))
-  
-  if formula is None:
-    return FormulaCreatePayload(
-      formula=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"Formula {formula_identifier.provided[1]} not found.",
-      )
-    )
-
-  suffix = " - Old Mix" if formula.is_old_mix else ""
-  full_name = f"{formula.name} - {formula.name}{suffix}"
-  slug = generate_slug(full_name)
+def create_formula(db: Session, formula: "FormulaCreateInput") -> FormulaCreatePayload:
+  slug = generate_slug(formula.name)
 
   existing = db.scalar(
     select(Formula).where(
       and_(
         Formula.slug == slug,
-        Formula.formula_id == formula.id
       )
     )
   )
@@ -311,12 +297,11 @@ def create_formula(db: Session, formula_identifier: "FormulaIdentifierInput", fo
       formula=FormulaType.from_model(existing),
       feedback=Feedback(
         status=FeedbackStatusEnum.CANCELLED,
-        message=f"Nic Profile {slug} already exists",
+        message=f"Formula {slug} already exists",
       )
     )
 
   formula = Formula(
-    formula_id=formula.id,
     slug=slug,
     name=formula.name,
     is_pre_mix=formula.is_pre_mix,
@@ -348,7 +333,7 @@ def delete_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula
       deleted_full_name=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
-        message=f"Nic profile {identifier.slug} not found."
+        message=f"Formula {identifier.slug} not found."
       )
     )
     
@@ -506,7 +491,7 @@ def update_formula(db: Session, identifier: "FormulaIdentifierInput", input: "Fo
       formula=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
-        message=f"Nic profile not found."
+        message=f"Formula not found."
       )
     )
 
