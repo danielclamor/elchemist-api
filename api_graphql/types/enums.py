@@ -53,7 +53,7 @@ class ProductionOrderActivityTypeEnum(enum.Enum):
   CHANGE_STATUS = "status"
   SWITCH_PRIORITY = "is_priority"
   TOGGLE_ARCHIVED = "is_archived"
-  ASSIGN_JOB = "job"
+  ASSIGN_MIX_BATCH = "mix_batch"
   
 @strawberry.enum
 class ProductionOrderJobTypeEnum(enum.Enum):
