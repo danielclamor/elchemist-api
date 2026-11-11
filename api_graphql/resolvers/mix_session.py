@@ -71,7 +71,7 @@ def create_mix_session(
     mix_session = MixSession(
       session_number=session_number,
       formula_id=formula.id,
-      formula_full_name_snapshot=formula.full_name,
+      formula_name_snapshot=formula.name,
       status=MixSessionStatus.IN_PROGRESS,
     )
     

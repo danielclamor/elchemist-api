@@ -27,7 +27,7 @@ class MixSessionType(relay.Node):
   total_volume_ml: float | None
   total_weight_g: float | None
   mixed_at: datetime | None
-  formula_full_name_snapshot: str | None
+  formula_name_snapshot: str | None
   created_at: datetime
   updated_at: datetime
   
@@ -44,7 +44,7 @@ class MixSessionType(relay.Node):
       total_volume_ml=b.total_volume_ml,
       total_weight_g=b.total_weight_g,
       mixed_at=b.mixed_at,
-      formula_full_name_snapshot=b.formula_full_name_snapshot,
+      formula_name_snapshot=b.formula_name_snapshot,
       created_at=b.created_at,
       updated_at=b.updated_at,
       _model=b,
