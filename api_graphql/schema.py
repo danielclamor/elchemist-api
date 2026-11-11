@@ -281,7 +281,7 @@ class Query:
     p = get_formula(db=db, identifier=identifier)
     return FormulaType.from_model(p) if p else None
   
-  @relay.connection(relay.ListConnection[FormulaType])
+  @relay.connection(ListConnectionWithTotalCount[FormulaType])
   def formulas(
     self, info: strawberry.Info,
   ) -> List[FormulaType]:
