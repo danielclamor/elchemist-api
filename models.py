@@ -225,6 +225,14 @@ class Formula(Base):
   
   mix_batches: Mapped[list["MixBatch"]] = relationship(back_populates="formula", passive_deletes=True)
 
+  @property
+  def nic_base_vg(self) -> float:
+    return sum(b.ratio for b in self.nic_bases if b.is_vg)
+  
+  @property
+  def nic_base_pg(self) -> float:
+    return sum(b.ratio for b in self.nic_bases if not b.is_vg)
+
   def __repr__(self) -> str:
     return f"<Formula {self.slug!r}>"
   

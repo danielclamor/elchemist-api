@@ -75,6 +75,14 @@ class FormulaType(relay.Node):
   def nic_bases(self) -> list["FormulaNicBaseType"]:
     return [FormulaNicBaseType.from_model(b) for b in self._model.nic_bases]
   
+  @strawberry.field
+  def nic_base_vg(self) -> float:
+    return self._model.nic_base_vg
+  
+  @strawberry.field
+  def nic_base_pg(self) -> float:
+    return self._model.nic_base_pg
+  
 @strawberry.input
 class FormulaIdentifierInput:
   id: Optional[relay.GlobalID] = strawberry.UNSET
