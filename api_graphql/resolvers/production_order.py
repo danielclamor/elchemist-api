@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from api_graphql.resolvers.mix_batch import change_mix_batch_status, create_mix_batch
+from api_graphql.resolvers.mix_session import change_mix_session_status, create_mix_session
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +23,8 @@ from api_graphql.resolvers.location import get_hq_location
 from models import (
   Eliquid,
   Location,
-  MixBatch,
-  MixBatchStatus,
+  MixSession,
+  MixSessionStatus,
   ProductionOrder,
   ProductionOrderAllocation,
   ProductionOrderJobType,
@@ -530,13 +530,13 @@ def mark_production_order_in_progress(db: Session, identifier: "ProductionOrderI
     )
   )
 
-def remove_production_order_from_mix_batch(db: Session, production_order: ProductionOrder) -> None:
-  batch = production_order.mix_batch
-  production_order.mix_batch_id = None
+def remove_production_order_from_mix_session(db: Session, production_order: ProductionOrder) -> None:
+  batch = production_order.mix_session
+  production_order.mix_session_id = None
   db.flush()
-  remaining = db.scalar(select(func.count()).select_from(ProductionOrder).where(ProductionOrder.mix_batch_id == batch.id))
-  if remaining == 0 and batch.status == MixBatchStatus.IN_PROGRESS:
-    change_mix_batch_status(batch, MixBatchStatus.CANCELLED)
+  remaining = db.scalar(select(func.count()).select_from(ProductionOrder).where(ProductionOrder.mix_session_id == batch.id))
+  if remaining == 0 and batch.status == MixSessionStatus.IN_PROGRESS:
+    change_mix_session_status(batch, MixSessionStatus.CANCELLED)
   
 def set_production_order_archived(db: Session, identifier: "ProductionOrderIdentifierInput", is_archived: bool) -> ProductionOrderUpdatePayload:
   po = db.scalar(select(ProductionOrder).where(identifier.query_condition))

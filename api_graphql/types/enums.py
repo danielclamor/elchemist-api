@@ -53,7 +53,7 @@ class ProductionOrderActivityTypeEnum(enum.Enum):
   CHANGE_STATUS = "status"
   SWITCH_PRIORITY = "is_priority"
   TOGGLE_ARCHIVED = "is_archived"
-  ASSIGN_MIX_BATCH = "mix_batch"
+  ASSIGN_MIX_SESSION = "mix_session"
   
 @strawberry.enum
 class ProductionOrderJobTypeEnum(enum.Enum):
@@ -69,7 +69,7 @@ class ProductionOrderJobStatusEnum(enum.Enum):
   REASSIGNED = "reassigned"
   
 @strawberry.enum
-class MixBatchStatusEnum(enum.Enum):
+class MixSessionStatusEnum(enum.Enum):
   CANCELLED = "cancelled"
   COMPLETED = "completed"
   IN_PROGRESS = "in_progress"

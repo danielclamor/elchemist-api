@@ -26,7 +26,7 @@ if TYPE_CHECKING:
   from api_graphql.types.eliquid import EliquidType
   from api_graphql.types.location import LocationType
   from api_graphql.types.production_order import ProductionOrderType
-  from api_graphql.types.mix_batch import MixBatchType
+  from api_graphql.types.mix_session import MixSessionType
 
 @strawberry.type
 class ProductionOrderActivityLogType(relay.Node):
@@ -128,9 +128,9 @@ class ProductionOrderType(relay.Node):
     return [ProductionOrderActivityLogType.from_model(l) for l in self._model.activity_logs]
   
   @strawberry.field
-  def mix_batch(self) -> Annotated["MixBatchType", strawberry.lazy("api_graphql.types.mix_batch")] | None:
-    from api_graphql.types.mix_batch import MixBatchType
-    return MixBatchType.from_model(self._model.mix_batch) if self._model.mix_batch else None
+  def mix_session(self) -> Annotated["MixSessionType", strawberry.lazy("api_graphql.types.mix_session")] | None:
+    from api_graphql.types.mix_session import MixSessionType
+    return MixSessionType.from_model(self._model.mix_session) if self._model.mix_session else None
   
   @strawberry.field
   def allocation_hq(self) -> ProductionOrderHqAllocationType | None:

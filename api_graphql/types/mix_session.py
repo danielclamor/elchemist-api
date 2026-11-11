@@ -8,20 +8,20 @@ from strawberry.scalars import JSON
 import strawberry
 from strawberry import relay
 
-from api_graphql.types.enums import MixBatchStatusEnum
+from api_graphql.types.enums import MixSessionStatusEnum
 
 from api_graphql.types.feedback import Feedback
-from models import MixBatch
+from models import MixSession
 
 if TYPE_CHECKING:
   from api_graphql.types.formula import FormulaType
   from api_graphql.types.production_order import ProductionOrderType
 
 @strawberry.type
-class MixBatchType(relay.Node):
+class MixSessionType(relay.Node):
   id: relay.NodeID[str]
-  mix_number: str
-  status: MixBatchStatusEnum
+  session_number: str
+  status: MixSessionStatusEnum
   batch_code: str | None
   recipe_snapshot: JSON | None
   total_volume_ml: float | None
@@ -31,14 +31,14 @@ class MixBatchType(relay.Node):
   created_at: datetime
   updated_at: datetime
   
-  _model: strawberry.Private[MixBatch]
+  _model: strawberry.Private[MixSession]
   
   @classmethod
-  def from_model(cls, b: MixBatch) -> "MixBatchType":
+  def from_model(cls, b: MixSession) -> "MixSessionType":
     return cls(
       id=b.id,
-      mix_number=b.mix_number,
-      status=MixBatchStatusEnum[b.status.name],
+      session_number=b.session_number,
+      status=MixSessionStatusEnum[b.status.name],
       batch_code=b.batch_code,
       recipe_snapshot=b.recipe_snapshot,
       total_volume_ml=b.total_volume_ml,
@@ -64,9 +64,9 @@ class MixBatchType(relay.Node):
     return [ProductionOrderType.from_model(o) for o in self._model.production_orders]
   
 @strawberry.input
-class MixBatchIdentifierInput:
+class MixSessionIdentifierInput:
   id: Optional[relay.GlobalID] = strawberry.UNSET
-  mix_number: Optional[str] = strawberry.UNSET
+  session_number: Optional[str] = strawberry.UNSET
   
   def __post_init__(self):
     if any(v is None for v in vars(self).values()):
@@ -84,7 +84,7 @@ class MixBatchIdentifierInput:
     
     if self.id is not strawberry.UNSET:
       type_name = self.id.type_name
-      expected_name = MixBatchType.__strawberry_definition__.name
+      expected_name = MixSessionType.__strawberry_definition__.name
       if type_name != expected_name:
         raise GraphQLError(
           f"Expected {expected_name} ID, got {type_name} ID",
@@ -100,16 +100,16 @@ class MixBatchIdentifierInput:
     attr, value = self.provided
     
     if attr == "id":
-      return MixBatch.id == value.node_id
+      return MixSession.id == value.node_id
     else:
-      return getattr(MixBatch, attr) == value  
+      return getattr(MixSession, attr) == value  
 
 @strawberry.type
-class MixBatchCreatePayload:
-  mix_batch: MixBatchType | None
+class MixSessionCreatePayload:
+  mix_session: MixSessionType | None
   feedback: Feedback
   
 @strawberry.type
-class MixBatchUpdatePayload:
-  mix_batch: MixBatchType | None
+class MixSessionUpdatePayload:
+  mix_session: MixSessionType | None
   feedback: Feedback

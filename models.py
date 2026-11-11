@@ -223,7 +223,7 @@ class Formula(Base):
     back_populates="formula", cascade="all, delete-orphan"
   )
   
-  mix_batches: Mapped[list["MixBatch"]] = relationship(back_populates="formula", passive_deletes=True)
+  mix_sessions: Mapped[list["MixSession"]] = relationship(back_populates="formula", passive_deletes=True)
 
   @property
   def nic_base_vg(self) -> float:
@@ -284,7 +284,7 @@ class ProductionOrder(Base):
   is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
   is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
   hq_location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("locations.id"), index=True)
-  mix_batch_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mix_batches.id", ondelete="SET NULL"), index=True)
+  mix_session_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mix_sessions.id", ondelete="SET NULL"), index=True)
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(
     DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -304,7 +304,7 @@ class ProductionOrder(Base):
     order_by=lambda: (ProductionOrderActivityLog.triggered_at, ProductionOrderActivityLog.id),
   )
 
-  mix_batch: Mapped["MixBatch | None"] = relationship(back_populates="production_orders")
+  mix_session: Mapped["MixSession | None"] = relationship(back_populates="production_orders")
   
   @property
   def is_open(self) -> bool:
@@ -345,7 +345,7 @@ class ProductionOrderActivityType(enum.Enum):
   CHANGE_STATUS = "status"
   SWITCH_PRIORITY = "is_priority"
   TOGGLE_ARCHIVED = "is_archived"
-  ASSIGN_MIX_BATCH = "mix_batch"
+  ASSIGN_MIX_SESSION = "mix_session"
 
 
 production_order_activity_type_enum = Enum(ProductionOrderActivityType, name="productionorderactivitytype")
@@ -388,24 +388,24 @@ class ProductionOrderAllocation(Base):
     return f"<{self.__class__.__name__} {self.quantity}>"
 
 
-class MixBatchStatus(enum.Enum):
+class MixSessionStatus(enum.Enum):
   CANCELLED = "cancelled"
   COMPLETED = "completed"
   IN_PROGRESS = "in_progress"
   MIXED = "mixed"
   
 
-mix_batch_status_enum = Enum(MixBatchStatus, name="mixbatchstatus")
+mix_session_status_enum = Enum(MixSessionStatus, name="mixsessionstatus")
 
 
-class MixBatch(Base):
-  __tablename__ = "mix_batches"
+class MixSession(Base):
+  __tablename__ = "mix_sessions"
   
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  mix_number: Mapped[str] = mapped_column(String(32), index=True, unique=True)
+  session_number: Mapped[str] = mapped_column(String(32), index=True, unique=True)
   formula_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("formulas.id", ondelete="SET NULL"), index=True)
   formula_full_name_snapshot: Mapped[str | None] = mapped_column(String(255))
-  status: Mapped[MixBatchStatus] = mapped_column(mix_batch_status_enum, default=MixBatchStatus.IN_PROGRESS, index=True)
+  status: Mapped[MixSessionStatus] = mapped_column(mix_session_status_enum, default=MixSessionStatus.IN_PROGRESS, index=True)
   batch_code: Mapped[str | None] = mapped_column(String(255))
   recipe_snapshot: Mapped[dict | None] = mapped_column(JSONB)
   total_volume_ml: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
@@ -414,21 +414,21 @@ class MixBatch(Base):
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-  formula: Mapped["Formula | None"] = relationship(back_populates="mix_batches")
+  formula: Mapped["Formula | None"] = relationship(back_populates="mix_sessions")
   
-  production_orders: Mapped[list["ProductionOrder"]] = relationship(back_populates="mix_batch", passive_deletes=True)
+  production_orders: Mapped[list["ProductionOrder"]] = relationship(back_populates="mix_session", passive_deletes=True)
 
   def __repr__(self) -> str:
-    return f"<MixBatch {self.mix_number!r}>"
+    return f"<MixSession {self.session_number!r}>"
 
 
-class MixBatchCounter(Base):
-  __tablename__ = "mix_batch_counter"
+class MixSessionCounter(Base):
+  __tablename__ = "mix_session_counter"
 
   last_number: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False, default=0)
 
   def __repr__(self) -> str:
-    return f"<MixBatchCounter {self.last_number!r}>"
+    return f"<MixSessionCounter {self.last_number!r}>"
 
 
 class Location(Base):

@@ -26,7 +26,7 @@ from api_graphql.types.flavoring_option import (
   FlavoringOptionCreatePayload,
   FlavoringOptionsBulkCreatePayload,
 )
-from api_graphql.types.mix_batch import MixBatchCreatePayload, MixBatchIdentifierInput, MixBatchType, MixBatchUpdatePayload
+from api_graphql.types.mix_session import MixSessionCreatePayload, MixSessionIdentifierInput, MixSessionType, MixSessionUpdatePayload
 from api_graphql.types.nic_base_option import (
   NicBaseOptionType,
   NicBaseOptionIdentifierInput,
@@ -145,12 +145,12 @@ from api_graphql.resolvers.production_order import (
   update_production_order,
 )
 
-from api_graphql.resolvers.mix_batch import (
-  create_mix_batch, 
-  get_all_mix_batches, 
-  get_mix_batch, 
-  mark_mix_batch_completed, 
-  mark_mix_batch_mixed,
+from api_graphql.resolvers.mix_session import (
+  create_mix_session, 
+  get_all_mix_sessions, 
+  get_mix_session, 
+  mark_mix_session_completed, 
+  mark_mix_session_mixed,
 )
 
 
@@ -335,19 +335,19 @@ class Query:
             for s in ProductionOrderStatus]
   
   @strawberry.field
-  def mixBatch(
-    self, info: strawberry.Info, identifier: MixBatchIdentifierInput,
-  ) -> MixBatchType | None:
+  def mixSession(
+    self, info: strawberry.Info, identifier: MixSessionIdentifierInput,
+  ) -> MixSessionType | None:
     db = info.context["db"]
-    b = get_mix_batch(db, identifier=identifier)
-    return MixBatchType.from_model(b) if b else None
+    b = get_mix_session(db, identifier=identifier)
+    return MixSessionType.from_model(b) if b else None
   
-  @relay.connection(ListConnectionWithTotalCount[MixBatchType])
-  def mixBatches(
+  @relay.connection(ListConnectionWithTotalCount[MixSessionType])
+  def mixSessions(
     self, info: strawberry.Info,
-  ) -> List[MixBatchType]:
+  ) -> List[MixSessionType]:
     db = info.context["db"]
-    return [MixBatchType.from_model(b) for b in get_all_mix_batches(db)]
+    return [MixSessionType.from_model(b) for b in get_all_mix_sessions(db)]
   
   @strawberry.field
   def location(
@@ -456,11 +456,11 @@ class Mutation:
     )
     
   @strawberry.mutation
-  def mixBatchCreate(
+  def mixSessionCreate(
     self, info: strawberry.Info, formula_identifier: FormulaIdentifierInput,
-  ) -> MixBatchCreatePayload:
+  ) -> MixSessionCreatePayload:
     db = info.context["db"]
-    return create_mix_batch(
+    return create_mix_session(
       db=db, formula_identifier=formula_identifier,
     )
 
@@ -627,20 +627,20 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def mixBatchMarkCompleted(
-    self, info: strawberry.Info, identifier: MixBatchIdentifierInput,
-  ) -> MixBatchUpdatePayload:
+  def mixSessionMarkCompleted(
+    self, info: strawberry.Info, identifier: MixSessionIdentifierInput,
+  ) -> MixSessionUpdatePayload:
     db = info.context["db"]
-    return mark_mix_batch_completed(
+    return mark_mix_session_completed(
       db=db, identifier=identifier,
     )
     
   @strawberry.mutation
-  def mixBatchMarkMixed(
-    self, info: strawberry.Info, identifier: MixBatchIdentifierInput,
-  ) -> MixBatchUpdatePayload:
+  def mixSessionMarkMixed(
+    self, info: strawberry.Info, identifier: MixSessionIdentifierInput,
+  ) -> MixSessionUpdatePayload:
     db = info.context["db"]
-    return mark_mix_batch_mixed(
+    return mark_mix_session_mixed(
       db=db, identifier=identifier,
     )
   
