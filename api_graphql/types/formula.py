@@ -7,6 +7,7 @@ from graphql import GraphQLError
 import strawberry
 from strawberry import relay
 
+from api_graphql.types.connections import ListConnectionWithTotalCount
 from models import (
   Formula, 
   Flavoring, 
@@ -25,6 +26,7 @@ from api_graphql.types.nic_base_option import NicBaseOptionIdentifierInput
 if TYPE_CHECKING:
   from api_graphql.types.flavoring_option import FlavoringOptionType
   from api_graphql.types.nic_base_option import NicBaseOptionType
+  from api_graphql.types.mix_session import MixSessionType
 
 @strawberry.type
 class FormulaType(relay.Node):
@@ -82,6 +84,12 @@ class FormulaType(relay.Node):
   @strawberry.field
   def nic_base_pg(self) -> float:
     return self._model.nic_base_pg
+  
+  @relay.connection(ListConnectionWithTotalCount[Annotated["MixSessionType", strawberry.lazy("api_graphql.types.mix_session")]])
+  def mix_sessions(self) -> list[Annotated["MixSessionType", strawberry.lazy("api_graphql.types.mix_session")]]:
+    from api_graphql.types.mix_session import MixSessionType
+    mix_sessions = sorted(self._model.mix_sessions, key=lambda s: (s.created_at, s.id), reverse=True)
+    return [MixSessionType.from_model(s) for s in mix_sessions]
   
 @strawberry.input
 class FormulaIdentifierInput:
