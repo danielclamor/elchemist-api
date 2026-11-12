@@ -193,28 +193,19 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
     )
 
   today = get_today()
-  todate = today.date()
   created_at_utc = today.astimezone(ZoneInfo("UTC"))
   
   try: 
-    counter = db.scalar(
-      select(ProductionOrderCounter)
-      .where(ProductionOrderCounter.date == todate)
-      .with_for_update()
-    )
+    # one running counter: lock its row so two requests can't get the same number
+    counter = db.scalar(select(ProductionOrderCounter).with_for_update())
 
-    if counter is not None:
-      counter.last_number += 1
-    else:
-      counter = ProductionOrderCounter(
-        date=todate,
-        last_number=1,
-      )
-      db.add(counter)
+    if counter is None:
+      raise RuntimeError("ProductionOrderCounter row is missing; run the database migrations")
 
+    counter.last_number += 1
     db.flush()
     
-    po_number = generate_production_order_number(date=todate, counter=counter.last_number)
+    po_number = generate_production_order_number(counter=counter.last_number)
     
     po = ProductionOrder(
       order_number=po_number,

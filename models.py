@@ -238,10 +238,15 @@ class Formula(Base):
   
  
 class ProductionOrderCounter(Base):
-  __tablename__ = "production_order_counters"
+  __tablename__ = "production_order_counter"
+  
+  __table_args__ = (
+    CheckConstraint("id = 1", name="ck_production_order_counter_single_row"),
+  )
 
-  date: Mapped[date] = mapped_column(Date, primary_key=True)
-  last_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+  # a single row that is locked while a number is handed out; the first order gets 1000
+  id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False, default=1)
+  last_number: Mapped[int] = mapped_column(Integer, nullable=False, default=999)
     
   
 class ProductionOrderStatus(enum.Enum):
@@ -423,12 +428,14 @@ class MixSession(Base):
 
 
 class MixSessionCounter(Base):
-  __tablename__ = "mix_session_counter"
+  __tablename__ = "mix_session_counters"
 
-  last_number: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False, default=0)
+  # one row per day, so the count in MIX-{yyyy}{mm}{dd}{count} restarts every day
+  date: Mapped[date] = mapped_column(Date, primary_key=True)
+  last_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
   def __repr__(self) -> str:
-    return f"<MixSessionCounter {self.last_number!r}>"
+    return f"<MixSessionCounter {self.date} {self.last_number!r}>"
 
 
 class Location(Base):

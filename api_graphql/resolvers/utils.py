@@ -1,12 +1,8 @@
-from typing import TYPE_CHECKING
-from datetime import datetime
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 import dataclasses
 import json
 import strawberry
-
-if TYPE_CHECKING:
-  from datetime import date
 
 def generate_slug(string: str) -> str:
   import re
@@ -24,14 +20,14 @@ def get_today(timezone: str | None = None) -> datetime:
   
   return datetime.now(ZoneInfo(os.getenv("TIMEZONE")))
 
-def generate_production_order_number(date: date, counter: int) -> str:
-  return f"{date:%Y%m%d}{counter:05d}"
+def generate_production_order_number(counter: int) -> str:
+  return str(counter)
 
 def generate_job_number(order_number: str, prefix: str, sequence: int) -> str:
   return f"{order_number}-{prefix}{sequence}"
 
-def generate_session_number(counter: int) -> str:
-  return f"MIX-{counter:02d}"
+def generate_session_number(day: date, counter: int) -> str:
+  return f"MIX-{day:%Y%m%d}{counter:02d}"
 
 def convert_strawberry_input_to_dict(input_obj):
     data = dataclasses.asdict(input_obj)

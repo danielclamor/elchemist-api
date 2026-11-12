@@ -6,12 +6,13 @@ logger = logging.getLogger(__name__)
 
 import strawberry
 from sqlalchemy.orm import Session, selectinload
-from sqlalchemy import select, func
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from typing import TYPE_CHECKING, Optional
 
-from api_graphql.resolvers.utils import generate_session_number
+from api_graphql.resolvers.utils import generate_session_number, get_today
 from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 from api_graphql.types.mix_session import MixSessionCreatePayload, MixSessionType, MixSessionUpdatePayload
 from models import MixSession, MixSessionCounter, MixSessionStatus, Formula
@@ -53,20 +54,20 @@ def create_mix_session(
         )
       )
   
+  todate = get_today().date()
+  
   try:
+    # make sure today's counter row exists (a second request waits instead of failing
+    # on a duplicate insert), then lock it while the number is handed out
+    db.execute(pg_insert(MixSessionCounter).values(date=todate, last_number=0).on_conflict_do_nothing())
     counter = db.scalar(
-      select(MixSessionCounter).with_for_update()
+      select(MixSessionCounter).where(MixSessionCounter.date == todate).with_for_update()
     )
-    
-    if counter is None:
-      count = db.execute(select(func.count(MixSession.id))).scalar_one()
-      counter = MixSessionCounter(last_number=count)
-      db.add(counter)
 
     counter.last_number += 1
     db.flush()
     
-    session_number = generate_session_number(counter=counter.last_number)
+    session_number = generate_session_number(day=todate, counter=counter.last_number)
     
     mix_session = MixSession(
       session_number=session_number,
