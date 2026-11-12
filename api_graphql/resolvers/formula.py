@@ -3,7 +3,7 @@ from enum import Enum
 import uuid
 
 from graphql import GraphQLError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import and_, delete, select
 import strawberry
 
@@ -60,11 +60,16 @@ if TYPE_CHECKING:
   
 # Queries
 def get_all_formulas(db: Session) -> list[Formula]:
-  return (
-    db.scalars(select(Formula))
-    .unique()
-    .all()
+  stmt = (
+    select(Formula)
+    .options(
+      selectinload(Formula.mix_sessions)
+    )
+    .order_by(Formula.name.asc(), Formula.id)
   )
+  
+  return db.scalars(stmt).unique().all()
+  
 
 def get_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula | None:
   return (
