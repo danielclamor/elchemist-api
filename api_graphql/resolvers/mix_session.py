@@ -5,8 +5,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 import strawberry
-from sqlalchemy.orm import Session, selectinload
-from sqlalchemy import select
+from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy import or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -15,11 +15,12 @@ from typing import TYPE_CHECKING, Optional
 from api_graphql.resolvers.utils import generate_session_number, get_today
 from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 from api_graphql.types.mix_session import MixSessionCreatePayload, MixSessionType, MixSessionUpdatePayload
-from models import MixSession, MixSessionCounter, MixSessionStatus, Formula
+from models import MixSession, MixSessionCounter, MixSessionStatus, Formula, ProductionOrder
 
 if TYPE_CHECKING:
   from api_graphql.types.mix_session import MixSessionIdentifierInput
   from api_graphql.types.formula import FormulaIdentifierInput
+  from api_graphql.types.production_order import ProductionOrderIdentifierInput
 
 # Queries
 def get_all_mix_sessions(db: Session) -> list[MixSession]:
@@ -30,55 +31,131 @@ def get_mix_session(db: Session, identifier: "MixSessionIdentifierInput") -> Mix
 
 # Mutations
 def create_mix_session(
-  db: Session, 
-  formula_identifier: Optional["FormulaIdentifierInput"] = None, 
+  db: Session,
+  formula_identifier: Optional["FormulaIdentifierInput"] = None,
   formula: Optional["Formula"] = None,
+  production_order_identifiers: Optional[list["ProductionOrderIdentifierInput"]] = None,
 ) -> MixSessionCreatePayload:
-  if formula is None:
-    if formula_identifier is None:
+  fetched_orders: list[ProductionOrder] = []
+
+  if production_order_identifiers is not None:
+    if not production_order_identifiers:
       return MixSessionCreatePayload(
         mix_session=None,
         feedback=Feedback(
           status=FeedbackStatusEnum.FAILED,
-          message=f"Formula or identifier must be provided"
-        )
+          message="At least one production order must be provided when assigning orders.",
+        ),
       )
-      
-    formula = db.scalar(select(Formula).where(formula_identifier.query_condition))
+
+    conditions = [ident.query_condition for ident in production_order_identifiers]
+    
+    fetched_orders = db.scalars(
+      select(ProductionOrder)
+      .options(joinedload(ProductionOrder.eliquid))
+      .where(or_(*conditions))
+    ).all()
+
+    if len(fetched_orders) != len(production_order_identifiers):
+      return MixSessionCreatePayload(
+        mix_session=None,
+        feedback=Feedback(
+          status=FeedbackStatusEnum.FAILED,
+          message="One or more production orders could not be found.",
+        ),
+      )
+
+    order_formula_ids = {po.eliquid.formula_id for po in fetched_orders}
+
+    if None in order_formula_ids:
+      return MixSessionCreatePayload(
+        mix_session=None,
+        feedback=Feedback(
+          status=FeedbackStatusEnum.FAILED,
+          message="Cannot create MixSession: one or more orders have an unset formula.",
+        ),
+      )
+
+    if len(order_formula_ids) > 1:
+      return MixSessionCreatePayload(
+        mix_session=None,
+        feedback=Feedback(
+          status=FeedbackStatusEnum.FAILED,
+          message="Cannot create MixSession: selected orders must have the same formula.",
+        ),
+      )
+
+  if formula is None and formula_identifier is not None:
+    formula = db.scalar(
+      select(Formula).where(formula_identifier.query_condition)
+    )
     if formula is None:
       return MixSessionCreatePayload(
         mix_session=None,
         feedback=Feedback(
           status=FeedbackStatusEnum.FAILED,
-          message=f"Nic Profile {formula_identifier.provided[1]} not found"
-        )
+          message=f"Formula {formula_identifier.provided[1]} not found",
+        ),
       )
-  
+
+  if fetched_orders:
+    orders_formula_id = fetched_orders[0].eliquid.formula_id
+    if formula is not None and formula.id != orders_formula_id:
+      return MixSessionCreatePayload(
+        mix_session=None,
+        feedback=Feedback(
+          status=FeedbackStatusEnum.FAILED,
+          message="Formula mismatch between provided formula and selected production orders.",
+        ),
+      )
+    if formula is None:
+      formula = db.scalar(
+        select(Formula).where(Formula.id == orders_formula_id)
+      )
+
+  if formula is None:
+    return MixSessionCreatePayload(
+      mix_session=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message="Formula, formula identifier, or production orders must be provided.",
+      ),
+    )
+
   todate = get_today().date()
-  
+
   try:
-    # make sure today's counter row exists (a second request waits instead of failing
-    # on a duplicate insert), then lock it while the number is handed out
-    db.execute(pg_insert(MixSessionCounter).values(date=todate, last_number=0).on_conflict_do_nothing())
+    db.execute(
+      pg_insert(MixSessionCounter)
+      .values(date=todate, last_number=0)
+      .on_conflict_do_nothing()
+    )
     counter = db.scalar(
-      select(MixSessionCounter).where(MixSessionCounter.date == todate).with_for_update()
+      select(MixSessionCounter)
+      .where(MixSessionCounter.date == todate)
+      .with_for_update()
     )
 
     counter.last_number += 1
     db.flush()
-    
-    session_number = generate_session_number(day=todate, counter=counter.last_number)
-    
+
+    session_number = generate_session_number(
+      day=todate, counter=counter.last_number
+    )
+
     mix_session = MixSession(
       session_number=session_number,
       formula_id=formula.id,
       formula_name_snapshot=formula.name,
       status=MixSessionStatus.IN_PROGRESS,
     )
-    
-    print(mix_session)
-    
+
     db.add(mix_session)
+    db.flush()
+
+    for po in fetched_orders:
+      po.mix_session_id = mix_session.id
+
     db.commit()
   except IntegrityError:
     db.rollback()
@@ -88,7 +165,7 @@ def create_mix_session(
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
         message="Could not create MixSession: a database constraint was violated",
-      )
+      ),
     )
   except SQLAlchemyError:
     db.rollback()
@@ -98,17 +175,17 @@ def create_mix_session(
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
         message="Could not create MixSession due to a database error",
-      )
+      ),
     )
-    
+
   db.refresh(mix_session)
-  
+
   return MixSessionCreatePayload(
     mix_session=MixSessionType.from_model(mix_session),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=f"MixSession {session_number} created",
-    )
+    ),
   )
   
 ALLOWED_MIX_SESSION_TRANSITIONS = {

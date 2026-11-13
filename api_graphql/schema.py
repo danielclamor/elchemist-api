@@ -454,15 +454,6 @@ class Mutation:
     return bulk_delete_flavoring_options(
       db=db, identifiers=identifiers,
     )
-    
-  @strawberry.mutation
-  def mixSessionCreate(
-    self, info: strawberry.Info, formula_identifier: FormulaIdentifierInput,
-  ) -> MixSessionCreatePayload:
-    db = info.context["db"]
-    return create_mix_session(
-      db=db, formula_identifier=formula_identifier,
-    )
 
   @strawberry.mutation
   def nicBaseOptionCreate(
@@ -624,6 +615,24 @@ class Mutation:
     db = info.context["db"]
     return mark_production_order_fulfilled(
       db=db, identifier=identifier, fulfilled_quantity=fulfilled_quantity,
+    )
+    
+  @strawberry.mutation
+  def mixSessionCreate(
+    self, info: strawberry.Info, formula_identifier: FormulaIdentifierInput,
+  ) -> MixSessionCreatePayload:
+    db = info.context["db"]
+    return create_mix_session(
+      db=db, formula_identifier=formula_identifier,
+    )
+    
+  @strawberry.mutation
+  def mixSessionCreateWithProductionOrders(
+    self, info: strawberry.Info, production_order_identifers: list[ProductionOrderIdentifierInput]
+  ) -> MixSessionCreatePayload:
+    db = info.context["db"]
+    return create_mix_session(
+      db=db, production_order_identifiers=production_order_identifers
     )
   
   @strawberry.mutation
