@@ -64,7 +64,7 @@ def create_mix_session(
           message="One or more production orders could not be found.",
         ),
       )
-
+    
     order_formula_ids = {po.eliquid.formula_id for po in fetched_orders}
 
     if None in order_formula_ids:
@@ -84,6 +84,86 @@ def create_mix_session(
           message="Cannot create MixSession: selected orders must have the same formula.",
         ),
       )
+      
+    orders_formula_id = fetched_orders[0].eliquid.formula_id
+    
+    assigned_session_ids = {
+      po.mix_session_id
+      for po in fetched_orders
+      if po.mix_session_id is not None
+    }
+    has_unassigned = any(po.mix_session_id is None for po in fetched_orders)
+    
+    if len(assigned_session_ids) > 1:
+      return MixSessionCreatePayload(
+        mix_session=None,
+        feedback=Feedback(
+          status=FeedbackStatusEnum.FAILED,
+          message="Selected production orders belong to multiple different mix sessions.",
+        ),
+      )
+    
+    if len(assigned_session_ids) == 1:
+      existing_session_id = assigned_session_ids.pop()
+      existing_ms = db.scalar(
+        select(MixSession).where(MixSession.id == existing_session_id)
+      )
+
+      if existing_ms is None:
+        return MixSessionCreatePayload(
+          mix_session=None,
+          feedback=Feedback(
+            status=FeedbackStatusEnum.FAILED,
+            message="Existing MixSession referenced by orders was not found.",
+          ),
+        )
+
+      # Rule 1: All orders are already in this exact mix session
+      if not has_unassigned:
+        return MixSessionCreatePayload(
+          mix_session=MixSessionType.from_model(existing_ms),
+          feedback=Feedback(
+            status=FeedbackStatusEnum.CANCELLED,
+            message=f"All selected production orders are already assigned to MixSession {existing_ms.session_number}.",
+          ),
+        )
+        
+      # Guard: Block adding remaining orders if the existing MixSession is no longer in progress
+      if existing_ms.status != MixSessionStatus.IN_PROGRESS:
+        return MixSessionCreatePayload(
+          mix_session=None,
+          feedback=Feedback(
+            status=FeedbackStatusEnum.FAILED,
+            message=f"Cannot assign remaining orders: MixSession {existing_ms.session_number} is {existing_ms.status.value}.",
+          ),
+        )
+
+      # Rule 2: Some orders are in this mix session, and the rest are unassigned -> assign the rest
+      try:
+        for po in fetched_orders:
+          if po.mix_session_id is None:
+            po.mix_session_id = existing_ms.id
+
+        db.commit()
+        db.refresh(existing_ms)
+
+        return MixSessionCreatePayload(
+          mix_session=MixSessionType.from_model(existing_ms),
+          feedback=Feedback(
+            status=FeedbackStatusEnum.SUCCESS,
+            message=f"Assigned remaining production orders to existing MixSession {existing_ms.session_number}.",
+          ),
+        )
+      except SQLAlchemyError:
+        db.rollback()
+        logger.exception("Database error assigning remaining orders to existing mix session")
+        return MixSessionCreatePayload(
+          mix_session=None,
+          feedback=Feedback(
+            status=FeedbackStatusEnum.FAILED,
+            message="Could not assign remaining orders due to a database error.",
+          ),
+        )
 
   if formula is None and formula_identifier is not None:
     formula = db.scalar(
