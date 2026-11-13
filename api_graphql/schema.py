@@ -244,7 +244,7 @@ class Query:
     return [EliquidType.from_model(e) for e in get_all_eliquids(db)]
   
   @strawberry.field
-  def flavoringOption(
+  def flavoring_option(
     self, info: strawberry.Info, identifier: FlavoringOptionIdentifierInput,
   ) -> FlavoringOptionType | None:
     db = info.context["db"]
@@ -252,14 +252,14 @@ class Query:
     return FlavoringOptionType.from_model(o) if o else None
 
   @relay.connection(relay.ListConnection[FlavoringOptionType])
-  def flavoringOptions(
+  def flavoring_options(
     self, info: strawberry.Info,
   ) -> List[FlavoringOptionType]:
     db = info.context["db"]
     return [FlavoringOptionType.from_model(o) for o in get_all_flavoring_options(db)]
   
   @strawberry.field
-  def nicBaseOption(
+  def nicBase_option(
     self, info: strawberry.Info, identifier: NicBaseOptionIdentifierInput,
   ) -> NicBaseOptionType | None:
     db = info.context["db"]
@@ -267,7 +267,7 @@ class Query:
     return NicBaseOptionType.from_model(o) if o else None
 
   @relay.connection(relay.ListConnection[NicBaseOptionType])
-  def nicBaseOptions(
+  def nicBase_options(
     self, info: strawberry.Info,
   ) -> List[NicBaseOptionType]:
     db = info.context["db"]
@@ -296,13 +296,13 @@ class Query:
     return get_recipe(db=db, formula_identifier=formula_identifier, input=input)
   
   @strawberry.field
-  def recipeDiy(
+  def recipe_diy(
     self, input: RecipeDiyInput,
   ) -> RecipeDiyType:
     return get_recipe_diy(input=input)
   
   @strawberry.field
-  def productionOrder(
+  def production_order(
     self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput,
   ) -> ProductionOrderType | None:
     db = info.context["db"]
@@ -310,7 +310,7 @@ class Query:
     return ProductionOrderType.from_model(o) if o else None
   
   @relay.connection(ListConnectionWithTotalCount[ProductionOrderType])
-  def productionOrders(
+  def production_orders(
     self, info: strawberry.Info,
     job_type: Optional[ProductionOrderJobTypeEnum] = None,
     status: Optional[ProductionOrderStatusEnum] = None,
@@ -324,7 +324,7 @@ class Query:
             get_all_production_orders(db, model_job_type, model_status, created_from, created_to)]
 
   @strawberry.field
-  def productionOrderStatusCounts(
+  def production_order_status_counts(
     self, info: strawberry.Info,
     created_from: Optional[datetime] = None,
     created_to: Optional[datetime] = None,
@@ -335,7 +335,7 @@ class Query:
             for s in ProductionOrderStatus]
   
   @strawberry.field
-  def mixSession(
+  def mix_session(
     self, info: strawberry.Info, identifier: MixSessionIdentifierInput,
   ) -> MixSessionType | None:
     db = info.context["db"]
@@ -343,7 +343,7 @@ class Query:
     return MixSessionType.from_model(b) if b else None
   
   @relay.connection(ListConnectionWithTotalCount[MixSessionType])
-  def mixSessions(
+  def mix_sessions(
     self, info: strawberry.Info,
   ) -> List[MixSessionType]:
     db = info.context["db"]
@@ -358,7 +358,7 @@ class Query:
     return LocationType.from_model(l) if l else None
   
   @strawberry.field
-  def locationHq(
+  def location_hq(
     self, info: strawberry.Info,
   ) -> LocationType | None:
     db = info.context["db"]
@@ -375,7 +375,7 @@ class Query:
 @strawberry.type
 class Mutation:
   @strawberry.mutation
-  def eliquidCreate(
+  def eliquid_create(
     self, info: strawberry.Info, eliquid: EliquidCreateInput,
   ) -> EliquidCreatePayload:
     db = info.context["db"]
@@ -384,7 +384,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def eliquidDelete(
+  def eliquid_delete(
     self, info: strawberry.Info, identifier: EliquidIdentifierInput,
   ) -> EliquidDeletePayload:
     db = info.context["db"]
@@ -393,7 +393,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def eliquidFormulaSet(
+  def eliquid_set_formula(
     self, info: strawberry.Info, identifier: EliquidIdentifierInput, formula_identifier: FormulaIdentifierInput,
   ) -> EliquidUpdatePayload:
     db = info.context["db"]
@@ -402,7 +402,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def eliquidFormulaUnset(
+  def eliquid_unset_formula(
     self, info: strawberry.Info, identifier: EliquidIdentifierInput,
   ) -> EliquidUpdatePayload:
     db = info.context["db"]
@@ -411,7 +411,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def eliquidUpdate(
+  def eliquid_update(
     self, info: strawberry.Info, identifier: EliquidIdentifierInput, eliquid: EliquidUpdateInput,
   ) -> EliquidUpdatePayload:
     db = info.context["db"]
@@ -420,7 +420,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def flavoringOptionCreate(
+  def flavoring_option_create(
     self, info: strawberry.Info, flavoring_option: FlavoringOptionCreateInput,
   ) -> FlavoringOptionCreatePayload:
     db = info.context["db"]
@@ -429,7 +429,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def flavoringOptionsBulkCreate(
+  def flavoring_options_bulk_create(
     self, info: strawberry.Info, flavoring_options: list[FlavoringOptionCreateInput],
   ) -> FlavoringOptionsBulkCreatePayload:
     db = info.context["db"]
@@ -438,7 +438,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def flavoringOptionDelete(
+  def flavoring_option_delete(
     self, info: strawberry.Info, identifier: FlavoringOptionIdentifierInput,
   ) -> FlavoringOptionDeletePayload:
     db = info.context["db"]
@@ -447,7 +447,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def flavoringOptionsBulkDelete(
+  def flavoring_options_bulk_delete(
     self, info: strawberry.Info, identifiers: list[FlavoringOptionIdentifierInput],
   ) -> FlavoringOptionsBulkDeletePayload:
     db = info.context["db"]
@@ -456,7 +456,7 @@ class Mutation:
     )
 
   @strawberry.mutation
-  def nicBaseOptionCreate(
+  def nic_base_option_create(
     self, info: strawberry.Info, nic_base_option: NicBaseOptionCreateInput,
   ) -> NicBaseOptionCreatePayload:
     db = info.context["db"]
@@ -465,7 +465,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def nicBaseOptionsBulkCreate(
+  def nic_base_options_bulk_create(
     self, info: strawberry.Info, nic_base_options: list[NicBaseOptionCreateInput],
   ) -> NicBaseOptionsBulkCreatePayload:
     db = info.context["db"]
@@ -474,7 +474,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def nicBaseOptionDelete(
+  def nic_base_option_delete(
     self, info: strawberry.Info, identifier: NicBaseOptionIdentifierInput,
   ) -> NicBaseOptionDeletePayload:
     db = info.context["db"]
@@ -483,7 +483,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def nicBaseOptionsBulkDelete(
+  def nic_base_options_bulk_delete(
     self, info: strawberry.Info, identifiers: list[NicBaseOptionIdentifierInput],
   ) -> NicBaseOptionsBulkDeletePayload:
     db = info.context["db"]
@@ -492,7 +492,7 @@ class Mutation:
     )
     
   @strawberry.mutation
-  def formulaCreate(
+  def formula_create(
     self, info: strawberry.Info, formula: FormulaCreateInput,
   ) -> FormulaCreatePayload:
     db = info.context["db"]
@@ -501,7 +501,7 @@ class Mutation:
     )
 
   @strawberry.mutation
-  def formulaDelete(
+  def formula_delete(
     self, info: strawberry.Info, identifier: FormulaIdentifierInput,
   ) -> FormulaDeletePayload:
     db = info.context["db"]
@@ -510,7 +510,7 @@ class Mutation:
     )
 
   @strawberry.mutation
-  def formulaFlavoringsBulkAdd(
+  def formula_bulk_add_flavorings(
     self, info: strawberry.Info, identifier: FormulaIdentifierInput, flavorings: list[FormulaFlavoringInput],
   ) -> FormulaFlavoringsBulkAddPayload:
     db = info.context["db"]
@@ -519,7 +519,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def formulaFlavoringsBulkRemove(
+  def formula_bulk_remove_flavorings(
     self, info: strawberry.Info, flavorings: list[FormulaFlavoringIdentifierInput],
   ) -> FormulaFlavoringsBulkRemovePayload:
     db = info.context["db"]
@@ -528,7 +528,7 @@ class Mutation:
     )
 
   @strawberry.mutation
-  def formulaNicBasesBulkAdd(
+  def formula_bulk_add_nic_bases(
    self, info: strawberry.Info, identifier: FormulaIdentifierInput, nic_bases: list[FormulaNicBaseInput],
   ) -> FormulaNicBasesBulkAddPayload:
     db = info.context["db"]
@@ -537,7 +537,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def formulaNicBasesSet(
+  def formula_set_nic_bases(
     self, info: strawberry.Info, identifier: FormulaIdentifierInput, nic_bases: list[FormulaNicBaseInput],
   ) -> FormulaNicBasesSetPayload:
     db = info.context["db"]
@@ -546,7 +546,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def formulaNicBasesBulkRemove(
+  def formula_bulk_remove_nic_bases(
     self, info: strawberry.Info, nic_bases: list[FormulaNicBaseIdentifierInput],
   ) -> FormulaNicBasesBulkRemovePayload:
     db = info.context["db"]
@@ -555,7 +555,7 @@ class Mutation:
     )
 
   @strawberry.mutation
-  def formulaUpdate(
+  def formula_update(
     self, info: strawberry.Info, identifier: FormulaIdentifierInput, formula: FormulaUpdateInput,
   ) -> FormulaUpdatePayload:
     db = info.context["db"]
@@ -564,7 +564,7 @@ class Mutation:
     )
 
   @strawberry.mutation
-  def productionOrderCreate(
+  def production_order_create(
     self, info: strawberry.Info, eliquid_identifier: EliquidIdentifierInput, production_order: ProductionOrderCreateInput,
   ) -> ProductionOrderCreatePayload:
     db = info.context["db"]
@@ -573,7 +573,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def productionOrderDelete(
+  def production_order_delete(
     self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput,
   ) -> ProductionOrderDeletePayload:
     db = info.context["db"]
@@ -582,7 +582,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def productionOrderMarkCancelled(
+  def production_order_mark_cancelled(
     self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput,
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
@@ -591,7 +591,7 @@ class Mutation:
     )
 
   @strawberry.mutation
-  def productionOrderMarkDelivered(
+  def production_order_mark_delivered(
     self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput,
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
@@ -600,7 +600,7 @@ class Mutation:
     )
     
   @strawberry.mutation
-  def productionOrderMarkInProgress(
+  def production_order_mark_in_progress(
     self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput,
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
@@ -609,7 +609,7 @@ class Mutation:
     )
     
   @strawberry.mutation
-  def productionOrderMarkFulfilled(
+  def production_order_mark_fulfilled(
     self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, fulfilled_quantity: int,
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
@@ -618,7 +618,7 @@ class Mutation:
     )
     
   @strawberry.mutation
-  def mixSessionCreate(
+  def mix_session_create(
     self, info: strawberry.Info, formula_identifier: FormulaIdentifierInput,
   ) -> MixSessionCreatePayload:
     db = info.context["db"]
@@ -627,7 +627,7 @@ class Mutation:
     )
     
   @strawberry.mutation
-  def mixSessionCreateWithProductionOrders(
+  def mix_session_create_with_production_orders(
     self, info: strawberry.Info, production_order_identifers: list[ProductionOrderIdentifierInput]
   ) -> MixSessionCreatePayload:
     db = info.context["db"]
@@ -636,7 +636,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def mixSessionMarkCompleted(
+  def mix_session_mark_completed(
     self, info: strawberry.Info, identifier: MixSessionIdentifierInput,
   ) -> MixSessionUpdatePayload:
     db = info.context["db"]
@@ -645,7 +645,7 @@ class Mutation:
     )
     
   @strawberry.mutation
-  def mixSessionMarkMixed(
+  def mix_session_mark_mixed(
     self, info: strawberry.Info, identifier: MixSessionIdentifierInput,
   ) -> MixSessionUpdatePayload:
     db = info.context["db"]
@@ -654,7 +654,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def productionOrderSetArchived(
+  def production_order_set_archived(
     self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, is_archived: bool,
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
@@ -663,7 +663,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def productionOrderSetPriority(
+  def production_order_set_priority(
     self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, is_priority: bool,
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
@@ -672,7 +672,7 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def productionOrderSetOrderedQuantity(
+  def production_order_set_ordered_quantity(
     self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, ordered_quantity: int | None,
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
@@ -681,22 +681,21 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def locationSetArchived(
-    self, info: strawberry.Info, identifier: LocationIdentifierInput, is_archived: bool,
-  ) -> LocationUpdatePayload:
-    db = info.context["db"]
-    return set_location_archived(
-      db=db, identifier=identifier, is_archived=is_archived,
-    )
-
-  @strawberry.mutation
-  def productionOrderUpdate(
+  def production_order_update(
     self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, production_order: ProductionOrderUpdateInput,
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
     return update_production_order(
       db=db, identifier=identifier, input=production_order,
     )
-
+  
+  @strawberry.mutation
+  def location_set_archived(
+    self, info: strawberry.Info, identifier: LocationIdentifierInput, is_archived: bool,
+  ) -> LocationUpdatePayload:
+    db = info.context["db"]
+    return set_location_archived(
+      db=db, identifier=identifier, is_archived=is_archived,
+    )
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
