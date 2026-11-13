@@ -27,7 +27,7 @@ def generate_job_number(order_number: str, prefix: str, sequence: int) -> str:
   return f"{order_number}-{prefix}{sequence}"
 
 def generate_session_number(day: date, counter: int) -> str:
-  return f"MIX-{day:%Y%m%d}{counter:02d}"
+  return f"MIX-{day:%Y%m%d}-{counter}"
 
 def convert_strawberry_input_to_dict(input_obj):
     data = dataclasses.asdict(input_obj)
