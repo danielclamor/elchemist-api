@@ -5,8 +5,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 import strawberry
-from sqlalchemy.orm import Session, joinedload, selectinload
-from sqlalchemy import or_, select, update
+from sqlalchemy.orm import Session, contains_eager, joinedload, selectinload
+from sqlalchemy import case, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -24,7 +24,20 @@ if TYPE_CHECKING:
 
 # Queries
 def get_all_mix_sessions(db: Session) -> list[MixSession]:
-  return db.scalars(select(MixSession)).unique().all()
+  return db.scalars(
+    select(MixSession)
+    .join(MixSession.formula)
+    .options(
+      selectinload(MixSession.production_orders),
+      contains_eager(MixSession.formula),
+    )
+    .order_by(
+      case(
+        (MixSession.status != MixSessionStatus.IN_PROGRESS, 1),
+        else_=0,
+      ), 
+      Formula.name.asc(), MixSession.created_at.desc())
+  ).unique().all()
 
 def get_mix_session(db: Session, identifier: "MixSessionIdentifierInput") -> MixSession:
   return db.scalar(select(MixSession).where(identifier.query_condition))
