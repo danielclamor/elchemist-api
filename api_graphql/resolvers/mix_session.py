@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 import strawberry
 from sqlalchemy.orm import Session, joinedload, selectinload
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Optional
 
 from api_graphql.resolvers.utils import generate_session_number, get_today
 from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
-from api_graphql.types.mix_session import MixSessionCreatePayload, MixSessionType, MixSessionUpdatePayload
+from api_graphql.types.mix_session import MixSessionCreatePayload, MixSessionMergePayload, MixSessionType, MixSessionUpdatePayload
 from models import MixSession, MixSessionCounter, MixSessionStatus, Formula, ProductionOrder
 
 if TYPE_CHECKING:
@@ -355,3 +355,120 @@ def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput")
       message=None,
     )
   )
+  
+def merge_mix_sessions(
+    db: Session,
+    source_identifiers: list["MixSessionIdentifierInput"],
+    target_identifier: "MixSessionIdentifierInput",
+) -> MixSessionMergePayload:
+    if not source_identifiers:
+      return MixSessionMergePayload(
+        mix_session=None,
+        feedback=Feedback(
+          status=FeedbackStatusEnum.FAILED,
+          message="At least one source MixSession must be provided.",
+        ),
+      )
+
+    target_ms = db.scalar(
+      select(MixSession).where(target_identifier.query_condition)
+    )
+    if target_ms is None:
+      return MixSessionMergePayload(
+        mix_session=None,
+        feedback=Feedback(
+          status=FeedbackStatusEnum.FAILED,
+          message=f"Target MixSession {target_identifier.provided[1]} not found.",
+        ),
+      )
+
+    if target_ms.status != MixSessionStatus.IN_PROGRESS:
+      return MixSessionMergePayload(
+        mix_session=None,
+        feedback=Feedback(
+          status=FeedbackStatusEnum.FAILED,
+          message=f"Target MixSession {target_ms.session_number} is {target_ms.status.value} and cannot accept merged orders.",
+        ),
+      )
+
+    # 1. Batch fetch all source sessions in a single query
+    conditions = [ident.query_condition for ident in source_identifiers]
+    source_sessions = db.scalars(
+      select(MixSession).where(or_(*conditions))
+    ).all()
+
+    if len(source_sessions) != len(source_identifiers):
+      return MixSessionMergePayload(
+        mix_session=None,
+        feedback=Feedback(
+          status=FeedbackStatusEnum.FAILED,
+          message="One or more source MixSessions could not be found.",
+        ),
+      )
+
+    # 2. Validate every source session upfront before modifying anything
+    for source_ms in source_sessions:
+      if source_ms.id == target_ms.id:
+        return MixSessionMergePayload(
+          mix_session=None,
+          feedback=Feedback(
+            status=FeedbackStatusEnum.FAILED,
+            message=f"Cannot merge MixSession {target_ms.session_number} into itself.",
+          ),
+        )
+
+      if source_ms.status != MixSessionStatus.IN_PROGRESS:
+        return MixSessionMergePayload(
+          mix_session=None,
+          feedback=Feedback(
+            status=FeedbackStatusEnum.FAILED,
+            message=f"Source MixSession {source_ms.session_number} is {source_ms.status.value} and cannot be merged.",
+          ),
+        )
+
+      if source_ms.formula_id != target_ms.formula_id:
+        return MixSessionMergePayload(
+          mix_session=None,
+          feedback=Feedback(
+            status=FeedbackStatusEnum.FAILED,
+            message=f"Formula mismatch: MixSession {source_ms.session_number} uses a different formula than {target_ms.session_number}.",
+          ),
+        )
+
+    source_ids = [ms.id for ms in source_sessions]
+    merged_numbers = ", ".join(ms.session_number for ms in source_sessions)
+
+    # 3. Reassign all orders and cancel all source sessions atomically
+    try:
+      db.execute(
+        update(ProductionOrder)
+        .where(ProductionOrder.mix_session_id.in_(source_ids))
+        .values(mix_session_id=target_ms.id)
+      )
+
+      db.execute(
+        update(MixSession)
+        .where(MixSession.id.in_(source_ids))
+        .values(status=MixSessionStatus.CANCELLED)
+      )
+
+      db.commit()
+      db.refresh(target_ms)
+
+      return MixSessionMergePayload(
+        mix_session=MixSessionType.from_model(target_ms),
+        feedback=Feedback(
+          status=FeedbackStatusEnum.SUCCESS,
+          message=f"Merged MixSession(s) {merged_numbers} into {target_ms.session_number}.",
+        ),
+      )
+    except SQLAlchemyError:
+      db.rollback()
+      logger.exception("Database error merging mix sessions")
+      return MixSessionMergePayload(
+        mix_session=None,
+        feedback=Feedback(
+          status=FeedbackStatusEnum.FAILED,
+          message="Could not merge MixSessions due to a database error.",
+        ),
+      )

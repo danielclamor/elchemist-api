@@ -113,3 +113,8 @@ class MixSessionCreatePayload:
 class MixSessionUpdatePayload:
   mix_session: MixSessionType | None
   feedback: Feedback
+  
+@strawberry.type
+class MixSessionMergePayload:
+  mix_session: MixSessionType | None
+  feedback: Feedback
