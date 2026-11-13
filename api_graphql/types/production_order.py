@@ -231,3 +231,13 @@ class ProductionOrderUpdateInput:
 class ProductionOrderUpdatePayload:
   production_order: ProductionOrderType | None
   feedback: Feedback
+  
+@strawberry.type
+class ProductionOrderAssignMixSessionPayload:
+  production_order: ProductionOrderType | None
+  feedback: Feedback
+
+@strawberry.type
+class ProductionOrderBulkAssignMixSessionPayload:
+  production_order_assign_payloads: list[ProductionOrderAssignMixSessionPayload]
+  feedback: Feedback
