@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from api_graphql.resolvers.mix_session import change_mix_session_status, create_mix_session
+from api_graphql.resolvers.mix_session import create_mix_session
 
 logger = logging.getLogger(__name__)
 
@@ -652,7 +652,7 @@ def remove_production_order_from_mix_session(db: Session, production_order: Prod
   db.flush()
   remaining = db.scalar(select(func.count()).select_from(ProductionOrder).where(ProductionOrder.mix_session_id == batch.id))
   if remaining == 0 and batch.status == MixSessionStatus.IN_PROGRESS:
-    change_mix_session_status(batch, MixSessionStatus.CANCELLED)
+    db.delete(batch)
   
 def set_production_order_archived(db: Session, identifier: "ProductionOrderIdentifierInput", is_archived: bool) -> ProductionOrderUpdatePayload:
   po = db.scalar(select(ProductionOrder).where(identifier.query_condition))

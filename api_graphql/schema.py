@@ -26,7 +26,7 @@ from api_graphql.types.flavoring_option import (
   FlavoringOptionCreatePayload,
   FlavoringOptionsBulkCreatePayload,
 )
-from api_graphql.types.mix_session import MixSessionCreatePayload, MixSessionIdentifierInput, MixSessionMergePayload, MixSessionType, MixSessionUpdatePayload
+from api_graphql.types.mix_session import MixSessionCreatePayload, MixSessionDeletePayload, MixSessionIdentifierInput, MixSessionMergePayload, MixSessionType, MixSessionUpdatePayload
 from api_graphql.types.nic_base_option import (
   NicBaseOptionType,
   NicBaseOptionIdentifierInput,
@@ -149,7 +149,7 @@ from api_graphql.resolvers.mix_session import (
   create_mix_session, 
   get_all_mix_sessions, 
   get_mix_session, 
-  mark_mix_session_completed, 
+  delete_mix_session,
   mark_mix_session_mixed,
   merge_mix_sessions,
 )
@@ -637,11 +637,11 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def mix_session_mark_completed(
+  def mix_session_delete(
     self, info: strawberry.Info, identifier: MixSessionIdentifierInput,
-  ) -> MixSessionUpdatePayload:
+  ) -> MixSessionDeletePayload:
     db = info.context["db"]
-    return mark_mix_session_completed(
+    return delete_mix_session(
       db=db, identifier=identifier,
     )
     

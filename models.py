@@ -394,8 +394,6 @@ class ProductionOrderAllocation(Base):
 
 
 class MixSessionStatus(enum.Enum):
-  CANCELLED = "cancelled"
-  COMPLETED = "completed"
   IN_PROGRESS = "in_progress"
   MIXED = "mixed"
   

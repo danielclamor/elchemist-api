@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 import strawberry
 from sqlalchemy.orm import Session, contains_eager, joinedload, selectinload
-from sqlalchemy import case, or_, select, update
+from sqlalchemy import case, delete, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Optional
 
 from api_graphql.resolvers.utils import generate_session_number, get_today
 from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
-from api_graphql.types.mix_session import MixSessionCreatePayload, MixSessionMergePayload, MixSessionType, MixSessionUpdatePayload
+from api_graphql.types.mix_session import MixSessionCreatePayload, MixSessionDeletePayload, MixSessionMergePayload, MixSessionType, MixSessionUpdatePayload
 from models import MixSession, MixSessionCounter, MixSessionStatus, Formula, ProductionOrder
 
 if TYPE_CHECKING:
@@ -282,10 +282,8 @@ def create_mix_session(
   )
   
 ALLOWED_MIX_SESSION_TRANSITIONS = {
-  MixSessionStatus.IN_PROGRESS: {MixSessionStatus.MIXED, MixSessionStatus.CANCELLED},
-  MixSessionStatus.MIXED: {MixSessionStatus.COMPLETED},
-  MixSessionStatus.COMPLETED: set(),
-  MixSessionStatus.CANCELLED: set(),
+  MixSessionStatus.IN_PROGRESS: {MixSessionStatus.MIXED},
+  MixSessionStatus.MIXED: set(),
 }
 
 def change_mix_session_status(batch: MixSession, new_status: MixSessionStatus) -> None:
@@ -293,48 +291,30 @@ def change_mix_session_status(batch: MixSession, new_status: MixSessionStatus) -
     raise ValueError(f"Cannot change MixSession from {batch.status.name} to {new_status.name}")
   
   batch.status = new_status
-  
-def mark_mix_session_cancelled(db: Session, identifier: "MixSessionIdentifierInput") -> MixSessionUpdatePayload:
-  batch = db.scalar(select(MixSession).where(identifier.query_condition))
-  
-  if batch is None:
-    return MixSessionUpdatePayload(
-      mix_session=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.CANCELLED,
-        message=f"MixSession {identifier.provided[1]} not found",
-      )
-    )
-    
-  change_mix_session_status(batch, MixSessionStatus.CANCELLED)
-  
-  db.commit()
-  db.refresh()
-  
-  return MixSessionUpdatePayload(
-    mix_session=MixSessionType.from_model(batch),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=None,
-    )
-  )
-  
-def mark_mix_session_completed(db: Session, identifier: "MixSessionIdentifierInput") -> MixSessionUpdatePayload:
-  batch = db.scalar(select(MixSession).where(identifier.query_condition))
+
+def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput") -> MixSessionUpdatePayload:
+  batch = db.scalar(select(MixSession).where(identifier.query_condition).with_for_update())
   
   if batch is None:
     return MixSessionUpdatePayload(
       mix_session=None,
       feedback=Feedback(
-        status=FeedbackStatusEnum.CANCELLED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"MixSession {identifier.provided[1]} not found",
       )
     )
-    
-  change_mix_session_status(batch, MixSessionStatus.COMPLETED)
+  
+  try:
+    change_mix_session_status(batch, MixSessionStatus.MIXED)
+  except ValueError as e:
+    db.rollback()
+    return MixSessionUpdatePayload(
+      mix_session=None,
+      feedback=Feedback(status=FeedbackStatusEnum.FAILED, message=str(e)),
+    )
   
   db.commit()
-  db.refresh()
+  db.refresh(batch)
   
   return MixSessionUpdatePayload(
     mix_session=MixSessionType.from_model(batch),
@@ -344,28 +324,46 @@ def mark_mix_session_completed(db: Session, identifier: "MixSessionIdentifierInp
     )
   )
 
-def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput") -> MixSessionUpdatePayload:
-  batch = db.scalar(select(MixSession).where(identifier.query_condition))
+def delete_mix_session(db: Session, identifier: "MixSessionIdentifierInput") -> MixSessionDeletePayload:
+  # "cancelling" a session = deleting it; its orders are unassigned (FK ondelete=SET NULL)
+  batch = db.scalar(select(MixSession).where(identifier.query_condition).with_for_update())
   
   if batch is None:
-    return MixSessionUpdatePayload(
-      mix_session=None,
+    return MixSessionDeletePayload(
       feedback=Feedback(
-        status=FeedbackStatusEnum.CANCELLED,
+        status=FeedbackStatusEnum.FAILED,
         message=f"MixSession {identifier.provided[1]} not found",
       )
     )
-    
-  change_mix_session_status(batch, MixSessionStatus.MIXED)
   
-  db.commit()
-  db.refresh()
+  if batch.status != MixSessionStatus.IN_PROGRESS:
+    db.rollback()
+    return MixSessionDeletePayload(
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message=f"MixSession {batch.session_number} is {batch.status.value} and cannot be deleted.",
+      )
+    )
   
-  return MixSessionUpdatePayload(
-    mix_session=MixSessionType.from_model(batch),
+  number = batch.session_number
+  
+  try:
+    db.delete(batch)
+    db.commit()
+  except SQLAlchemyError:
+    db.rollback()
+    logger.exception("Database error deleting mix session")
+    return MixSessionDeletePayload(
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message="Could not delete MixSession due to a database error.",
+      )
+    )
+  
+  return MixSessionDeletePayload(
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
-      message=None,
+      message=f"MixSession {number} deleted",
     )
   )
   
@@ -384,7 +382,7 @@ def merge_mix_sessions(
       )
 
     target_ms = db.scalar(
-      select(MixSession).where(target_identifier.query_condition)
+      select(MixSession).where(target_identifier.query_condition).with_for_update()
     )
     if target_ms is None:
       return MixSessionMergePayload(
@@ -407,7 +405,7 @@ def merge_mix_sessions(
     # 1. Batch fetch all source sessions in a single query
     conditions = [ident.query_condition for ident in source_identifiers]
     source_sessions = db.scalars(
-      select(MixSession).where(or_(*conditions))
+      select(MixSession).where(or_(*conditions)).with_for_update()
     ).all()
 
     if len(source_sessions) != len(source_identifiers):
@@ -451,7 +449,7 @@ def merge_mix_sessions(
     source_ids = [ms.id for ms in source_sessions]
     merged_numbers = ", ".join(ms.session_number for ms in source_sessions)
 
-    # 3. Reassign all orders and cancel all source sessions atomically
+    # 3. Reassign all orders and delete all source sessions atomically
     try:
       db.execute(
         update(ProductionOrder)
@@ -460,9 +458,7 @@ def merge_mix_sessions(
       )
 
       db.execute(
-        update(MixSession)
-        .where(MixSession.id.in_(source_ids))
-        .values(status=MixSessionStatus.CANCELLED)
+        delete(MixSession).where(MixSession.id.in_(source_ids))
       )
 
       db.commit()

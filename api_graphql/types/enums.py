@@ -70,7 +70,5 @@ class ProductionOrderJobStatusEnum(enum.Enum):
   
 @strawberry.enum
 class MixSessionStatusEnum(enum.Enum):
-  CANCELLED = "cancelled"
-  COMPLETED = "completed"
   IN_PROGRESS = "in_progress"
   MIXED = "mixed"

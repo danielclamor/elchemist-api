@@ -115,6 +115,10 @@ class MixSessionUpdatePayload:
   feedback: Feedback
   
 @strawberry.type
+class MixSessionDeletePayload:
+  feedback: Feedback
+
+@strawberry.type
 class MixSessionMergePayload:
   mix_session: MixSessionType | None
   feedback: Feedback
