@@ -64,6 +64,7 @@ from api_graphql.types.recipe import (
 )
 
 from api_graphql.types.production_order import (
+  ProductionOrderBulkAssignMixSessionPayload,
   ProductionOrderStatusCountType,
   ProductionOrderType,
   ProductionOrderIdentifierInput,
@@ -131,6 +132,7 @@ from api_graphql.resolvers.recipe import (
 )
 
 from api_graphql.resolvers.production_order import (
+  bulk_assign_production_order_to_mix_session,
   create_production_order,
   delete_production_order,
   get_all_production_orders,
@@ -610,11 +612,20 @@ class Mutation:
     
   @strawberry.mutation
   def mix_session_merge(
-      self, info: strawberry.Info, source_identifiers: list[MixSessionIdentifierInput], target_identifier: MixSessionIdentifierInput,
+    self, info: strawberry.Info, source_identifiers: list[MixSessionIdentifierInput], target_identifier: MixSessionIdentifierInput,
   ) -> MixSessionMergePayload:
     db = info.context["db"]
     return merge_mix_sessions(
       db=db, source_identifiers=source_identifiers, target_identifier=target_identifier,
+    )
+  
+  @strawberry.mutation
+  def production_order_bulk_assign_to_mix_session(
+    self, info: strawberry.Info, mix_session_identifier: MixSessionIdentifierInput, identifiers: list[ProductionOrderIdentifierInput],
+  ) -> ProductionOrderBulkAssignMixSessionPayload:
+    db = info.context["db"]
+    return bulk_assign_production_order_to_mix_session(
+      db=db, mix_session_identifier=mix_session_identifier, identifiers=identifiers,
     )
   
   @strawberry.mutation
