@@ -40,6 +40,8 @@ from api_graphql.types.eliquid import EliquidIdentifierInput
 from api_graphql.types.production_order import (
   ProductionOrderAssignMixSessionPayload,
   ProductionOrderBulkAssignMixSessionPayload,
+  ProductionOrderUnassignMixSessionPayload,
+  ProductionOrderBulkUnassignMixSessionPayload,
   ProductionOrderIdentifierInput,
   ProductionOrderType,
   ProductionOrderCreatePayload,
@@ -139,7 +141,7 @@ def bulk_assign_production_order_to_mix_session(
     return ProductionOrderBulkAssignMixSessionPayload(
       production_order_assign_to_mix_payloads=[],
       feedback=Feedback(
-        status=FeedbackStatusEnum.SUCCESS,
+        status=FeedbackStatusEnum.CANCELLED,
         message="No production orders provided",
       ),
     )
@@ -175,7 +177,7 @@ def bulk_assign_production_order_to_mix_session(
   for identifier in identifiers:
     matched_po = (
       orders_by_id.get(uuid.UUID(identifier.id.node_id))
-      if getattr(identifier, "id", None) is not None
+      if getattr(identifier, "id", None) is not strawberry.UNSET
       else orders_by_number.get(getattr(identifier, "order_number", None))
     )
 
@@ -229,6 +231,93 @@ def bulk_assign_production_order_to_mix_session(
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message="Bulk assignment processed",
+    ),
+  )
+  
+def bulk_unassign_production_order_from_mix_session(
+  db: Session,
+  identifiers: list["ProductionOrderIdentifierInput"],
+) -> ProductionOrderBulkUnassignMixSessionPayload:
+  if not identifiers:
+    return ProductionOrderBulkUnassignMixSessionPayload(
+      production_order_assign_to_mix_payloads=[],
+      feedback=Feedback(
+        status=FeedbackStatusEnum.CANCELLED,
+        message="No production orders provided",
+      ),
+    )
+  
+  conditions = [ident.query_condition for ident in identifiers]
+  fetched_orders = db.scalars(
+    select(ProductionOrder)
+    .where(or_(*conditions))
+  ).all()
+  
+  orders_by_id = {po.id: po for po in fetched_orders}
+  orders_by_number = {
+    po.order_number: po for po in fetched_orders if po.order_number
+  }
+  
+  payloads: list[ProductionOrderUnassignMixSessionPayload] = []
+  
+  for identifier in identifiers:
+    matched_po = (
+      orders_by_id.get(uuid.UUID(identifier.id.node_id))
+      if getattr(identifier, "id", None) is not strawberry.UNSET
+      else orders_by_number.get(getattr(identifier, "order_number", None))
+    )
+    
+    if matched_po is None:
+      payloads.append(
+        ProductionOrderUnassignMixSessionPayload(
+          production_order=None,
+          feedback=Feedback(
+            status=FeedbackStatusEnum.FAILED,
+            message=f"ProductionOrder {identifier.provided[1]} not found",
+          ),
+        )
+      )
+      continue
+    
+    try:
+      with db.begin_nested():
+        result = _unasssign_production_order_from_mix_session(
+          db=db, production_order=matched_po,
+        )
+        payloads.append(result)
+    except Exception as e:
+      payloads.append(
+        ProductionOrderUnassignMixSessionPayload(
+          production_order=ProductionOrderType.from_model(matched_po),
+          feedback=Feedback(
+            status=FeedbackStatusEnum.FAILED,
+            message=f"Unassigning ProductionOrder from MixSession failed. {e}",
+          )
+        )
+      )
+  
+  db.commit()
+  
+  return ProductionOrderBulkUnassignMixSessionPayload(
+    production_order_unassign_to_mix_payloads=payloads,
+    feedback=Feedback(
+      status=FeedbackStatusEnum.SUCCESS,
+      message="Bulk unassignment processed",
+    )
+  )
+        
+def _unasssign_production_order_from_mix_session(
+db: Session,
+  production_order: "ProductionOrder",
+) -> ProductionOrderUnassignMixSessionPayload:
+  production_order.mix_session_id = None
+  db.flush()
+
+  return ProductionOrderAssignMixSessionPayload(
+    production_order=ProductionOrderType.from_model(production_order),
+    feedback=Feedback(
+      status=FeedbackStatusEnum.SUCCESS,
+      message="Unassigned successfully",
     ),
   )
 
