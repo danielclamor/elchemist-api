@@ -112,8 +112,8 @@ class ProductionOrderType(relay.Node):
     )
 
   @strawberry.field
-  def is_open(self) -> bool:
-    return self._model.is_open
+  def is_closed(self) -> bool:
+    return self._model.is_closed
 
   @strawberry.field
   def eliquid(self) -> Annotated["EliquidType", strawberry.lazy("api_graphql.types.eliquid")]:

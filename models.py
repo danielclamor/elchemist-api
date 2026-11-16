@@ -303,8 +303,8 @@ class ProductionOrder(Base):
   mix_session: Mapped["MixSession | None"] = relationship(back_populates="production_orders")
   
   @property
-  def is_open(self) -> bool:
-    return self.status != ProductionOrderStatus.DELIVERED and self.status != ProductionOrderStatus.CANCELLED
+  def is_closed(self) -> bool:
+    return self.status == ProductionOrderStatus.DELIVERED or self.status == ProductionOrderStatus.CANCELLED
   
   @property
   def hq_quantity(self) -> int | None:
