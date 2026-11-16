@@ -56,19 +56,6 @@ class ProductionOrderActivityTypeEnum(enum.Enum):
   ASSIGN_MIX_SESSION = "mix_session"
   
 @strawberry.enum
-class ProductionOrderJobTypeEnum(enum.Enum):
-  MIX = "mix"
-  REPAT = "repat"
-  
-@strawberry.enum
-class ProductionOrderJobStatusEnum(enum.Enum):
-  CANCELLED = "cancelled"
-  COMPLETED = "completed"
-  IN_PROGRESS = "in_progress"
-  MIXED = "mixed"
-  REASSIGNED = "reassigned"
-  
-@strawberry.enum
 class MixSessionStatusEnum(enum.Enum):
   IN_PROGRESS = "in_progress"
   MIXED = "mixed"

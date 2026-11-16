@@ -23,9 +23,6 @@ def get_today(timezone: str | None = None) -> datetime:
 def generate_production_order_number(counter: int) -> str:
   return str(counter)
 
-def generate_job_number(order_number: str, prefix: str, sequence: int) -> str:
-  return f"{order_number}-{prefix}{sequence}"
-
 def generate_session_number(day: date, counter: int) -> str:
   return f"MIX-{day:%Y%m%d}-{counter}"
 

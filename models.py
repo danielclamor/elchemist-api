@@ -260,14 +260,6 @@ class ProductionOrderStatus(enum.Enum):
 production_order_status_enum = Enum(ProductionOrderStatus, name="productionorderstatus")
 
 
-class ProductionOrderJobType(enum.Enum):
-  MIX = "mix"
-  REPAT = "repat"
-
-
-production_order_job_type_enum = Enum(ProductionOrderJobType, name="productionorderjobtype")
-
-
 class ProductionOrder(Base):
   __tablename__ = "production_orders"
   
@@ -285,7 +277,6 @@ class ProductionOrder(Base):
   ordered_quantity: Mapped[int | None]
   fulfilled_quantity: Mapped[int | None]
   status: Mapped[ProductionOrderStatus] = mapped_column(production_order_status_enum, default=ProductionOrderStatus.PENDING)
-  job_type: Mapped[ProductionOrderJobType | None] = mapped_column(production_order_job_type_enum)
   is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
   is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
   hq_location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("locations.id"), index=True)

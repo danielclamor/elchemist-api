@@ -27,7 +27,6 @@ from models import (
   MixSessionStatus,
   ProductionOrder,
   ProductionOrderAllocation,
-  ProductionOrderJobType,
   ProductionOrderStatus,
   ProductionOrderActivityLog,
   ProductionOrderActivityType,
@@ -48,8 +47,6 @@ from api_graphql.types.production_order import (
   ProductionOrderUpdatePayload,
 )
 
-from api_graphql.types.enums import ProductionOrderJobTypeEnum
-
 from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
   from api_graphql.types.production_order import (
@@ -60,12 +57,10 @@ if TYPE_CHECKING:
     MixSessionIdentifierInput,
   )
 
-from .utils import generate_job_number, generate_production_order_number, get_today, convert_strawberry_input_to_dict
+from .utils import generate_production_order_number, get_today, convert_strawberry_input_to_dict
 
 # Queries
-def _filter_production_orders(stmt, job_type: "ProductionOrderJobType"=None, status:"ProductionOrderStatus"=None, created_from:datetime=None, created_to:datetime=None):
-  if job_type is not None:
-    stmt = stmt.where(ProductionOrder.job_type == job_type)
+def _filter_production_orders(stmt, status:"ProductionOrderStatus"=None, created_from:datetime=None, created_to:datetime=None):
   if status is not None:
     stmt = stmt.where(ProductionOrder.status == status)
   if created_from is not None:
@@ -74,7 +69,7 @@ def _filter_production_orders(stmt, job_type: "ProductionOrderJobType"=None, sta
     stmt = stmt.where(ProductionOrder.created_at < created_to)
   return stmt
 
-def get_all_production_orders(db: Session, job_type: "ProductionOrderJobType"=None, status:"ProductionOrderStatus"=None, created_from:datetime=None, created_to:datetime=None) -> list[ProductionOrder]:
+def get_all_production_orders(db: Session, status:"ProductionOrderStatus"=None, created_from:datetime=None, created_to:datetime=None) -> list[ProductionOrder]:
   stmt = (
     select(ProductionOrder)
     .options(
@@ -84,7 +79,7 @@ def get_all_production_orders(db: Session, job_type: "ProductionOrderJobType"=No
     )
     .order_by(ProductionOrder.created_at.desc(), ProductionOrder.id)
   )
-  stmt = _filter_production_orders(stmt, job_type, status, created_from, created_to)
+  stmt = _filter_production_orders(stmt, status, created_from, created_to)
   return db.scalars(stmt).unique().all()
 
 def get_production_order_status_counts(db: Session, created_from=None, created_to=None) -> dict:
@@ -305,17 +300,6 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
           message=f"Allocations ({allocated}) exceed ordered quantity ({quantity})"
         )
       )
-        
-  job_type = None if input.job_type in (None, strawberry.UNSET) else input.job_type
-  
-  if job_type == ProductionOrderJobTypeEnum.MIX and quantity is None:
-    return ProductionOrderCreatePayload(
-      production_order=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message="Set an ordered quantity before assigning to mix job"
-      )
-    )
 
   today = get_today()
   created_at_utc = today.astimezone(ZoneInfo("UTC"))

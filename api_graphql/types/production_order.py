@@ -18,7 +18,6 @@ from models import (
 from api_graphql.types.feedback import Feedback
 from api_graphql.types.enums import (
   ProductionOrderActivityTypeEnum,
-  ProductionOrderJobTypeEnum,
   ProductionOrderStatusEnum,
 )
 
@@ -92,7 +91,6 @@ class ProductionOrderType(relay.Node):
   ordered_quantity: int | None
   fulfilled_quantity: int | None
   status: ProductionOrderStatusEnum
-  job_type: ProductionOrderJobTypeEnum | None
   is_priority: bool
   created_at: datetime
   updated_at: datetime
@@ -107,7 +105,6 @@ class ProductionOrderType(relay.Node):
       ordered_quantity=o.ordered_quantity,
       fulfilled_quantity=o.fulfilled_quantity,
       status=ProductionOrderStatusEnum[o.status.name],
-      job_type=ProductionOrderJobTypeEnum[o.job_type.name] if o.job_type else None,
       is_priority=o.is_priority,
       created_at=o.created_at,
       updated_at=o.updated_at,
@@ -209,7 +206,6 @@ class ProductionOrderCreateInput:
   quantity: Optional[int] = strawberry.UNSET
   is_priority: bool = False
   allocations: Optional[list[ProductionOrderAllocationInput]] = strawberry.UNSET
-  job_type: Optional[ProductionOrderJobTypeEnum] = strawberry.UNSET
 
 @strawberry.type
 class ProductionOrderCreatePayload:

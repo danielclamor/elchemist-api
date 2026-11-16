@@ -16,7 +16,7 @@ from api_graphql.types.eliquid import (
   EliquidUpdateInput, 
   EliquidUpdatePayload,
 )
-from api_graphql.types.enums import ProductionOrderJobTypeEnum, ProductionOrderStatusEnum
+from api_graphql.types.enums import ProductionOrderStatusEnum
 from api_graphql.types.flavoring_option import (
   FlavoringOptionsBulkDeletePayload,
   FlavoringOptionDeletePayload,
@@ -162,7 +162,7 @@ from api_graphql.resolvers.location import (
   set_location_archived,
 )
 
-from models import ProductionOrderJobType, ProductionOrderStatus
+from models import ProductionOrderStatus
 
 def _cursor_index(cursor: str) -> int:
   return int(relay.from_base64(cursor).split(":")[1])
@@ -313,16 +313,14 @@ class Query:
   @relay.connection(ListConnectionWithTotalCount[ProductionOrderType])
   def production_orders(
     self, info: strawberry.Info,
-    job_type: Optional[ProductionOrderJobTypeEnum] = None,
     status: Optional[ProductionOrderStatusEnum] = None,
     created_from: Optional[datetime] = None,
     created_to: Optional[datetime] = None,
   ) -> List[ProductionOrderType]:
     db = info.context["db"]
-    model_job_type = ProductionOrderJobType[job_type.name] if job_type else None
     model_status = ProductionOrderStatus[status.name] if status else None
     return [ProductionOrderType.from_model(po) for po in
-            get_all_production_orders(db, model_job_type, model_status, created_from, created_to)]
+            get_all_production_orders(db, model_status, created_from, created_to)]
 
   @strawberry.field
   def production_order_status_counts(
@@ -563,7 +561,52 @@ class Mutation:
     return update_formula(
       db=db, identifier=identifier, formula=formula,
     )
-
+    
+  @strawberry.mutation
+  def mix_session_create(
+    self, info: strawberry.Info, formula_identifier: FormulaIdentifierInput,
+  ) -> MixSessionCreatePayload:
+    db = info.context["db"]
+    return create_mix_session(
+      db=db, formula_identifier=formula_identifier,
+    )
+    
+  @strawberry.mutation
+  def mix_session_create_with_production_orders(
+    self, info: strawberry.Info, production_order_identifers: list[ProductionOrderIdentifierInput]
+  ) -> MixSessionCreatePayload:
+    db = info.context["db"]
+    return create_mix_session(
+      db=db, production_order_identifiers=production_order_identifers
+    )
+  
+  @strawberry.mutation
+  def mix_session_delete(
+    self, info: strawberry.Info, identifier: MixSessionIdentifierInput,
+  ) -> MixSessionDeletePayload:
+    db = info.context["db"]
+    return delete_mix_session(
+      db=db, identifier=identifier,
+    )
+    
+  @strawberry.mutation
+  def mix_session_mark_mixed(
+    self, info: strawberry.Info, identifier: MixSessionIdentifierInput,
+  ) -> MixSessionUpdatePayload:
+    db = info.context["db"]
+    return mark_mix_session_mixed(
+      db=db, identifier=identifier,
+    )
+    
+  @strawberry.mutation
+  def mix_session_merge(
+      self, info: strawberry.Info, source_identifiers: list[MixSessionIdentifierInput], target_identifier: MixSessionIdentifierInput,
+  ) -> MixSessionMergePayload:
+    db = info.context["db"]
+    return merge_mix_sessions(
+      db=db, source_identifiers=source_identifiers, target_identifier=target_identifier,
+    )
+  
   @strawberry.mutation
   def production_order_create(
     self, info: strawberry.Info, eliquid_identifier: EliquidIdentifierInput, production_order: ProductionOrderCreateInput,
@@ -616,51 +659,6 @@ class Mutation:
     db = info.context["db"]
     return mark_production_order_fulfilled(
       db=db, identifier=identifier, fulfilled_quantity=fulfilled_quantity,
-    )
-    
-  @strawberry.mutation
-  def mix_session_create(
-    self, info: strawberry.Info, formula_identifier: FormulaIdentifierInput,
-  ) -> MixSessionCreatePayload:
-    db = info.context["db"]
-    return create_mix_session(
-      db=db, formula_identifier=formula_identifier,
-    )
-    
-  @strawberry.mutation
-  def mix_session_create_with_production_orders(
-    self, info: strawberry.Info, production_order_identifers: list[ProductionOrderIdentifierInput]
-  ) -> MixSessionCreatePayload:
-    db = info.context["db"]
-    return create_mix_session(
-      db=db, production_order_identifiers=production_order_identifers
-    )
-  
-  @strawberry.mutation
-  def mix_session_delete(
-    self, info: strawberry.Info, identifier: MixSessionIdentifierInput,
-  ) -> MixSessionDeletePayload:
-    db = info.context["db"]
-    return delete_mix_session(
-      db=db, identifier=identifier,
-    )
-    
-  @strawberry.mutation
-  def mix_session_mark_mixed(
-    self, info: strawberry.Info, identifier: MixSessionIdentifierInput,
-  ) -> MixSessionUpdatePayload:
-    db = info.context["db"]
-    return mark_mix_session_mixed(
-      db=db, identifier=identifier,
-    )
-    
-  @strawberry.mutation
-  def mix_session_merge(
-      self, info: strawberry.Info, source_identifiers: list[MixSessionIdentifierInput], target_identifier: MixSessionIdentifierInput,
-  ) -> MixSessionMergePayload:
-    db = info.context["db"]
-    return merge_mix_sessions(
-      db=db, source_identifiers=source_identifiers, target_identifier=target_identifier,
     )
   
   @strawberry.mutation
