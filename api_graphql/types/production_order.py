@@ -245,5 +245,5 @@ class ProductionOrderUnassignMixSessionPayload:
 
 @strawberry.type
 class ProductionOrderBulkUnassignMixSessionPayload:
-  production_order_unassign_to_mix_payloads: list[ProductionOrderUnassignMixSessionPayload]
+  production_order_unassign_from_mix_payloads: list[ProductionOrderUnassignMixSessionPayload]
   feedback: Feedback

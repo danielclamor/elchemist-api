@@ -299,7 +299,7 @@ def bulk_unassign_production_order_from_mix_session(
   db.commit()
   
   return ProductionOrderBulkUnassignMixSessionPayload(
-    production_order_unassign_to_mix_payloads=payloads,
+    production_order_unassign_from_mix_payloads=payloads,
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message="Bulk unassignment processed",
