@@ -136,7 +136,7 @@ from api_graphql.resolvers.production_order import (
   get_all_production_orders,
   get_production_order,
   get_production_order_status_counts,
-  get_production_orders_for_formula,
+  get_assignable_production_orders_to_mix,
   mark_production_order_cancelled,
   mark_production_order_delivered,
   mark_production_order_fulfilled,
@@ -336,11 +336,11 @@ class Query:
             for s in ProductionOrderStatus]
     
   @relay.connection(ListConnectionWithTotalCount[ProductionOrderType])
-  def production_orders_for_formula(
+  def production_orders_assignable_to_mix(
     self, info: strawberry.Info, formula_id: relay.GlobalID,
   ) -> list[ProductionOrderType]:
     db = info.context["db"]
-    orders = get_production_orders_for_formula(db, uuid.UUID(formula_id.node_id))
+    orders = get_assignable_production_orders_to_mix(db, uuid.UUID(formula_id.node_id))
     return [ProductionOrderType.from_model(po) for po in orders]
   
   @strawberry.field

@@ -95,7 +95,7 @@ def get_production_order(db: Session, identifier: "ProductionOrderIdentifierInpu
     db.scalar(select(ProductionOrder).where(identifier.query_condition))
   )
   
-def get_production_orders_for_formula(db: Session, formula_id: uuid.UUID) -> list[ProductionOrder]:
+def get_assignable_production_orders_to_mix(db: Session, formula_id: uuid.UUID) -> list[ProductionOrder]:
   return db.scalars(
     select(ProductionOrder)
     .join(ProductionOrder.eliquid)
