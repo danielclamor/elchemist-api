@@ -235,5 +235,5 @@ class ProductionOrderAssignMixSessionPayload:
 
 @strawberry.type
 class ProductionOrderBulkAssignMixSessionPayload:
-  production_order_assign_payloads: list[ProductionOrderAssignMixSessionPayload]
+  production_order_assign_to_mix_payloads: list[ProductionOrderAssignMixSessionPayload]
   feedback: Feedback

@@ -137,7 +137,7 @@ def bulk_assign_production_order_to_mix_session(
 ) -> ProductionOrderBulkAssignMixSessionPayload:
   if not identifiers:
     return ProductionOrderBulkAssignMixSessionPayload(
-      production_order_assign_payloads=[],
+      production_order_assign_to_mix_payloads=[],
       feedback=Feedback(
         status=FeedbackStatusEnum.SUCCESS,
         message="No production orders provided",
@@ -150,7 +150,7 @@ def bulk_assign_production_order_to_mix_session(
 
   if ms is None:
     return ProductionOrderBulkAssignMixSessionPayload(
-      production_order_assign_payloads=[],
+      production_order_assign_to_mix_payloads=[],
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
         message=f"MixSession {mix_session_identifier.provided[1]} not found",
@@ -225,7 +225,7 @@ def bulk_assign_production_order_to_mix_session(
   db.commit()
 
   return ProductionOrderBulkAssignMixSessionPayload(
-    production_order_assign_payloads=payloads,
+    production_order_assign_to_mix_payloads=payloads,
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message="Bulk assignment processed",
