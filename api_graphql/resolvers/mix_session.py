@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +24,13 @@ if TYPE_CHECKING:
   from api_graphql.types.production_order import ProductionOrderIdentifierInput
 
 # Queries
-def get_all_mix_sessions(db: Session) -> list[MixSession]:
-  return db.scalars(
+def _filter_mix_sessions(stmt, formula_identifier:"FormulaIdentifierInput"=None):
+  if formula_identifier is not None:
+    stmt = stmt.where(formula_identifier.query_condition)
+  return stmt
+
+def get_all_mix_sessions(db: Session, formula_identifier:"FormulaIdentifierInput"=None) -> list[MixSession]:
+  stmt = (
     select(MixSession)
     .join(MixSession.formula)
     .options(
@@ -37,7 +43,9 @@ def get_all_mix_sessions(db: Session) -> list[MixSession]:
         else_=0,
       ), 
       Formula.name.asc(), MixSession.created_at.desc())
-  ).unique().all()
+  )
+  stmt = _filter_mix_sessions(stmt, formula_identifier)
+  return db.scalars(stmt).unique().all()
 
 def get_mix_session(db: Session, identifier: "MixSessionIdentifierInput") -> MixSession:
   return db.scalar(select(MixSession).where(identifier.query_condition))

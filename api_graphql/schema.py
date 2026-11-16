@@ -357,10 +357,10 @@ class Query:
   
   @relay.connection(ListConnectionWithTotalCount[MixSessionType])
   def mix_sessions(
-    self, info: strawberry.Info,
+    self, info: strawberry.Info, formula_identifer: Optional[FormulaIdentifierInput] = None,
   ) -> List[MixSessionType]:
     db = info.context["db"]
-    return [MixSessionType.from_model(b) for b in get_all_mix_sessions(db)]
+    return [MixSessionType.from_model(b) for b in get_all_mix_sessions(db, formula_identifer)]
   
   @strawberry.field
   def location(
