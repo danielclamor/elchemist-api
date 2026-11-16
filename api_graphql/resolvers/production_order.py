@@ -13,7 +13,7 @@ import uuid
 from graphql import GraphQLError
 import strawberry
 
-from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy.orm import Session, contains_eager, joinedload, selectinload
 from sqlalchemy import or_, select, and_, func
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -56,6 +56,9 @@ if TYPE_CHECKING:
   from api_graphql.types.mix_session import (
     MixSessionIdentifierInput,
   )
+  from api_graphql.types.formula import (
+    FormulaIdentifierInput,
+  )
 
 from .utils import generate_production_order_number, get_today, convert_strawberry_input_to_dict
 
@@ -91,6 +94,23 @@ def get_production_order(db: Session, identifier: "ProductionOrderIdentifierInpu
   return (
     db.scalar(select(ProductionOrder).where(identifier.query_condition))
   )
+  
+def get_production_orders_for_formula(db: Session, formula_id: uuid.UUID) -> list[ProductionOrder]:
+  return db.scalars(
+    select(ProductionOrder)
+    .join(ProductionOrder.eliquid)
+    .options(
+      contains_eager(ProductionOrder.eliquid)
+    )
+    .where(
+      and_(
+        Eliquid.formula_id == formula_id,
+        ProductionOrder.mix_session_id.is_(None),
+        ProductionOrder.status.notin_([ProductionOrderStatus.FULFILLED, ProductionOrderStatus.CANCELLED, ProductionOrderStatus.DELIVERED]),
+        ProductionOrder.is_archived.is_(False),
+      )
+    ).order_by(ProductionOrder.created_at)
+  ).all()
 
 #Mutations
 def _assign_single_production_order(

@@ -1,4 +1,5 @@
 from datetime import datetime
+import uuid
 
 from graphql import GraphQLError
 import strawberry
@@ -135,6 +136,7 @@ from api_graphql.resolvers.production_order import (
   get_all_production_orders,
   get_production_order,
   get_production_order_status_counts,
+  get_production_orders_for_formula,
   mark_production_order_cancelled,
   mark_production_order_delivered,
   mark_production_order_fulfilled,
@@ -332,6 +334,14 @@ class Query:
     counts = get_production_order_status_counts(db, created_from, created_to)
     return [ProductionOrderStatusCountType(status=ProductionOrderStatusEnum[s.name], count=counts.get(s, 0))
             for s in ProductionOrderStatus]
+    
+  @relay.connection(ListConnectionWithTotalCount[ProductionOrderType])
+  def production_orders_for_formula(
+    self, info: strawberry.Info, formula_id: relay.GlobalID,
+  ) -> list[ProductionOrderType]:
+    db = info.context["db"]
+    orders = get_production_orders_for_formula(db, uuid.UUID(formula_id.node_id))
+    return [ProductionOrderType.from_model(po) for po in orders]
   
   @strawberry.field
   def mix_session(
