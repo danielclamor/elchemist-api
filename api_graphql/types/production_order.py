@@ -203,7 +203,7 @@ class ProductionOrderStatusCountType:
 
 @strawberry.input
 class ProductionOrderCreateInput:
-  quantity: Optional[int] = strawberry.UNSET
+  quantity: int
   is_priority: bool = False
   allocations: Optional[list[ProductionOrderAllocationInput]] = strawberry.UNSET
 
