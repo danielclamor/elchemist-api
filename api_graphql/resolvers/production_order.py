@@ -174,7 +174,7 @@ def bulk_assign_production_order_to_mix_session(
 
   for identifier in identifiers:
     matched_po = (
-      orders_by_id.get(identifier.id)
+      orders_by_id.get(uuid.UUID(identifier.id.node_id))
       if getattr(identifier, "id", None) is not None
       else orders_by_number.get(getattr(identifier, "order_number", None))
     )
