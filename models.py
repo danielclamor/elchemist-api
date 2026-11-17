@@ -250,11 +250,11 @@ class ProductionOrderCounter(Base):
     
   
 class ProductionOrderStatus(enum.Enum):
-  CANCELLED = "cancelled"
-  DELIVERED = "delivered"
   FULFILLED = "fulfilled"
   IN_PROGRESS = "in_progress"
   PENDING = "pending"
+  MIXED = "mixed"
+  PUMPED = "pumped"
   
 
 production_order_status_enum = Enum(ProductionOrderStatus, name="productionorderstatus")
@@ -279,6 +279,7 @@ class ProductionOrder(Base):
   status: Mapped[ProductionOrderStatus] = mapped_column(production_order_status_enum, default=ProductionOrderStatus.PENDING)
   is_priority: Mapped[bool] = mapped_column(Boolean, default=False)
   is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
+  is_canceled: Mapped[bool] = mapped_column(Boolean, default=False)
   hq_location_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("locations.id"), index=True)
   mix_session_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("mix_sessions.id", ondelete="SET NULL"), index=True)
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
