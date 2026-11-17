@@ -92,6 +92,8 @@ class ProductionOrderType(relay.Node):
   fulfilled_quantity: int | None
   status: ProductionOrderStatusEnum
   is_priority: bool
+  is_canceled: bool
+  is_archived: bool
   created_at: datetime
   updated_at: datetime
 
@@ -106,6 +108,8 @@ class ProductionOrderType(relay.Node):
       fulfilled_quantity=o.fulfilled_quantity,
       status=ProductionOrderStatusEnum[o.status.name],
       is_priority=o.is_priority,
+      is_canceled=o.is_canceled,
+      is_archived=o.is_archived,
       created_at=o.created_at,
       updated_at=o.updated_at,
       _model=o,
