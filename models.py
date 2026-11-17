@@ -343,6 +343,7 @@ class ProductionOrderActivityType(enum.Enum):
   SWITCH_PRIORITY = "is_priority"
   TOGGLE_ARCHIVED = "is_archived"
   ASSIGN_MIX_SESSION = "mix_session"
+  CANCEL_ORDER = "is_canceled"
 
 
 production_order_activity_type_enum = Enum(ProductionOrderActivityType, name="productionorderactivitytype")
