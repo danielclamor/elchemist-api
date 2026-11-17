@@ -40,11 +40,11 @@ class NicTypeEnum(enum.Enum):
   
 @strawberry.enum
 class ProductionOrderStatusEnum(enum.Enum):
-  CANCELLED = "cancelled"
-  DELIVERED = "delivered"
   FULFILLED = "fulfilled"
   IN_PROGRESS = "in_progress"
   PENDING = "pending"
+  MIXED = "mixed"
+  PUMPED = "pumped"
   
 @strawberry.enum
 class ProductionOrderActivityTypeEnum(enum.Enum):
@@ -54,6 +54,7 @@ class ProductionOrderActivityTypeEnum(enum.Enum):
   SWITCH_PRIORITY = "is_priority"
   TOGGLE_ARCHIVED = "is_archived"
   ASSIGN_MIX_SESSION = "mix_session"
+  CANCEL_ORDER = "is_canceled"
   
 @strawberry.enum
 class MixSessionStatusEnum(enum.Enum):
