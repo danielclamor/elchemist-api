@@ -119,11 +119,17 @@ def get_assignable_production_orders_to_mix(db: Session, formula_id: uuid.UUID) 
 def _assign_single_production_order(
   db: Session,
   mix_session_id: uuid.UUID,
-  production_order: "ProductionOrder",
+  production_order: ProductionOrder,
 ) -> ProductionOrderAssignMixSessionPayload:
   production_order.mix_session_id = mix_session_id
   db.flush()
 
+  _change_production_order_status(
+    db=db,
+    order=production_order, 
+    new_status=ProductionOrderStatus.IN_PROGRESS,
+  )
+  
   return ProductionOrderAssignMixSessionPayload(
     production_order=ProductionOrderType.from_model(production_order),
     feedback=Feedback(
@@ -564,13 +570,46 @@ ALLOWED_PRODUCTION_ORDER_STATUS_TRANSITIONS = {
   ProductionOrderStatus.FULFILLED: set(),
 }
 
-def update_production_order_status(
-  db: Session, 
-  identifier: "ProductionOrderIdentifierInput",
-  new_status: "ProductionOrderStatusEnum"
-) -> ProductionOrderUpdatePayload:
-  order = db.scalar(select(ProductionOrder).where(identifier.query_condition))
+def _change_production_order_status(
+  db: Session,
+  order: ProductionOrder,
+  new_status = ProductionOrderStatus,
+)-> ProductionOrderUpdatePayload:    
+  if new_status not in ALLOWED_PRODUCTION_ORDER_STATUS_TRANSITIONS[order.status]:
+    raise ValueError(f"Cannot change ProductionOrder from {order.status.name} to {new_status.name}")
   
+  today = get_today("UTC")
+  
+  old_status = order.status
+  
+  order.status = new_status
+  order.updated_at = today
+  db.flush()
+  
+  create_production_order_activity_log(
+    db=db,
+    production_order_id=order.id,
+    type=ProductionOrderActivityType.CHANGE_STATUS,
+    triggered_at=today,
+    old_value=old_status.name,
+    new_value=new_status.name,
+  )
+  
+  return ProductionOrderUpdatePayload(
+    production_order=ProductionOrderType.from_model(order),
+    feedback=Feedback(
+      status=FeedbackStatusEnum.SUCCESS,
+      message=f"ProductionOrder {order.order_number} status changed to {new_status}"
+    )
+  )
+
+def update_production_order_status(
+  db: Session,
+  identifier:"ProductionOrderIdentifierInput",
+  new_status: "ProductionOrderStatusEnum",
+) -> ProductionOrderUpdatePayload:   
+  order = db.scalar(select(ProductionOrder).where(identifier.query_condition))
+
   if order is None:
     return ProductionOrderUpdatePayload(
       production_order=None,
@@ -582,36 +621,12 @@ def update_production_order_status(
   
   new_status_model = ProductionOrderStatus[new_status.name]
   
-  if new_status_model not in ALLOWED_PRODUCTION_ORDER_STATUS_TRANSITIONS[order.status]:
-    raise ValueError(f"Cannot change ProductionOrder from {order.status.name} to {new_status_model.name}")
-  
-  today = get_today("UTC")
-  
-  old_status_model = order.status
-  
-  order.status = new_status_model
-  order.updated_at = today
-  db.flush()
-  
-  create_production_order_activity_log(
-    db=db,
-    production_order_id=order.id,
-    type=ProductionOrderActivityType.CHANGE_STATUS,
-    triggered_at=today,
-    old_value=old_status_model.name,
-    new_value=new_status_model.name,
-  )
+  payload = _change_production_order_status(db, order, new_status_model)
   
   db.commit()
   db.refresh(order)
   
-  return ProductionOrderUpdatePayload(
-    production_order=ProductionOrderType.from_model(order),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=f"ProductionOrder {order.order_number} status changed to {new_status}"
-    )
-  )
+  return payload
 
 def remove_production_order_from_mix_session(db: Session, production_order: ProductionOrder) -> None:
   batch = production_order.mix_session
