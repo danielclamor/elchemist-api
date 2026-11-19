@@ -141,14 +141,10 @@ from api_graphql.resolvers.production_order import (
   get_production_order,
   get_production_order_status_counts,
   get_assignable_production_orders_to_mix,
-  mark_production_order_cancelled,
-  mark_production_order_delivered,
-  mark_production_order_fulfilled,
-  mark_production_order_in_progress,
   set_production_order_archived,
   set_production_order_priority,
   set_production_order_ordered_quantity,
-  update_production_order,
+  update_production_order_status,
 )
 
 from api_graphql.resolvers.mix_session import (
@@ -658,39 +654,12 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def production_order_mark_cancelled(
-    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput,
+  def production_order_update_status(
+    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, new_status: ProductionOrderStatusEnum,
   ) -> ProductionOrderUpdatePayload:
     db = info.context["db"]
-    return mark_production_order_cancelled(
-      db=db, identifier=identifier,
-    )
-
-  @strawberry.mutation
-  def production_order_mark_delivered(
-    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput,
-  ) -> ProductionOrderUpdatePayload:
-    db = info.context["db"]
-    return mark_production_order_delivered(
-      db=db, identifier=identifier,
-    )
-    
-  @strawberry.mutation
-  def production_order_mark_in_progress(
-    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput,
-  ) -> ProductionOrderUpdatePayload:
-    db = info.context["db"]
-    return mark_production_order_in_progress(
-      db=db, identifier=identifier,
-    )
-    
-  @strawberry.mutation
-  def production_order_mark_fulfilled(
-    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, fulfilled_quantity: int,
-  ) -> ProductionOrderUpdatePayload:
-    db = info.context["db"]
-    return mark_production_order_fulfilled(
-      db=db, identifier=identifier, fulfilled_quantity=fulfilled_quantity,
+    return update_production_order_status(
+      db=db, identifier=identifier, new_status=new_status,
     )
   
   @strawberry.mutation
@@ -718,15 +687,6 @@ class Mutation:
     db = info.context["db"]
     return set_production_order_ordered_quantity(
       db=db, identifier=identifier, ordered_quantity=ordered_quantity,
-    )
-  
-  @strawberry.mutation
-  def production_order_update(
-    self, info: strawberry.Info, identifier: ProductionOrderIdentifierInput, production_order: ProductionOrderUpdateInput,
-  ) -> ProductionOrderUpdatePayload:
-    db = info.context["db"]
-    return update_production_order(
-      db=db, identifier=identifier, input=production_order,
     )
   
   @strawberry.mutation
