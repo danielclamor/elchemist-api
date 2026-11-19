@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 from api_graphql.resolvers.mix_session import create_mix_session
+from api_graphql.types.enums import ProductionOrderStatusEnum
 
 logger = logging.getLogger(__name__)
 
@@ -554,51 +555,23 @@ def delete_production_order(db: Session, identifier: "ProductionOrderIdentifierI
       message=None
     )
   )
+  
+ALLOWED_PRODUCTION_ORDER_STATUS_TRANSITIONS = {
+  ProductionOrderStatus.PENDING: {ProductionOrderStatus.IN_PROGRESS, ProductionOrderStatus.PUMPED},
+  ProductionOrderStatus.IN_PROGRESS: {ProductionOrderStatus.MIXED},
+  ProductionOrderStatus.MIXED: {ProductionOrderStatus.PUMPED},
+  ProductionOrderStatus.PUMPED: {ProductionOrderStatus.FULFILLED},
+  ProductionOrderStatus.FULFILLED: set(),
+}
 
-def mark_production_order_cancelled(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrderUpdatePayload:
-  po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
+def update_production_order_status(
+  db: Session, 
+  identifier: "ProductionOrderIdentifierInput",
+  new_status: "ProductionOrderStatusEnum"
+) -> ProductionOrderUpdatePayload:
+  order = db.scalar(select(ProductionOrder).where(identifier.query_condition))
   
-  if po is None:
-    return ProductionOrderUpdatePayload(
-      production_order=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"ProductionOrder {identifier.provided[1]} not found"
-      )
-    )
-    
-  old_value = f"{po.status.name}"
-  
-  today = get_today("UTC")
-  
-  po.status = ProductionOrderStatus.CANCELLED
-  po.updated_at = today
-  db.flush()
-  
-  create_production_order_activity_log(
-    db=db,
-    production_order_id=po.id,
-    type=ProductionOrderActivityType.CHANGE_STATUS,
-    triggered_at=today,
-    old_value=old_value,
-    new_value=f"{po.status.name}",
-  )
-  
-  db.commit()
-  db.refresh(po)
-    
-  return ProductionOrderUpdatePayload(
-    production_order=ProductionOrderType.from_model(po),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=f"ProductionOrder {po.order_number} cancelled"
-    )
-  )
-
-def mark_production_order_delivered(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrderUpdatePayload:
-  po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
-  
-  if po is None:
+  if order is None:
     return ProductionOrderUpdatePayload(
       production_order=None,
       feedback=Feedback(
@@ -607,135 +580,36 @@ def mark_production_order_delivered(db: Session, identifier: "ProductionOrderIde
       )
     )
   
-  if po.status == ProductionOrderStatus.DELIVERED:
-    return ProductionOrderUpdatePayload(
-      production_order=ProductionOrderType.from_model(po),
-      feedback=Feedback(
-        status=FeedbackStatusEnum.SUCCESS,
-        message=f"ProductionOrder {po.order_number} is already delivered"
-      )
-    )
-    
-  old_value = f"{po.status.name}"
+  new_status_model = ProductionOrderStatus[new_status.name]
+  
+  if new_status_model not in ALLOWED_PRODUCTION_ORDER_STATUS_TRANSITIONS[order.status]:
+    raise ValueError(f"Cannot change ProductionOrder from {order.status.name} to {new_status_model.name}")
   
   today = get_today("UTC")
   
-  po.status = ProductionOrderStatus.DELIVERED
-  po.updated_at = today
+  old_status_model = order.status
+  
+  order.status = new_status_model
+  order.updated_at = today
   db.flush()
   
   create_production_order_activity_log(
     db=db,
-    production_order_id=po.id,
+    production_order_id=order.id,
     type=ProductionOrderActivityType.CHANGE_STATUS,
     triggered_at=today,
-    old_value=old_value,
-    new_value=f"{po.status.name}",
+    old_value=old_status_model.name,
+    new_value=new_status_model.name,
   )
   
   db.commit()
-  db.refresh(po)
-    
+  db.refresh(order)
+  
   return ProductionOrderUpdatePayload(
-    production_order=ProductionOrderType.from_model(po),
+    production_order=ProductionOrderType.from_model(order),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
-      message=f"ProductionOrder {po.order_number} delivered"
-    )
-  )
-
-def mark_production_order_fulfilled(db: Session, identifier: "ProductionOrderIdentifierInput", fulfilled_quantity: int) -> ProductionOrderUpdatePayload:
-  po = db.scalar(
-    select(ProductionOrder).where(
-      and_(
-        identifier.query_condition,
-        ProductionOrder.status == ProductionOrderStatus.IN_PROGRESS,
-      )
-    )
-  )
-  
-  if po is None:
-    return ProductionOrderUpdatePayload(
-      production_order=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"ProductionOrder {identifier.provided[1]} in progress not found"
-      )
-    )
-  
-  old_value = f"{po.status.name}"
-  
-  today_as_utc = get_today("UTC")
-  
-  po.fulfilled_quantity = fulfilled_quantity
-  po.status = ProductionOrderStatus.FULFILLED
-  po.updated_at = today_as_utc
-  db.flush()
-  
-  create_production_order_activity_log(
-    db=db,
-    production_order_id=po.id,
-    type=ProductionOrderActivityType.CHANGE_STATUS,
-    triggered_at=today_as_utc,
-    old_value=old_value,
-    new_value=f"{po.status.name}",
-  )
-  
-  db.commit()
-  db.refresh(po)
-    
-  return ProductionOrderUpdatePayload(
-    production_order=ProductionOrderType.from_model(po),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=f"ProductionOrder {po.order_number} fulfilled"
-    )
-  )
-  
-def mark_production_order_in_progress(db: Session, identifier: "ProductionOrderIdentifierInput") -> ProductionOrderUpdatePayload:
-  po = db.scalar(
-    select(ProductionOrder).where(
-      and_(
-        identifier.query_condition,
-        ProductionOrder.status == ProductionOrderStatus.PENDING,
-      )
-    )
-  )
-  
-  if po is None:
-    return ProductionOrderUpdatePayload(
-      production_order=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"ProductionOrder {identifier.provided[1]} pending not found"
-      )
-    )
-  
-  old_value = f"{po.status.name}"
-  
-  today_as_utc = get_today("UTC")
-  
-  po.status = ProductionOrderStatus.IN_PROGRESS
-  po.updated_at = today_as_utc
-  db.flush()
-  
-  create_production_order_activity_log(
-    db=db,
-    production_order_id=po.id,
-    type=ProductionOrderActivityType.CHANGE_STATUS,
-    triggered_at=today_as_utc,
-    old_value=old_value,
-    new_value=f"{po.status.name}",
-  )
-  
-  db.commit()
-  db.refresh(po)
-    
-  return ProductionOrderUpdatePayload(
-    production_order=ProductionOrderType.from_model(po),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=f"ProductionOrder {po.order_number} in progress"
+      message=f"ProductionOrder {order.order_number} status changed to {new_status}"
     )
   )
 
@@ -903,62 +777,5 @@ def set_production_order_ordered_quantity(db: Session, identifier: "ProductionOr
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=f"ProductionOrder {po.order_number} quantity updated to {po.ordered_quantity}"
-    )
-  )
-  
-def update_production_order(db: Session, identifier: "ProductionOrderIdentifierInput", input: "ProductionOrderUpdateInput") -> ProductionOrderUpdatePayload:
-  po = db.scalar(select(ProductionOrder).where(identifier.query_condition))
-  
-  if po is None:
-    return ProductionOrderUpdatePayload(
-      production_order=None,
-      feedback=Feedback(
-        status=FeedbackStatusEnum.FAILED,
-        message=f"ProductionOrder {identifier.provided[1]} not found"
-      )
-    )
-  
-  updated_columns = []  
-  
-  for attr, value in vars(input).items():
-    today = get_today("UTC")
-    
-    current = getattr(po, attr, None)
-    
-    if value is strawberry.UNSET:
-      continue
-    if isinstance(value, Enum):
-      value = value.name
-      current = current.name if current else None
-    
-    if value != current:
-      setattr(po, attr, value)
-      po.updated_at = today
-      db.flush()
-      
-      create_production_order_activity_log(
-        db=db,
-        production_order_id=po.id,
-        type=ProductionOrderActivityType(attr),
-        triggered_at=today,
-        old_value=f"{current.name}",
-        new_value=f"{value}",
-      )
-      
-      updated_columns.append(attr)
-  
-  if len(updated_columns) == 0:
-    message = "Nothing to update"
-  else:
-    db.commit()
-    db.refresh(po)
-    
-    message = f"Updated {', '.join(updated_columns)}"
-  
-  return ProductionOrderUpdatePayload(
-    production_order=ProductionOrderType.from_model(po),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=message
     )
   )
