@@ -294,19 +294,19 @@ ALLOWED_MIX_SESSION_TRANSITIONS = {
   MixSessionStatus.MIXED: set(),
 }
 
-def _change_mix_session_status(batch: MixSession, new_status: MixSessionStatus) -> None:
-  if batch.is_archived:
+def _change_mix_session_status(session: MixSession, new_status: MixSessionStatus) -> None:
+  if session.is_archived:
     raise ValueError("Cannot change the status of an archived MixSession")
   
-  if new_status not in ALLOWED_MIX_SESSION_TRANSITIONS[batch.status]:
-    raise ValueError(f"Cannot change MixSession from {batch.status.name} to {new_status.name}")
+  if new_status not in ALLOWED_MIX_SESSION_TRANSITIONS[session.status]:
+    raise ValueError(f"Cannot change MixSession from {session.status.name} to {new_status.name}")
   
-  batch.status = new_status
+  session.status = new_status
 
 def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput") -> MixSessionUpdatePayload:
-  batch = db.scalar(select(MixSession).where(identifier.query_condition).with_for_update())
+  session = db.scalar(select(MixSession).where(identifier.query_condition).with_for_update())
   
-  if batch is None:
+  if session is None:
     return MixSessionUpdatePayload(
       mix_session=None,
       feedback=Feedback(
@@ -316,7 +316,7 @@ def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput")
     )
   
   try:
-    _change_mix_session_status(batch, MixSessionStatus.MIXED)
+    _change_mix_session_status(session, MixSessionStatus.MIXED)
   except ValueError as e:
     db.rollback()
     return MixSessionUpdatePayload(
@@ -325,10 +325,10 @@ def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput")
     )
   
   db.commit()
-  db.refresh(batch)
+  db.refresh(session)
   
   return MixSessionUpdatePayload(
-    mix_session=MixSessionType.from_model(batch),
+    mix_session=MixSessionType.from_model(session),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=None,
@@ -337,9 +337,9 @@ def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput")
 
 def delete_mix_session(db: Session, identifier: "MixSessionIdentifierInput") -> MixSessionDeletePayload:
   # "cancelling" a session = deleting it; its orders are unassigned (FK ondelete=SET NULL)
-  batch = db.scalar(select(MixSession).where(identifier.query_condition).with_for_update())
+  session = db.scalar(select(MixSession).where(identifier.query_condition).with_for_update())
   
-  if batch is None:
+  if session is None:
     return MixSessionDeletePayload(
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
@@ -347,19 +347,19 @@ def delete_mix_session(db: Session, identifier: "MixSessionIdentifierInput") -> 
       )
     )
   
-  if batch.status != MixSessionStatus.IN_PROGRESS:
+  if session.status != MixSessionStatus.IN_PROGRESS:
     db.rollback()
     return MixSessionDeletePayload(
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
-        message=f"MixSession {batch.session_number} is {batch.status.value} and cannot be deleted.",
+        message=f"MixSession {session.session_number} is {session.status.value} and cannot be deleted.",
       )
     )
   
-  number = batch.session_number
+  number = session.session_number
   
   try:
-    db.delete(batch)
+    db.delete(session)
     db.commit()
   except SQLAlchemyError:
     db.rollback()
