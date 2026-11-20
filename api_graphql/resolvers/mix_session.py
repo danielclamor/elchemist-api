@@ -294,7 +294,10 @@ ALLOWED_MIX_SESSION_TRANSITIONS = {
   MixSessionStatus.MIXED: set(),
 }
 
-def change_mix_session_status(batch: MixSession, new_status: MixSessionStatus) -> None:
+def _change_mix_session_status(batch: MixSession, new_status: MixSessionStatus) -> None:
+  if batch.is_archived:
+    raise ValueError("Cannot change the status of an archived MixSession")
+  
   if new_status not in ALLOWED_MIX_SESSION_TRANSITIONS[batch.status]:
     raise ValueError(f"Cannot change MixSession from {batch.status.name} to {new_status.name}")
   
@@ -313,7 +316,7 @@ def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput")
     )
   
   try:
-    change_mix_session_status(batch, MixSessionStatus.MIXED)
+    _change_mix_session_status(batch, MixSessionStatus.MIXED)
   except ValueError as e:
     db.rollback()
     return MixSessionUpdatePayload(
