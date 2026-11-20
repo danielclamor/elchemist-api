@@ -393,6 +393,14 @@ mix_session_status_enum = Enum(MixSessionStatus, name="mixsessionstatus")
 class MixSession(Base):
   __tablename__ = "mix_sessions"
   
+  __table_args__ = (
+      Index(
+        "ix_mix_sessions_active",
+        "created_at",
+        postgresql_where=text("is_archived = false")
+      ),
+    )
+  
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   session_number: Mapped[str] = mapped_column(String(32), index=True, unique=True)
   formula_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("formulas.id", ondelete="SET NULL"), index=True)
@@ -403,6 +411,7 @@ class MixSession(Base):
   total_volume_ml: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
   total_weight_g: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
   mixed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+  is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
   created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
   updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
