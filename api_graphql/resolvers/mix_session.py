@@ -13,7 +13,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from typing import TYPE_CHECKING, Optional
 
-from api_graphql.resolvers.utils import generate_session_number, get_today
+from api_graphql.resolvers.utils import generate_batch_code, generate_session_number, get_today
 from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 from api_graphql.types.mix_session import MixSessionCreatePayload, MixSessionDeletePayload, MixSessionMergePayload, MixSessionType, MixSessionUpdatePayload
 from models import MixSession, MixSessionCounter, MixSessionStatus, Formula, ProductionOrder, ProductionOrderStatus
@@ -323,6 +323,8 @@ def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput")
   
   try:
     _change_mix_session_status(session, MixSessionStatus.MIXED)
+    
+    session.batch_code = generate_batch_code(datetime=get_today())
     if len(orders) > 0:
       from api_graphql.resolvers.production_order import _change_production_order_status
       for order in orders:
