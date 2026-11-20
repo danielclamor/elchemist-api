@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import logging
 import uuid
+from zoneinfo import ZoneInfo
+
+from api_graphql.resolvers.recipe import build_mix_parameters, build_recipe
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +16,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from typing import TYPE_CHECKING, Optional
 
-from api_graphql.resolvers.utils import generate_batch_code, generate_session_number, get_today
+from api_graphql.resolvers.utils import convert_strawberry_input_to_dict, generate_batch_code, generate_session_number, get_today
 from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 from api_graphql.types.mix_session import MixSessionCreatePayload, MixSessionDeletePayload, MixSessionMergePayload, MixSessionType, MixSessionUpdatePayload
 from models import MixSession, MixSessionCounter, MixSessionStatus, Formula, ProductionOrder, ProductionOrderStatus
@@ -24,12 +27,12 @@ if TYPE_CHECKING:
   from api_graphql.types.production_order import ProductionOrderIdentifierInput
 
 # Queries
-def _filter_mix_sessions(stmt, formula_identifier:"FormulaIdentifierInput"=None):
-  if formula_identifier is not None:
+def _filter_mix_sessions(stmt, formula_identifier: Optional["FormulaIdentifierInput"]=None):
+  if formula_identifier not in (None, strawberry.UNSET):
     stmt = stmt.where(formula_identifier.query_condition)
   return stmt
 
-def get_all_mix_sessions(db: Session, formula_identifier:"FormulaIdentifierInput"=None) -> list[MixSession]:
+def get_all_mix_sessions(db: Session, formula_identifier: Optional["FormulaIdentifierInput"]=None) -> list[MixSession]:
   stmt = (
     select(MixSession)
     .join(MixSession.formula)
@@ -304,13 +307,13 @@ def _change_mix_session_status(session: MixSession, new_status: MixSessionStatus
   session.status = new_status
 
 def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput") -> MixSessionUpdatePayload:
-  session = db.scalar(
+  ms = db.scalar(
     select(MixSession)
     .options(selectinload(MixSession.production_orders))
     .where(identifier.query_condition).with_for_update()
   )
   
-  if session is None:
+  if ms is None:
     return MixSessionUpdatePayload(
       mix_session=None,
       feedback=Feedback(
@@ -319,12 +322,18 @@ def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput")
       )
     )
     
-  orders = session.production_orders
+  orders = ms.production_orders
   
   try:
-    _change_mix_session_status(session, MixSessionStatus.MIXED)
+    now = get_today()
+    params = build_mix_parameters(ms.formula, float(ms.total_volume_ml or 0), ms.mix_overrides)
+    recipe = build_recipe(params)
+
+    ms.recipe_snapshot = convert_strawberry_input_to_dict(recipe)
+    ms.mixed_at = now.astimezone(ZoneInfo("UTC"))
+    ms.batch_code = generate_batch_code(datetime=now)
     
-    session.batch_code = generate_batch_code(datetime=get_today())
+    _change_mix_session_status(ms, MixSessionStatus.MIXED)
     if len(orders) > 0:
       from api_graphql.resolvers.production_order import _change_production_order_status
       for order in orders:
@@ -337,10 +346,10 @@ def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput")
     )
   
   db.commit()
-  db.refresh(session)
+  db.refresh(ms)
   
   return MixSessionUpdatePayload(
-    mix_session=MixSessionType.from_model(session),
+    mix_session=MixSessionType.from_model(ms),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
       message=None,
