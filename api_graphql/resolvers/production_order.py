@@ -632,7 +632,7 @@ def update_production_order_status(
     production_order=ProductionOrderType.from_model(order),
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
-      message=f"ProductionOrder {order.order_number} status changed to {new_status}"
+      message=f"ProductionOrder {order.order_number} status changed to {new_status.name}"
     )
   )
 
