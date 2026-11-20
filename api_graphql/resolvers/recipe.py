@@ -1,24 +1,25 @@
 from __future__ import annotations
 
-from graphql import GraphQLError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 import strawberry
+
+from api_graphql.resolvers.utils import convert_strawberry_input_to_dict
 
 from api_graphql.types.recipe import (
   MixParametersType,
   MixParametersFlavoringsType,
   MixParametersNicBasesType,
+  RecipeIngredientsOverrideInput,
   RecipeType,
   RecipeDiyType,
   RecipeIngredientType,
   RecipeIngredientGroup,
 )
 
-from api_graphql.types.formula import FormulaType
+from typing import TYPE_CHECKING, Optional
 
-from api_graphql.resolvers.formula import get_formula
-
-from typing import TYPE_CHECKING
+from models import Formula
 
 if TYPE_CHECKING:
   from api_graphql.types.recipe import RecipeInput, RecipeDiyInput
@@ -28,16 +29,11 @@ VG_FLAVOR_DENSITY = 1.16065
 PG_FLAVOR_DENSITY = 1.04865
 VG_DENSITY = 1.26130
 PG_DENSITY = 1.03730
-NIC_DENSITY = 1.00925  
+NIC_DENSITY = 1.00925
 
-def get_recipe(db: Session, formula_identifier: "FormulaIdentifierInput", input: "RecipeInput") -> RecipeType | None:
-  formula = get_formula(db=db, identifier=formula_identifier)
-    
-  if formula is None:
-    return None
-  
+def build_mix_parameters(formula: Formula, batch_volume_ml: float, overrides: Optional[RecipeIngredientsOverrideInput] = None) -> MixParametersType:
   mix_parameters = MixParametersType(
-    batch_volume_ml=input.batch_volume_ml,
+    batch_volume_ml=batch_volume_ml,
     target_nic_str=float(formula.target_nic_str),
     target_vg=float(formula.target_vg),
     target_pg=float(formula.target_pg),
@@ -59,44 +55,49 @@ def get_recipe(db: Session, formula_identifier: "FormulaIdentifierInput", input:
     ]
   )
   
-  if input.overrides is not strawberry.UNSET:
-    OVERRIDE_TRANSFORMS = {
-      "flavorings": lambda value: [
-        MixParametersFlavoringsType(
-          name=v.name,
-          is_vg=v.is_vg,
-          ratio=v.ratio
-        ) for v in value
-      ],
-      "nic_bases": lambda value: [
-        MixParametersNicBasesType(
-          code=v.code,
-          name=v.name,
-          is_vg=v.is_vg,
-          ratio=v.ratio
-        ) for v in value
-      ],
-    }
-    
-    for attr, value in vars(input.overrides).items():
-      if value is strawberry.UNSET:
-        continue
-      
-      transform = OVERRIDE_TRANSFORMS.get(attr)
-      if transform:
-        value = transform(value)
-      
-      setattr(mix_parameters, attr, value)
-  
+  if overrides is None or overrides is strawberry.UNSET:
+    return mix_parameters
+  if not isinstance(overrides, dict):
+    overrides = convert_strawberry_input_to_dict(overrides)   # input object -> dict
+
+  OVERRIDE_TRANSFORMS = {
+    "flavorings": lambda value: [
+      MixParametersFlavoringsType(name=v["name"], is_vg=v["is_vg"], ratio=v["ratio"]) for v in value
+    ],
+    "nic_bases": lambda value: [
+      MixParametersNicBasesType(code=v["code"], name=v["name"], is_vg=v["is_vg"], ratio=v["ratio"]) for v in value
+    ],
+  }
+
+  for attr, value in overrides.items():
+    if value is None or value is strawberry.UNSET:
+      continue
+    setattr(mix_parameters, attr, OVERRIDE_TRANSFORMS.get(attr, lambda v: v)(value))
+
+  return mix_parameters
+
+def build_recipe(mix_parameters: MixParametersType) -> RecipeType:
   ingredients = get_recipe_ingredients(mix_parameters=mix_parameters)
-  
-  return RecipeType(
+  return RecipeDiyType(
     mix_parameters=mix_parameters,
     ingredients=ingredients,
     total_ratio=sum(i.ratio for i in ingredients),
     total_volume_ml=sum(i.volume_ml for i in ingredients),
     total_weight_g=sum(i.weight_g for i in ingredients),
-    formula=FormulaType.from_model(formula)
+  )
+
+def get_recipe(db: Session, formula_identifier: "FormulaIdentifierInput", input: "RecipeInput") -> RecipeType | None:
+  formula = db.scalar(select(Formula).where(formula_identifier.query_condition))
+    
+  if formula is None:
+    return None
+  
+  return build_recipe(
+    build_mix_parameters(
+      formula=formula,
+      batch_volume_ml=input.batch_volume_ml,
+      overrides=input.overrides,
+    )
   )
 
 def get_recipe_diy(input: RecipeDiyInput) -> RecipeDiyType:
