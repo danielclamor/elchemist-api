@@ -17,6 +17,18 @@ class MixParametersType:
   flavorings: list[MixParametersFlavoringsType]
   nic_bases: list[MixParametersNicBasesType]
   
+  @classmethod
+  def from_dict(cls, d: dict) -> "MixParametersType":
+    return cls(
+      batch_volume_ml=d["batch_volume_ml"],
+      target_nic_str=d["target_nic_str"],
+      target_vg=d["target_vg"],
+      target_pg=d["target_pg"],
+      nic_base_nic_str=d["nic_base_nic_str"],
+      flavorings=[MixParametersFlavoringsType(**f) for f in d["flavorings"]],
+      nic_bases=[MixParametersNicBasesType(**b) for b in d["nic_bases"]],
+    )
+  
 @strawberry.type
 class MixParametersFlavoringsType:
   name: str
@@ -37,7 +49,16 @@ class RecipeType:
   total_ratio: float
   total_volume_ml: float
   total_weight_g: float
-  formula: FormulaType
+  
+  @classmethod
+  def from_snapshot(cls, r: dict) -> "RecipeType":
+    return cls(
+      mix_parameters=MixParametersType.from_dict(r["mix_parameters"]),
+      ingredients=[RecipeIngredientType(**i) for i in r["ingredients"]],
+      total_ratio=r["total_ratio"],
+      total_volume_ml=r["total_volume_ml"],
+      total_weight_g=r["total_weight_g"],
+    )
 
 @strawberry.input
 class RecipeInput:
