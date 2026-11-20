@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 
-from api_graphql.resolvers.mix_session import create_mix_session
 from api_graphql.types.enums import ProductionOrderStatusEnum
 
 logger = logging.getLogger(__name__)
