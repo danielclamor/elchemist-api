@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Optional
 from zoneinfo import ZoneInfo
 import dataclasses
 import json
@@ -25,6 +26,9 @@ def generate_production_order_number(counter: int) -> str:
 
 def generate_session_number(day: date, counter: int) -> str:
   return f"MIX-{day:%Y%m%d}-{counter}"
+
+def generate_batch_code(datetime: datetime, suffix: str = "") -> str:
+  return f'{datetime:%m%d%y%H%M}{suffix}'
 
 def convert_strawberry_input_to_dict(input_obj):
     data = dataclasses.asdict(input_obj)
