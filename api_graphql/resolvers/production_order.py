@@ -574,7 +574,13 @@ def _change_production_order_status(
   db: Session,
   order: ProductionOrder,
   new_status: ProductionOrderStatus,
-)-> None:    
+)-> None:
+  if order.is_canceled:
+    raise ValueError("Cannot change the status of a canceled ProductionOrder")
+  
+  if order.is_archived:
+    raise ValueError("Cannot change the status of an archived ProductionOrder")
+    
   if new_status not in ALLOWED_PRODUCTION_ORDER_STATUS_TRANSITIONS[order.status]:
     raise ValueError(f"Cannot change ProductionOrder from {order.status.name} to {new_status.name}")
   
@@ -600,7 +606,11 @@ def update_production_order_status(
   identifier:"ProductionOrderIdentifierInput",
   new_status: "ProductionOrderStatusEnum",
 ) -> ProductionOrderUpdatePayload:   
-  order = db.scalar(select(ProductionOrder).where(identifier.query_condition))
+  order = db.scalar(
+    select(ProductionOrder)
+    .where(identifier.query_condition)
+    .with_for_update()
+  )
 
   if order is None:
     return ProductionOrderUpdatePayload(
@@ -609,7 +619,7 @@ def update_production_order_status(
         status=FeedbackStatusEnum.FAILED,
         message=f"ProductionOrder {identifier.provided[1]} not found"
       )
-    )
+    )    
   
   new_status_model = ProductionOrderStatus[new_status.name]
   
