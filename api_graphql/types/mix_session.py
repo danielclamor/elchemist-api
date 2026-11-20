@@ -11,11 +11,12 @@ from strawberry import relay
 from api_graphql.types.enums import MixSessionStatusEnum
 
 from api_graphql.types.feedback import Feedback
-from models import MixSession
+from models import MixSession, MixSessionStatus
 
 if TYPE_CHECKING:
   from api_graphql.types.formula import FormulaType
   from api_graphql.types.production_order import ProductionOrderType
+  from api_graphql.types.recipe import RecipeType  
 
 @strawberry.type
 class MixSessionType(relay.Node):
@@ -59,6 +60,19 @@ class MixSessionType(relay.Node):
       return FormulaType.from_model(self._model.formula)
     
     return None
+  
+  @strawberry.field
+  def recipe(self) -> Annotated["RecipeType", strawberry.lazy("api_graphql.types.recipe")] | None:
+    from api_graphql.types.recipe import RecipeType
+    m = self._model
+    if m.status == MixSessionStatus.MIXED and m.recipe_snapshot:
+      return RecipeType.from_snapshot(m.recipe_snapshot)
+    if m.formula is None:
+      return None
+    from api_graphql.resolvers.recipe import build_mix_parameters, build_recipe
+    # params = build_mix_parameters(m.formula, float(m.total_volume_ml or 0), m.mix_overrides) TODO: add mix_overrides later
+    params = build_mix_parameters(m.formula, float(m.total_volume_ml or 0))
+    return build_recipe(params)
   
   @strawberry.field
   def production_orders(self) -> list[Annotated["ProductionOrderType", strawberry.lazy("api_graphql.types.production_order")]]:
