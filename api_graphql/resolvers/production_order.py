@@ -574,7 +574,7 @@ def _change_production_order_status(
   db: Session,
   order: ProductionOrder,
   new_status = ProductionOrderStatus,
-)-> ProductionOrderUpdatePayload:    
+)-> None:    
   if new_status not in ALLOWED_PRODUCTION_ORDER_STATUS_TRANSITIONS[order.status]:
     raise ValueError(f"Cannot change ProductionOrder from {order.status.name} to {new_status.name}")
   
@@ -593,14 +593,6 @@ def _change_production_order_status(
     triggered_at=today,
     old_value=old_status.name,
     new_value=new_status.name,
-  )
-  
-  return ProductionOrderUpdatePayload(
-    production_order=ProductionOrderType.from_model(order),
-    feedback=Feedback(
-      status=FeedbackStatusEnum.SUCCESS,
-      message=f"ProductionOrder {order.order_number} status changed to {new_status}"
-    )
   )
 
 def update_production_order_status(
@@ -621,12 +613,28 @@ def update_production_order_status(
   
   new_status_model = ProductionOrderStatus[new_status.name]
   
-  payload = _change_production_order_status(db, order, new_status_model)
+  try:
+    _change_production_order_status(db, order, new_status_model)
+  except ValueError as e:
+    db.rollback()
+    return ProductionOrderUpdatePayload(
+      production_order=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message=f"ProductionOrder {identifier.provided[1]} status update failed. {e}"
+      )
+    )
   
   db.commit()
   db.refresh(order)
   
-  return payload
+  return ProductionOrderUpdatePayload(
+    production_order=ProductionOrderType.from_model(order),
+    feedback=Feedback(
+      status=FeedbackStatusEnum.SUCCESS,
+      message=f"ProductionOrder {order.order_number} status changed to {new_status}"
+    )
+  )
 
 def remove_production_order_from_mix_session(db: Session, production_order: ProductionOrder) -> None:
   batch = production_order.mix_session
