@@ -573,7 +573,7 @@ ALLOWED_PRODUCTION_ORDER_STATUS_TRANSITIONS = {
 def _change_production_order_status(
   db: Session,
   order: ProductionOrder,
-  new_status = ProductionOrderStatus,
+  new_status: ProductionOrderStatus,
 )-> None:    
   if new_status not in ALLOWED_PRODUCTION_ORDER_STATUS_TRANSITIONS[order.status]:
     raise ValueError(f"Cannot change ProductionOrder from {order.status.name} to {new_status.name}")
