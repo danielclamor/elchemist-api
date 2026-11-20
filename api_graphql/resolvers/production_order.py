@@ -454,7 +454,7 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
         quantity=qty,
       )
     
-    create_production_order_activity_log(
+    _create_production_order_activity_log(
       db=db,
       production_order_id=po.id,
       type=ProductionOrderActivityType.CREATED,
@@ -496,14 +496,14 @@ def create_production_order(db: Session, eliquid_identifier: "EliquidIdentifierI
     )
   )
 
-def create_production_order_activity_log(
+def _create_production_order_activity_log(
   db: Session,
   production_order_id: uuid.UUID,
   type: ProductionOrderActivityType,
   triggered_at: datetime,
   old_value: Optional[str],
   new_value: Optional[str],
-) -> ProductionOrderActivityLog:
+) -> None:
   # this mutation is called internally on every update of ProductionOrder
   # doesn't need graphql schema, input, and payload type
   
@@ -516,9 +516,6 @@ def create_production_order_activity_log(
   )
     
   db.add(log)
-  db.flush()
-  
-  return log
 
 def create_production_order_allocation(
   db: Session,
@@ -592,7 +589,7 @@ def _change_production_order_status(
   order.updated_at = today
   db.flush()
   
-  create_production_order_activity_log(
+  _create_production_order_activity_log(
     db=db,
     production_order_id=order.id,
     type=ProductionOrderActivityType.CHANGE_STATUS,
@@ -683,7 +680,7 @@ def set_production_order_archived(db: Session, identifier: "ProductionOrderIdent
   po.updated_at = today
   db.flush()
   
-  create_production_order_activity_log(
+  _create_production_order_activity_log(
     db=db,
     production_order_id=po.id,
     type=ProductionOrderActivityType.TOGGLE_ARCHIVED,
@@ -732,7 +729,7 @@ def set_production_order_priority(db: Session, identifier: "ProductionOrderIdent
   po.updated_at = today
   db.flush()
   
-  create_production_order_activity_log(
+  _create_production_order_activity_log(
     db=db,
     production_order_id=po.id,
     type=ProductionOrderActivityType.SWITCH_PRIORITY,
@@ -793,7 +790,7 @@ def set_production_order_ordered_quantity(db: Session, identifier: "ProductionOr
   po.updated_at = today
   db.flush()
   
-  create_production_order_activity_log(
+  _create_production_order_activity_log(
     db=db,
     production_order_id=po.id,
     type=ProductionOrderActivityType.ADJUST_QUANTITY,
