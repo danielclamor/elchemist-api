@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Optional
 from api_graphql.resolvers.utils import generate_session_number, get_today
 from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 from api_graphql.types.mix_session import MixSessionCreatePayload, MixSessionDeletePayload, MixSessionMergePayload, MixSessionType, MixSessionUpdatePayload
-from models import MixSession, MixSessionCounter, MixSessionStatus, Formula, ProductionOrder
+from models import MixSession, MixSessionCounter, MixSessionStatus, Formula, ProductionOrder, ProductionOrderStatus
 
 if TYPE_CHECKING:
   from api_graphql.types.mix_session import MixSessionIdentifierInput
@@ -304,7 +304,11 @@ def _change_mix_session_status(session: MixSession, new_status: MixSessionStatus
   session.status = new_status
 
 def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput") -> MixSessionUpdatePayload:
-  session = db.scalar(select(MixSession).where(identifier.query_condition).with_for_update())
+  session = db.scalar(
+    select(MixSession)
+    .options(selectinload(MixSession.production_orders))
+    .where(identifier.query_condition).with_for_update()
+  )
   
   if session is None:
     return MixSessionUpdatePayload(
@@ -314,9 +318,15 @@ def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput")
         message=f"MixSession {identifier.provided[1]} not found",
       )
     )
+    
+  orders = session.production_orders
   
   try:
     _change_mix_session_status(session, MixSessionStatus.MIXED)
+    if len(orders) > 0:
+      from api_graphql.resolvers.production_order import _change_production_order_status
+      for order in orders:
+        _change_production_order_status(db=db, order=order, new_status=ProductionOrderStatus.MIXED)
   except ValueError as e:
     db.rollback()
     return MixSessionUpdatePayload(
