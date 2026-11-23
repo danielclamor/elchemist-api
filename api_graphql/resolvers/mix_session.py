@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import uuid
 from zoneinfo import ZoneInfo
 
 from api_graphql.resolvers.recipe import build_mix_parameters, build_recipe
@@ -19,12 +18,13 @@ from typing import TYPE_CHECKING, Optional
 from api_graphql.resolvers.utils import convert_strawberry_input_to_dict, generate_batch_code, generate_session_number, get_today
 from api_graphql.types.feedback import Feedback, FeedbackStatusEnum
 from api_graphql.types.mix_session import MixSessionCreatePayload, MixSessionDeletePayload, MixSessionMergePayload, MixSessionType, MixSessionUpdatePayload
-from models import MixSession, MixSessionCounter, MixSessionStatus, Formula, ProductionOrder, ProductionOrderStatus
+from models import Flavoring, MixSession, MixSessionCounter, MixSessionStatus, Formula, NicBase, ProductionOrder, ProductionOrderStatus
 
 if TYPE_CHECKING:
   from api_graphql.types.mix_session import MixSessionIdentifierInput
   from api_graphql.types.formula import FormulaIdentifierInput
   from api_graphql.types.production_order import ProductionOrderIdentifierInput
+  from api_graphql.types.recipe import MixParametersNicBaseType
 
 # Queries
 def _filter_mix_sessions(stmt, formula_identifier: Optional["FormulaIdentifierInput"]=None):
@@ -306,6 +306,24 @@ def _change_mix_session_status(session: MixSession, new_status: MixSessionStatus
   
   session.status = new_status
 
+def _get_batch_suffix(nic_bases: list["MixParametersNicBaseType"]) -> str:
+  if not nic_bases:
+    return ""
+  
+  codes = {n.code for n in nic_bases if n.ratio > 0}
+  
+  match codes:
+    case c if (c & {"1", "1CNT"}) and (c & {"2P", "3P", "2CNT"}):
+      return "H"
+    case c if c == {"1"}:
+      return "N"
+    case c if c == {"1CNT"}:
+      return "NNM"
+    case c if c <= {"2P", "3P", "2CNT"}:
+      return ""
+    case _:
+      return ""
+
 def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput") -> MixSessionUpdatePayload:
   ms = db.scalar(
     select(MixSession)
@@ -322,22 +340,36 @@ def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput")
       )
     )
     
+  if not ms.total_volume_ml:
+    return MixSessionUpdatePayload(
+      mix_session=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message=f"MixSession {identifier.provided[1]} total volume is not set",
+      )
+    )
+    
   orders = ms.production_orders
   
   try:
     now = get_today()
-    params = build_mix_parameters(ms.formula, float(ms.total_volume_ml or 0), ms.mix_overrides)
+    params = build_mix_parameters(ms.formula, float(ms.total_volume_ml))
     recipe = build_recipe(params)
-
+    
     ms.recipe_snapshot = convert_strawberry_input_to_dict(recipe)
+    
     ms.mixed_at = now.astimezone(ZoneInfo("UTC"))
+    
     ms.batch_code = generate_batch_code(datetime=now)
     
     _change_mix_session_status(ms, MixSessionStatus.MIXED)
+    
     if len(orders) > 0:
       from api_graphql.resolvers.production_order import _change_production_order_status
       for order in orders:
         _change_production_order_status(db=db, order=order, new_status=ProductionOrderStatus.MIXED)
+  
+    _toggle_mix_session_is_archived(ms, True)
   except ValueError as e:
     db.rollback()
     return MixSessionUpdatePayload(
@@ -513,3 +545,67 @@ def merge_mix_sessions(
           message="Could not merge MixSessions due to a database error.",
         ),
       )
+
+def _mix_session_load_options():
+  return (
+    selectinload(MixSession.production_orders).joinedload(ProductionOrder.eliquid),
+    selectinload(MixSession.formula).selectinload(Formula.flavorings).joinedload(Flavoring.flavoring_option),
+    selectinload(MixSession.formula).selectinload(Formula.nic_bases).joinedload(NicBase.nic_base_option),
+  )
+
+def set_mix_session_total_volume_ml(db: Session, identifier: "MixSessionIdentifierInput", total_volume_ml: float) -> MixSessionUpdatePayload:
+  ms = db.scalar(
+    select(MixSession)
+    .options(*_mix_session_load_options())
+    .where(identifier.query_condition)
+    .with_for_update()
+  )
+  
+  if ms is None:
+    return MixSessionUpdatePayload(
+      mix_session=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message=f"MixSession {identifier.provided[1]} not found",
+      )
+    )
+    
+  if ms.status != MixSessionStatus.IN_PROGRESS:
+    db.rollback()
+    return MixSessionUpdatePayload(mix_session=None, feedback=Feedback(
+      status=FeedbackStatusEnum.FAILED,
+      message=f"MixSession {ms.session_number} is {ms.status.value}; volume can no longer be changed."))
+
+  if total_volume_ml <= 0:
+    db.rollback()
+    return MixSessionUpdatePayload(mix_session=None, feedback=Feedback(
+      status=FeedbackStatusEnum.FAILED, message="Volume must be greater than 0."))
+  
+  params = build_mix_parameters(ms.formula, float(total_volume_ml))
+  recipe = build_recipe(params)
+  
+  ms.total_volume_ml = total_volume_ml
+  ms.total_weight_g = recipe.total_weight_g
+  
+  ms_id = ms.id
+  db.commit()
+  ms = db.scalar(
+    select(MixSession)
+    .options(*_mix_session_load_options())
+    .where(MixSession.id == ms_id)
+    .execution_options(populate_existing=True)
+  )
+    
+  return MixSessionUpdatePayload(
+    mix_session=MixSessionType.from_model(ms),
+    feedback=Feedback(
+      status=FeedbackStatusEnum.SUCCESS,
+      message=None,
+    )
+  )
+
+def _toggle_mix_session_is_archived(session: MixSession, is_archived: bool) -> None:
+  if session.status is not MixSessionStatus.MIXED:
+    raise ValueError("Cannot archive in progress MixSession")
+  
+  session.is_archived = is_archived
