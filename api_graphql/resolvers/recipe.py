@@ -80,9 +80,9 @@ def build_recipe(mix_parameters: MixParametersType) -> RecipeType:
   return RecipeType(
     mix_parameters=mix_parameters,
     ingredients=ingredients,
-    total_ratio=sum(i.ratio for i in ingredients),
-    total_volume_ml=sum(i.volume_ml for i in ingredients),
-    total_weight_g=sum(i.weight_g for i in ingredients),
+    total_ratio=_round_float(sum(i.ratio for i in ingredients)),
+    total_volume_ml=_round_float(sum(i.volume_ml for i in ingredients)),
+    total_weight_g=_round_float(sum(i.weight_g for i in ingredients)),
   )
 
 def get_recipe(db: Session, formula_identifier: "FormulaIdentifierInput", input: "RecipeInput") -> RecipeType | None:
@@ -128,16 +128,8 @@ def get_recipe_diy(input: RecipeDiyInput) -> RecipeType:
       ),
     ],
   )
-  
-  ingredients = get_recipe_ingredients(mix_parameters=mix_parameters)
     
-  return RecipeType(
-    mix_parameters=mix_parameters,
-    ingredients=ingredients,
-    total_ratio=sum(i.ratio for i in ingredients),
-    total_volume_ml=sum(i.volume_ml for i in ingredients),
-    total_weight_g=sum(i.weight_g for i in ingredients),
-  )
+  return build_recipe(mix_parameters=mix_parameters)
 
 def get_recipe_ingredients(mix_parameters: MixParametersType) -> list[RecipeIngredientType]:  
   flavoring_ingredients = get_flavoring_ingredients(
