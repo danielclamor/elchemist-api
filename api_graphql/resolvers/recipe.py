@@ -8,11 +8,10 @@ from api_graphql.resolvers.utils import convert_strawberry_input_to_dict
 
 from api_graphql.types.recipe import (
   MixParametersType,
-  MixParametersFlavoringsType,
-  MixParametersNicBasesType,
+  MixParametersFlavoringType,
+  MixParametersNicBaseType,
   RecipeIngredientsOverrideInput,
   RecipeType,
-  RecipeDiyType,
   RecipeIngredientType,
   RecipeIngredientGroup,
 )
@@ -39,14 +38,14 @@ def build_mix_parameters(formula: Formula, batch_volume_ml: float, overrides: Op
     target_pg=float(formula.target_pg),
     nic_base_nic_str=float(formula.nic_base_nic_str),
     flavorings=[
-      MixParametersFlavoringsType(
+      MixParametersFlavoringType(
         name=f.flavoring_option.name,
         is_vg=f.flavoring_option.is_vg,
         ratio=float(f.ratio),
       ) for f in formula.flavorings
     ],
     nic_bases=[
-      MixParametersNicBasesType(
+      MixParametersNicBaseType(
         code=b.nic_base_option.code,
         name=b.nic_base_option.name,
         is_vg=b.nic_base_option.is_vg,
@@ -62,10 +61,10 @@ def build_mix_parameters(formula: Formula, batch_volume_ml: float, overrides: Op
 
   OVERRIDE_TRANSFORMS = {
     "flavorings": lambda value: [
-      MixParametersFlavoringsType(name=v["name"], is_vg=v["is_vg"], ratio=v["ratio"]) for v in value
+      MixParametersFlavoringType(name=v["name"], is_vg=v["is_vg"], ratio=v["ratio"]) for v in value
     ],
     "nic_bases": lambda value: [
-      MixParametersNicBasesType(code=v["code"], name=v["name"], is_vg=v["is_vg"], ratio=v["ratio"]) for v in value
+      MixParametersNicBaseType(code=v["code"], name=v["name"], is_vg=v["is_vg"], ratio=v["ratio"]) for v in value
     ],
   }
 
@@ -78,7 +77,7 @@ def build_mix_parameters(formula: Formula, batch_volume_ml: float, overrides: Op
 
 def build_recipe(mix_parameters: MixParametersType) -> RecipeType:
   ingredients = get_recipe_ingredients(mix_parameters=mix_parameters)
-  return RecipeDiyType(
+  return RecipeType(
     mix_parameters=mix_parameters,
     ingredients=ingredients,
     total_ratio=sum(i.ratio for i in ingredients),
@@ -100,7 +99,7 @@ def get_recipe(db: Session, formula_identifier: "FormulaIdentifierInput", input:
     )
   )
 
-def get_recipe_diy(input: RecipeDiyInput) -> RecipeDiyType:
+def get_recipe_diy(input: RecipeDiyInput) -> RecipeType:
   mix_parameters = MixParametersType(
     batch_volume_ml=input.batch_volume_ml,
     target_nic_str=float(input.target_nic_str),
@@ -108,20 +107,20 @@ def get_recipe_diy(input: RecipeDiyInput) -> RecipeDiyType:
     target_pg=float(input.target_pg),
     nic_base_nic_str=float(input.nic_base_nic_str),
     flavorings=[
-      MixParametersFlavoringsType(
+      MixParametersFlavoringType(
         name=f.name,
         is_vg=f.is_vg,
         ratio=float(f.ratio),
       ) for f in input.flavorings
     ],
     nic_bases=[
-      MixParametersNicBasesType(
+      MixParametersNicBaseType(
         code="PG",
         name="PG",
         is_vg=False,
         ratio=float(input.nic_base_pg),
       ),
-      MixParametersNicBasesType(
+      MixParametersNicBaseType(
         code="VG",
         name="VG",
         is_vg=True,
@@ -132,7 +131,7 @@ def get_recipe_diy(input: RecipeDiyInput) -> RecipeDiyType:
   
   ingredients = get_recipe_ingredients(mix_parameters=mix_parameters)
     
-  return RecipeDiyType(
+  return RecipeType(
     mix_parameters=mix_parameters,
     ingredients=ingredients,
     total_ratio=sum(i.ratio for i in ingredients),
@@ -176,7 +175,7 @@ def get_recipe_ingredients(mix_parameters: MixParametersType) -> list[RecipeIngr
 def _round_float(value: float, ndigits: Optional[int] = 2) -> float:
   return round(value, ndigits)
 
-def get_flavoring_ingredients(flavorings: list[MixParametersFlavoringsType], batch_volume_ml: float) -> RecipeIngredientGroup:
+def get_flavoring_ingredients(flavorings: list[MixParametersFlavoringType], batch_volume_ml: float) -> RecipeIngredientGroup:
   ingredients = []
   total_pg_ratio = 0.0
   total_vg_ratio = 0.0
@@ -211,7 +210,7 @@ def get_flavoring_ingredients(flavorings: list[MixParametersFlavoringsType], bat
     total_vg_ratio=total_vg_ratio
   )
 
-def get_nic_base_ingredients(nic_bases: list[MixParametersNicBasesType], batch_volume_ml: float, target_nic_str: float, nic_base_nic_str: float) -> RecipeIngredientGroup:
+def get_nic_base_ingredients(nic_bases: list[MixParametersNicBaseType], batch_volume_ml: float, target_nic_str: float, nic_base_nic_str: float) -> RecipeIngredientGroup:
   ingredients = []
   total_pg_ratio = 0.0
   total_vg_ratio = 0.0

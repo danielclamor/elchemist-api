@@ -5,8 +5,6 @@ from typing import Optional
 from graphql import GraphQLError
 import strawberry
 
-from api_graphql.types.formula import FormulaType
-
 @strawberry.type
 class MixParametersType:
   batch_volume_ml: float
@@ -14,8 +12,8 @@ class MixParametersType:
   target_pg: float
   target_vg: float
   nic_base_nic_str: float
-  flavorings: list[MixParametersFlavoringsType]
-  nic_bases: list[MixParametersNicBasesType]
+  flavorings: list[MixParametersFlavoringType]
+  nic_bases: list[MixParametersNicBaseType]
   
   @classmethod
   def from_dict(cls, d: dict) -> "MixParametersType":
@@ -25,8 +23,8 @@ class MixParametersType:
       target_vg=d["target_vg"],
       target_pg=d["target_pg"],
       nic_base_nic_str=d["nic_base_nic_str"],
-      flavorings=[MixParametersFlavoringsType(**f) for f in d["flavorings"]],
-      nic_bases=[MixParametersNicBasesType(**b) for b in d["nic_bases"]],
+      flavorings=[MixParametersFlavoringType(**f) for f in d["flavorings"]],
+      nic_bases=[MixParametersNicBaseType(**b) for b in d["nic_bases"]],
     )
   
   @strawberry.field
@@ -38,13 +36,13 @@ class MixParametersType:
     return sum(n.ratio for n in self.nic_bases if not n.is_vg)
   
 @strawberry.type
-class MixParametersFlavoringsType:
+class MixParametersFlavoringType:
   name: str
   is_vg: bool
   ratio: float
   
 @strawberry.type
-class MixParametersNicBasesType:
+class MixParametersNicBaseType:
   code: str
   name: str
   is_vg: bool
