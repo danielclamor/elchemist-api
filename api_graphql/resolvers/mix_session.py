@@ -340,7 +340,7 @@ def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput")
       )
     )
     
-  if not ms.total_volume_ml:
+  if not ms.batch_volume_ml:
     return MixSessionUpdatePayload(
       mix_session=None,
       feedback=Feedback(
@@ -353,7 +353,7 @@ def mark_mix_session_mixed(db: Session, identifier: "MixSessionIdentifierInput")
   
   try:
     now = get_today()
-    params = build_mix_parameters(ms.formula, float(ms.total_volume_ml))
+    params = build_mix_parameters(ms.formula, float(ms.batch_volume_ml))
     recipe = build_recipe(params)
     
     ms.recipe_snapshot = convert_strawberry_input_to_dict(recipe)
@@ -553,7 +553,7 @@ def _mix_session_load_options():
     selectinload(MixSession.formula).selectinload(Formula.nic_bases).joinedload(NicBase.nic_base_option),
   )
 
-def set_mix_session_total_volume_ml(db: Session, identifier: "MixSessionIdentifierInput", total_volume_ml: float) -> MixSessionUpdatePayload:
+def set_mix_session_batch_volume_ml(db: Session, identifier: "MixSessionIdentifierInput", batch_volume_ml: float) -> MixSessionUpdatePayload:
   ms = db.scalar(
     select(MixSession)
     .options(*_mix_session_load_options())
@@ -576,16 +576,16 @@ def set_mix_session_total_volume_ml(db: Session, identifier: "MixSessionIdentifi
       status=FeedbackStatusEnum.FAILED,
       message=f"MixSession {ms.session_number} is {ms.status.value}; volume can no longer be changed."))
 
-  if total_volume_ml <= 0:
+  if batch_volume_ml <= 0:
     db.rollback()
     return MixSessionUpdatePayload(mix_session=None, feedback=Feedback(
       status=FeedbackStatusEnum.FAILED, message="Volume must be greater than 0."))
   
-  params = build_mix_parameters(ms.formula, float(total_volume_ml))
+  params = build_mix_parameters(ms.formula, float(batch_volume_ml))
   recipe = build_recipe(params)
   
-  ms.total_volume_ml = total_volume_ml
-  ms.total_weight_g = recipe.total_weight_g
+  ms.batch_volume_ml = batch_volume_ml
+  ms.batch_weight_g = recipe.total_weight_g
   
   ms_id = ms.id
   db.commit()

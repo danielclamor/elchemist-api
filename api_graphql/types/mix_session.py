@@ -25,8 +25,8 @@ class MixSessionType(relay.Node):
   status: MixSessionStatusEnum
   batch_code: str | None
   recipe_snapshot: JSON | None
-  total_volume_ml: float | None
-  total_weight_g: float | None
+  batch_volume_ml: float | None
+  batch_weight_g: float | None
   mixed_at: datetime | None
   formula_name_snapshot: str | None
   is_archived: bool
@@ -43,8 +43,8 @@ class MixSessionType(relay.Node):
       status=MixSessionStatusEnum[b.status.name],
       batch_code=b.batch_code,
       recipe_snapshot=b.recipe_snapshot,
-      total_volume_ml=b.total_volume_ml,
-      total_weight_g=b.total_weight_g,
+      batch_volume_ml=b.batch_volume_ml,
+      batch_weight_g=b.batch_weight_g,
       mixed_at=b.mixed_at,
       formula_name_snapshot=b.formula_name_snapshot,
       is_archived=b.is_archived,
@@ -70,8 +70,8 @@ class MixSessionType(relay.Node):
     if m.formula is None:
       return None
     from api_graphql.resolvers.recipe import build_mix_parameters, build_recipe
-    # params = build_mix_parameters(m.formula, float(m.total_volume_ml or 0), m.mix_overrides) TODO: add mix_overrides later
-    params = build_mix_parameters(m.formula, float(m.total_volume_ml or 0))
+    # params = build_mix_parameters(m.formula, float(m.batch_volume_ml or 0), m.mix_overrides) TODO: add mix_overrides later
+    params = build_mix_parameters(m.formula, float(m.batch_volume_ml or 0))
     return build_recipe(params)
   
   @strawberry.field

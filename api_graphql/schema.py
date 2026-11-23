@@ -153,7 +153,7 @@ from api_graphql.resolvers.mix_session import (
   delete_mix_session,
   mark_mix_session_mixed,
   merge_mix_sessions,
-  set_mix_session_total_volume_ml,
+  set_mix_session_batch_volume_ml,
 )
 
 
@@ -618,12 +618,12 @@ class Mutation:
     )
   
   @strawberry.mutation
-  def mix_session_set_total_volume_ml(
-    self, info: strawberry.Info, identifier: MixSessionIdentifierInput, total_volume_ml: float
+  def mix_session_set_batch_volume_ml(
+    self, info: strawberry.Info, identifier: MixSessionIdentifierInput, batch_volume_ml: float
   ) -> MixSessionUpdatePayload:
     db = info.context["db"]
-    return set_mix_session_total_volume_ml(
-      db=db, identifier=identifier, total_volume_ml=total_volume_ml
+    return set_mix_session_batch_volume_ml(
+      db=db, identifier=identifier, batch_volume_ml=batch_volume_ml
     )
   
   @strawberry.mutation
