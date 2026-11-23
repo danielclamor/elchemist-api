@@ -29,6 +29,14 @@ class MixParametersType:
       nic_bases=[MixParametersNicBasesType(**b) for b in d["nic_bases"]],
     )
   
+  @strawberry.field
+  def nic_base_vg(self) -> float:
+    return sum(n.ratio for n in self.nic_bases if n.is_vg)
+  
+  @strawberry.field
+  def nic_base_pg(self) -> float:
+    return sum(n.ratio for n in self.nic_bases if not n.is_vg)
+  
 @strawberry.type
 class MixParametersFlavoringsType:
   name: str
