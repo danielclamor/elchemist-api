@@ -173,6 +173,9 @@ def get_recipe_ingredients(mix_parameters: MixParametersType) -> list[RecipeIngr
   
   return nic_base_ingredients.ingredients + flavoring_ingredients.ingredients + [vg_ingredient, pg_ingredient]
 
+def _round_float(value: float, ndigits: Optional[int] = 2) -> float:
+  return round(value, ndigits)
+
 def get_flavoring_ingredients(flavorings: list[MixParametersFlavoringsType], batch_volume_ml: float) -> RecipeIngredientGroup:
   ingredients = []
   total_pg_ratio = 0.0
@@ -196,9 +199,9 @@ def get_flavoring_ingredients(flavorings: list[MixParametersFlavoringsType], bat
     ingredients.append(
       RecipeIngredientType(
         name=flavoring.name,
-        ratio=flavoring_ratio,
-        volume_ml=volume_ml,
-        weight_g=weight_g
+        ratio=_round_float(flavoring_ratio),
+        volume_ml=_round_float(volume_ml),
+        weight_g=_round_float(weight_g)
       )
     )
   
@@ -247,9 +250,9 @@ def get_nic_base_ingredients(nic_bases: list[MixParametersNicBasesType], batch_v
     ingredients.append(
       RecipeIngredientType(
         name=f"Nic Base ({nic_base.code})",
-        ratio=nic_base_batch_ratio,
-        volume_ml=nic_base_batch_volume_ml,
-        weight_g=nic_base_batch_weight_g
+        ratio=_round_float(nic_base_batch_ratio),
+        volume_ml=_round_float(nic_base_batch_volume_ml),
+        weight_g=_round_float(nic_base_batch_weight_g)
       )
     )
   
@@ -268,9 +271,9 @@ def get_pg_ingredient(
   
   return RecipeIngredientType(
     name="PG",
-    ratio=pg_ratio,
-    volume_ml=volume_ml,
-    weight_g=weight_g
+    ratio=_round_float(pg_ratio),
+    volume_ml=_round_float(volume_ml),
+    weight_g=_round_float(weight_g)
   )
 
 def get_vg_ingredient(
@@ -282,7 +285,7 @@ def get_vg_ingredient(
   
   return RecipeIngredientType(
     name="VG",
-    ratio=vg_ratio,
-    volume_ml=volume_ml,
-    weight_g=weight_g
+    ratio=_round_float(vg_ratio),
+    volume_ml=_round_float(volume_ml),
+    weight_g=_round_float(weight_g)
   )
