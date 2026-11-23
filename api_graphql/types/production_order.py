@@ -154,6 +154,10 @@ class ProductionOrderType(relay.Node):
   @strawberry.field
   def allocation_shortfall(self) -> int | None:
     return self._model.allocation_shortfall
+  
+  @strawberry.field
+  def order_volume_ml(self) -> int:
+    return self._model.order_volume_ml
 
 @strawberry.input
 class ProductionOrderIdentifierInput:

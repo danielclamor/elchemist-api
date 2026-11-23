@@ -79,6 +79,10 @@ class MixSessionType(relay.Node):
     from api_graphql.types.production_order import ProductionOrderType
     return [ProductionOrderType.from_model(o) for o in self._model.production_orders]
   
+  @strawberry.field
+  def total_orders_volume_ml(self) -> int:
+    return self._model.total_orders_volume_ml
+  
 @strawberry.input
 class MixSessionIdentifierInput:
   id: Optional[relay.GlobalID] = strawberry.UNSET
