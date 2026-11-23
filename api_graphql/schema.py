@@ -59,7 +59,6 @@ from api_graphql.types.formula import (
 from api_graphql.types.recipe import (
   RecipeType,
   RecipeInput,
-  RecipeDiyType,
   RecipeDiyInput,
 )
 
@@ -154,6 +153,7 @@ from api_graphql.resolvers.mix_session import (
   delete_mix_session,
   mark_mix_session_mixed,
   merge_mix_sessions,
+  set_mix_session_total_volume_ml,
 )
 
 
@@ -301,7 +301,7 @@ class Query:
   @strawberry.field
   def recipe_diy(
     self, input: RecipeDiyInput,
-  ) -> RecipeDiyType:
+  ) -> RecipeType:
     return get_recipe_diy(input=input)
   
   @strawberry.field
@@ -615,6 +615,15 @@ class Mutation:
     db = info.context["db"]
     return merge_mix_sessions(
       db=db, source_identifiers=source_identifiers, target_identifier=target_identifier,
+    )
+  
+  @strawberry.mutation
+  def mix_session_set_total_volume_ml(
+    self, info: strawberry.Info, identifier: MixSessionIdentifierInput, total_volume_ml: float
+  ) -> MixSessionUpdatePayload:
+    db = info.context["db"]
+    return set_mix_session_total_volume_ml(
+      db=db, identifier=identifier, total_volume_ml=total_volume_ml
     )
   
   @strawberry.mutation
