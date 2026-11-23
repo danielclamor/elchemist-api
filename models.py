@@ -54,26 +54,38 @@ nic_type_enum = Enum(NicType, name="nictype")
 
 
 class BottleSize(enum.Enum):
-  ML_30 = "30ml"
-  ML_60 = "60ml"
-  ML_120 = "120ml"
+  ML_30  = ("30ml", 30)
+  ML_60  = ("60ml", 60)
+  ML_120 = ("120ml", 120)
+  
+  def __new__(cls, label: str, ml: int):
+    obj = object.__new__(cls)
+    obj._value_ = label
+    obj.ml = ml
+    return obj
 
 
 bottle_size_enum = Enum(BottleSize, name="bottlesize")
 
 
-class NicLevel(enum.Enum):
-  MG_0 = "0mg"
-  MG_3 = "3mg"
-  MG_5 = "5mg"
-  MG_6 = "6mg"
-  MG_10 = "10mg"
-  MG_12 = "12mg"
-  MG_15 = "15mg"
-  MG_18 = "18mg"
-  MG_20 = "20mg"
-  HIT_35 = "hit35"
-  HIT_50 = "hit50"
+class NicLevel(Enum):
+  MG_0 = (0, "0mg")
+  MG_3 = (3, "3mg")
+  MG_5 = (5, "5mg")
+  MG_6 = (6, "6mg")
+  MG_10 = (10, "10mg")
+  MG_12 = (12, "12mg")
+  MG_15 = (15, "15mg")
+  MG_18 = (18, "18mg")
+  MG_20 = (20, "20mg")
+  HIT_35 = (20, "hit35")
+  HIT_50 = (20, "hit50")
+
+  def __new__(cls, mg: int, label: str):
+    obj = object.__new__(cls)
+    obj._value_ = label
+    obj.mg = mg
+    return obj
 
 
 nic_level_enum = Enum(NicLevel, name="niclevel")
@@ -328,6 +340,10 @@ class ProductionOrder(Base):
 
     return max(self.allocated_quantity - self.fulfilled_quantity, 0)
 
+  @property
+  def order_volume_ml(self) -> int:
+    return int(self.eliquid.bottle_size.ml * self.ordered_quantity)
+  
   def __repr__(self) -> str:
     return f"<ProductionOrder {self.order_number!r} eliquid={self.eliquid.description!r} quantity={self.ordered_quantity} status={self.status.value}>"
   
@@ -418,6 +434,10 @@ class MixSession(Base):
   formula: Mapped["Formula | None"] = relationship(back_populates="mix_sessions")
   
   production_orders: Mapped[list["ProductionOrder"]] = relationship(back_populates="mix_session", passive_deletes=True)
+  
+  @property
+  def total_orders_volume_ml(self) -> int:
+    return int(sum(po.order_volume_ml for po in self.production_orders))
 
   def __repr__(self) -> str:
     return f"<MixSession {self.session_number!r}>"
