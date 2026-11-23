@@ -73,14 +73,6 @@ class RecipeInput:
   batch_volume_ml: float
   overrides: Optional[RecipeIngredientsOverrideInput] = strawberry.UNSET
 
-@strawberry.type
-class RecipeDiyType:
-  mix_parameters: MixParametersType
-  ingredients: list[RecipeIngredientType]
-  total_ratio: float
-  total_volume_ml: float
-  total_weight_g: float
-
 @strawberry.input
 class RecipeDiyInput:
   batch_volume_ml: float
