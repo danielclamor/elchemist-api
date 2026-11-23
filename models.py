@@ -68,7 +68,7 @@ class BottleSize(enum.Enum):
 bottle_size_enum = Enum(BottleSize, name="bottlesize")
 
 
-class NicLevel(Enum):
+class NicLevel(enum.Enum):
   MG_0 = (0, "0mg")
   MG_3 = (3, "3mg")
   MG_5 = (5, "5mg")
