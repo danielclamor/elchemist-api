@@ -30,6 +30,22 @@ def generate_session_number(day: date, counter: int) -> str:
 def generate_batch_code(datetime: datetime, suffix: str = "") -> str:
   return f'{datetime:%m%d%y%H%M}{suffix}'
 
-def convert_strawberry_input_to_dict(input_obj):
-    data = dataclasses.asdict(input_obj)
-    return {k: v for k, v in data.items() if v is not strawberry.UNSET}
+def convert_strawberry_input_to_dict(obj):
+  # data = dataclasses.asdict(obj)
+  # return {k: v for k, v in data.items() if v is not strawberry.UNSET}
+  if dataclasses.is_dataclass(obj):
+    return {
+      f.name: convert_strawberry_input_to_dict(getattr(obj, f.name))
+      for f in dataclasses.fields(obj)
+      if getattr(obj, f.name) is not strawberry.UNSET
+      and not callable(getattr(obj, f.name))
+    }
+  if isinstance(obj, list):
+    return [convert_strawberry_input_to_dict(item) for item in obj]
+  if isinstance(obj, dict):
+    return {
+      k: convert_strawberry_input_to_dict(v)
+      for k, v in obj.items()
+      if v is not strawberry.UNSET and not callable(v)
+    }
+  return obj
