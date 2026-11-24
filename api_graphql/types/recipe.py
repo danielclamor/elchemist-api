@@ -23,14 +23,8 @@ class MixParametersType:
       target_vg=d["target_vg"],
       target_pg=d["target_pg"],
       nic_base_nic_str=d["nic_base_nic_str"],
-      flavorings=[
-        MixParametersFlavoringType(id=f"flavoring-{i}", **f)
-        for i, f in enumerate(d["flavorings"], start=1)
-      ],
-      nic_bases=[
-        MixParametersNicBaseType(id=f"nicbase-{i}", **b) 
-        for i, b in enumerate(d["nic_bases"], start=1)
-      ],
+      flavorings=[MixParametersFlavoringType(**f) for f in d["flavorings"]],
+      nic_bases=[MixParametersNicBaseType(**b) for b in d["nic_bases"]],
     )
   
   @strawberry.field
