@@ -192,10 +192,10 @@ def get_nic_base_ingredients(nic_bases: list[MixParametersNicBaseType], batch_vo
   
   if nic_base_nic_str == 0:
     return RecipeIngredientGroup(
-    ingredients=ingredients,
-    total_pg_ratio=total_pg_ratio,
-    total_vg_ratio=total_vg_ratio
-  )
+      ingredients=ingredients,
+      total_pg_ratio=total_pg_ratio,
+      total_vg_ratio=total_vg_ratio
+    )
   
   for nic_base in nic_bases:
     nic_base_ratio = nic_base.ratio
