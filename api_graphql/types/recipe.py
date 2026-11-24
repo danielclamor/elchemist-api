@@ -23,8 +23,14 @@ class MixParametersType:
       target_vg=d["target_vg"],
       target_pg=d["target_pg"],
       nic_base_nic_str=d["nic_base_nic_str"],
-      flavorings=[MixParametersFlavoringType(**f) for f in d["flavorings"]],
-      nic_bases=[MixParametersNicBaseType(**b) for b in d["nic_bases"]],
+      flavorings=[
+        MixParametersFlavoringType(id=f"flavoring-{i}", **f)
+        for i, f in enumerate(d["flavorings"], start=1)
+      ],
+      nic_bases=[
+        MixParametersNicBaseType(id=f"nicbase-{i}", **b) 
+        for i, b in enumerate(d["nic_bases"], start=1)
+      ],
     )
   
   @strawberry.field
@@ -37,13 +43,16 @@ class MixParametersType:
   
 @strawberry.type
 class MixParametersFlavoringType:
+  id: str
+  slug: Optional[str] = None
   name: str
   is_vg: bool
   ratio: float
   
 @strawberry.type
 class MixParametersNicBaseType:
-  code: str
+  id: str
+  code: Optional[str] = None
   name: str
   is_vg: bool
   ratio: float
@@ -142,13 +151,14 @@ class RecipeIngredientsOverrideInput:
     
 @strawberry.input
 class RecipeIngredientsFlavoringInput:
+  slug: Optional[str] = strawberry.UNSET
   name: str
   is_vg: bool
   ratio: float
   
 @strawberry.input
 class RecipeIngredientsNicBaseInput:
-  code: str
+  code: Optional[str] = strawberry.UNSET
   name: str
   is_vg: bool
   ratio: float
