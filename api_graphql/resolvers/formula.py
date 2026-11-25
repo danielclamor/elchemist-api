@@ -7,12 +7,15 @@ from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import and_, delete, select
 import strawberry
 
+from api_graphql.types.flavor import FlavorIdentifierInput
+
 from .utils import generate_slug
 from api_graphql.resolvers.flavor import get_or_create_flavor
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from models import (
   ChillType,
+  Flavor,
   Formula,
   Flavoring,
   NicBase,
@@ -47,7 +50,7 @@ from api_graphql.types.formula import (
   FormulaNicBasesSetPayload,
 )
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING: 
   from api_graphql.types.formula import (
     FormulaIdentifierInput,
@@ -61,16 +64,33 @@ if TYPE_CHECKING:
   
   
 # Queries
-def get_all_formulas(db: Session) -> list[Formula]:
+def _filter_formulas(stmt, flavor_id: uuid.UUID=None):
+  if flavor_id is not None:
+    stmt = stmt.where(Formula.flavor_id == flavor_id)
+  
+  return stmt
+  
+def get_all_formulas(db: Session, flavor_identifier: Optional["FlavorIdentifierInput"] = None) -> list[Formula]:
   stmt = (
     select(Formula)
     .options(
+      selectinload(Formula.flavor),
       selectinload(Formula.mix_sessions)
     )
-    .order_by(Formula.name.asc(), Formula.id)
   )
   
-  return db.scalars(stmt).unique().all()
+  flavor_id = None
+  if flavor_identifier is not None:
+    flavor_id = db.scalar(select(Flavor.id).where(flavor_identifier.query_condition))
+
+  stmt = _filter_formulas(stmt, flavor_id)
+  
+  return db.scalars(
+    stmt.order_by(
+      Formula.name.asc(),
+      Formula.id,
+    )
+  ).unique().all()
   
 
 def get_formula(db: Session, identifier: "FormulaIdentifierInput") -> Formula | None:

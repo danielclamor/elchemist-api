@@ -19,7 +19,7 @@ from api_graphql.types.eliquid import (
   EliquidUpdatePayload,
 )
 from api_graphql.types.enums import ProductionOrderStatusEnum
-from api_graphql.types.flavor import FlavorType
+from api_graphql.types.flavor import FlavorIdentifierInput, FlavorType
 from api_graphql.types.flavoring_option import (
   FlavoringOptionsBulkDeletePayload,
   FlavoringOptionDeletePayload,
@@ -295,10 +295,10 @@ class Query:
   
   @relay.connection(ListConnectionWithTotalCount[FormulaType])
   def formulas(
-    self, info: strawberry.Info,
+    self, info: strawberry.Info, flavor_identifier: Optional[FlavorIdentifierInput] = None
   ) -> List[FormulaType]:
     db = info.context["db"]
-    return [FormulaType.from_model(p) for p in get_all_formulas(db)]
+    return [FormulaType.from_model(p) for p in get_all_formulas(db, flavor_identifier)]
   
   @strawberry.field
   def recipe(
