@@ -7,6 +7,7 @@ from graphql import GraphQLError
 import strawberry
 from strawberry import relay
 
+from api_graphql.types.flavor import FlavorIdentifierInput
 from models import Eliquid
 
 from api_graphql.types.connections import ListConnectionWithTotalCount
@@ -22,6 +23,7 @@ from api_graphql.types.enums import (
 )
 
 if TYPE_CHECKING:
+  from api_graphql.types.flavor import FlavorType
   from api_graphql.types.formula import FormulaType
   from api_graphql.types.production_order import ProductionOrderType
 
@@ -58,6 +60,11 @@ class EliquidType(relay.Node):
       _model=e,
     )
     
+  @strawberry.field
+  def flavor(self) -> Annotated["FlavorType", strawberry.lazy("api_graphql.types.flavor")]:
+    from api_graphql.types.flavor import FlavorType
+    return FlavorType.from_model(self._model.flavor)
+
   @strawberry.field
   def formula(self) -> Annotated["FormulaType", strawberry.lazy("api_graphql.types.formula")] | None:
     if self._model.formula:
@@ -118,6 +125,7 @@ class EliquidCreateInput:
   upc: str
   description: str
   brand: str
+  flavor_name: str
   chill_type: ChillTypeEnum
   nic_type: NicTypeEnum
   bottle_size: BottleSizeEnum
@@ -141,6 +149,7 @@ class EliquidUpdateInput:
   upc: Optional[str] = strawberry.UNSET
   description: Optional[str] = strawberry.UNSET
   brand: Optional[str] = strawberry.UNSET
+  flavor_name: Optional[str] = strawberry.UNSET
   chill_type: Optional[ChillTypeEnum] = strawberry.UNSET
   nic_type: Optional[NicTypeEnum] = strawberry.UNSET
   bottle_size: Optional[BottleSizeEnum] = strawberry.UNSET

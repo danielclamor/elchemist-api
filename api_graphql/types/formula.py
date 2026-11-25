@@ -24,6 +24,7 @@ from api_graphql.types.flavoring_option import FlavoringOptionIdentifierInput
 from api_graphql.types.nic_base_option import NicBaseOptionIdentifierInput
 
 if TYPE_CHECKING:
+  from api_graphql.types.flavor import FlavorType
   from api_graphql.types.flavoring_option import FlavoringOptionType
   from api_graphql.types.nic_base_option import NicBaseOptionType
   from api_graphql.types.mix_session import MixSessionType
@@ -69,6 +70,11 @@ class FormulaType(relay.Node):
       _model=f,
     )
     
+  @strawberry.field
+  def flavor(self) -> Annotated["FlavorType", strawberry.lazy("api_graphql.types.flavor")]:
+    from api_graphql.types.flavor import FlavorType
+    return FlavorType.from_model(self._model.flavor)
+
   @strawberry.field
   def flavorings(self) -> list["FormulaFlavoringType"]:
     return [FormulaFlavoringType.from_model(b) for b in self._model.flavorings]
@@ -164,6 +170,7 @@ class FormulaCreateInput:
   name: str
   nic_level: float
   brand: str
+  flavor_name: str
   chill_type: ChillTypeEnum
   nic_type: NicTypeEnum
   nic_base_nic_str: float

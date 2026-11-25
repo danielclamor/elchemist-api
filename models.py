@@ -91,15 +91,39 @@ class NicLevel(enum.Enum):
 nic_level_enum = Enum(NicLevel, name="niclevel")
 
 
+class Flavor(Base):
+  __tablename__ = "flavors"
+
+  __table_args__ = (
+    UniqueConstraint("brand", "name", "chill_type", "nic_type", name="uq_flavors_identity"),
+  )
+
+  id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+  slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+  name: Mapped[str] = mapped_column(String(255))  # brand + flavor, e.g. "Slice Big Island"
+  brand: Mapped[str] = mapped_column(String(255), index=True)
+  chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
+  nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
+
+  created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+  updated_at: Mapped[datetime] = mapped_column(
+    DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+  )
+
+  formulas: Mapped[list["Formula"]] = relationship(back_populates="flavor")
+  eliquids: Mapped[list["Eliquid"]] = relationship(back_populates="flavor")
+
+  def __repr__(self) -> str:
+    return f"<Flavor {self.slug!r}>"
+
+
 class Eliquid(Base):
   __tablename__ = "eliquids"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
   upc: Mapped[str] = mapped_column(String(12), unique=True, index=True)
   description: Mapped[str] = mapped_column(String(255))
-  brand: Mapped[str] = mapped_column(String(255))
-  chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
-  nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
+  flavor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("flavors.id"), index=True)
   bottle_size: Mapped[BottleSize] = mapped_column(bottle_size_enum)
   nic_level: Mapped[NicLevel] = mapped_column(nic_level_enum)
   bottle_color: Mapped[BottleColor] = mapped_column(bottle_color_enum)
@@ -111,8 +135,21 @@ class Eliquid(Base):
   )
   
   formula: Mapped["Formula"] = relationship()
+  flavor: Mapped["Flavor"] = relationship(back_populates="eliquids", lazy="joined")
   
   production_orders: Mapped[list["ProductionOrder"]] = relationship(back_populates="eliquid")
+
+  @property
+  def brand(self) -> str:
+    return self.flavor.brand
+
+  @property
+  def chill_type(self) -> ChillType:
+    return self.flavor.chill_type
+
+  @property
+  def nic_type(self) -> NicType:
+    return self.flavor.nic_type
 
   def __repr__(self) -> str:
     return f"<Eliquid {self.description!r}>"
@@ -212,9 +249,7 @@ class Formula(Base):
   slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
   name: Mapped[str] = mapped_column(String(255))
   nic_level: Mapped[float] = mapped_column(Numeric(3, 1))
-  brand: Mapped[str] = mapped_column(String(255))
-  chill_type: Mapped[ChillType] = mapped_column(chill_type_enum)
-  nic_type: Mapped[NicType] = mapped_column(nic_type_enum)
+  flavor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("flavors.id"), index=True)
   is_pre_mix: Mapped[bool] = mapped_column(Boolean, default=False)
   is_old_mix: Mapped[bool] = mapped_column(Boolean, default=False)
 
@@ -236,6 +271,19 @@ class Formula(Base):
   )
   
   mix_sessions: Mapped[list["MixSession"]] = relationship(back_populates="formula", passive_deletes=True)
+  flavor: Mapped["Flavor"] = relationship(back_populates="formulas", lazy="joined")
+
+  @property
+  def brand(self) -> str:
+    return self.flavor.brand
+
+  @property
+  def chill_type(self) -> ChillType:
+    return self.flavor.chill_type
+
+  @property
+  def nic_type(self) -> NicType:
+    return self.flavor.nic_type
 
   @property
   def nic_base_vg(self) -> float:

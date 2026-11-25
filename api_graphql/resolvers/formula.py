@@ -8,6 +8,8 @@ from sqlalchemy import and_, delete, select
 import strawberry
 
 from .utils import generate_slug
+from api_graphql.resolvers.flavor import get_or_create_flavor
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from models import (
   ChillType,
@@ -307,14 +309,29 @@ def create_formula(db: Session, formula: "FormulaCreateInput") -> FormulaCreateP
         message=f"Formula {slug} already exists",
       )
     )
+  
+  try: 
+    flavor = get_or_create_flavor(
+      db,
+      brand=formula.brand,
+      name=formula.flavor_name,
+      chill_type=ChillType[formula.chill_type.name],
+      nic_type=NicType[formula.nic_type.name],
+    )
+  except SQLAlchemyError:
+    return FormulaCreatePayload(
+      formula=None,
+      feedback=Feedback(
+        status=FeedbackStatusEnum.FAILED,
+        message=f"Failed to get/create flavor {formula.flavor_name}",
+      )
+    )
 
   formula = Formula(
     slug=slug,
     name=formula.name,
     nic_level=formula.nic_level,
-    brand=formula.brand,
-    chill_type=ChillType[formula.chill_type.name],
-    nic_type=NicType[formula.nic_type.name],
+    flavor_id=flavor.id,
     is_pre_mix=formula.is_pre_mix,
     is_old_mix=formula.is_old_mix,
     nic_base_nic_str=formula.nic_base_nic_str,
