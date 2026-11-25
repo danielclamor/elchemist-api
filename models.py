@@ -121,7 +121,7 @@ class Eliquid(Base):
   __tablename__ = "eliquids"
 
   id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-  upc: Mapped[str] = mapped_column(String(12), unique=True, index=True)
+  sku: Mapped[str] = mapped_column(String(100), unique=True, index=True)
   description: Mapped[str] = mapped_column(String(255))
   flavor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("flavors.id"), index=True)
   bottle_size: Mapped[BottleSize] = mapped_column(bottle_size_enum)

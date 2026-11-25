@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 @strawberry.type
 class EliquidType(relay.Node):
   id: relay.NodeID[str]
-  upc: str
+  sku: str
   description: str
   brand: str
   chill_type: ChillTypeEnum
@@ -47,7 +47,7 @@ class EliquidType(relay.Node):
   def from_model(cls, e: "Eliquid") -> "EliquidType":
     return cls(
       id=e.id,
-      upc=e.upc,
+      sku=e.sku,
       description=e.description,
       brand=e.brand,
       chill_type=ChillTypeEnum[e.chill_type.name],
@@ -82,7 +82,7 @@ class EliquidType(relay.Node):
 @strawberry.input
 class EliquidIdentifierInput:
   id: Optional[relay.GlobalID] = strawberry.UNSET
-  upc: Optional[str] = strawberry.UNSET
+  sku: Optional[str] = strawberry.UNSET
   
   def __post_init__(self):
     if any(v is None for v in vars(self).values()):
@@ -122,7 +122,7 @@ class EliquidIdentifierInput:
 
 @strawberry.input
 class EliquidCreateInput:
-  upc: str
+  sku: str
   description: str
   brand: str
   flavor_name: str
@@ -140,13 +140,13 @@ class EliquidCreatePayload:
   
 @strawberry.type
 class EliquidDeletePayload:
-  deleted_upc: str | None
+  deleted_sku: str | None
   deleted_description: str | None
   feedback: Feedback
 
 @strawberry.input
 class EliquidUpdateInput:
-  upc: Optional[str] = strawberry.UNSET
+  sku: Optional[str] = strawberry.UNSET
   description: Optional[str] = strawberry.UNSET
   brand: Optional[str] = strawberry.UNSET
   flavor_name: Optional[str] = strawberry.UNSET

@@ -50,14 +50,14 @@ def get_eliquid(db: Session, identifier: "EliquidIdentifierInput") -> Eliquid | 
 
 # Mutations
 def create_eliquid(db: Session, input: "EliquidCreateInput") -> EliquidCreatePayload:
-  existing = db.scalar(select(Eliquid).where(Eliquid.upc == input.upc))
+  existing = db.scalar(select(Eliquid).where(Eliquid.sku == input.sku))
   
   if existing is not None:
     return EliquidCreatePayload(
       eliquid=EliquidType.from_model(existing),
       feedback=Feedback(
         status=FeedbackStatusEnum.CANCELLED,
-        message=f"Eliquid with upc {input.upc} already exists",
+        message=f"Eliquid with sku {input.sku} already exists",
       )
     )
   
@@ -92,7 +92,7 @@ def create_eliquid(db: Session, input: "EliquidCreateInput") -> EliquidCreatePay
       formula_id = formula.id
   
   eliquid = Eliquid(
-    upc=input.upc,
+    sku=input.sku,
     description=input.description,
     flavor_id=flavor.id,
     bottle_size=BottleSize[input.bottle_size.name],
@@ -118,7 +118,7 @@ def delete_eliquid(db: Session, identifier: "EliquidIdentifierInput") -> Eliquid
   
   if eliquid is None:
     return EliquidDeletePayload(
-      deleted_upc=None,
+      deleted_sku=None,
       deleted_description=None,
       feedback=Feedback(
         status=FeedbackStatusEnum.FAILED,
@@ -126,14 +126,14 @@ def delete_eliquid(db: Session, identifier: "EliquidIdentifierInput") -> Eliquid
       )
     )
   
-  upc = eliquid.upc
+  sku = eliquid.sku
   description = eliquid.description
   
   db.delete(eliquid)
   db.commit()
   
   return EliquidDeletePayload(
-    deleted_upc=upc,
+    deleted_sku=sku,
     deleted_description=description,
     feedback=Feedback(
       status=FeedbackStatusEnum.SUCCESS,
