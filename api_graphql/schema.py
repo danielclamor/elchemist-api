@@ -6,6 +6,7 @@ import strawberry
 from strawberry import relay
 from typing import List, Optional
 
+from api_graphql.resolvers.flavor import get_all_flavors
 from api_graphql.types.connections import ListConnectionWithTotalCount
 from api_graphql.types.brand import BrandEdge, BrandConnection
 from api_graphql.types.eliquid import (
@@ -18,6 +19,7 @@ from api_graphql.types.eliquid import (
   EliquidUpdatePayload,
 )
 from api_graphql.types.enums import ProductionOrderStatusEnum
+from api_graphql.types.flavor import FlavorType
 from api_graphql.types.flavoring_option import (
   FlavoringOptionsBulkDeletePayload,
   FlavoringOptionDeletePayload,
@@ -245,6 +247,13 @@ class Query:
   ) -> List[EliquidType]:
     db = info.context["db"]
     return [EliquidType.from_model(e) for e in get_all_eliquids(db)]
+  
+  @relay.connection(ListConnectionWithTotalCount[FlavorType])
+  def flavors(
+    self, info: strawberry.Info, search_string: Optional[str] = None
+  ) -> List[FlavorType]:
+    db = info.context["db"]
+    return [FlavorType.from_model(f) for f in get_all_flavors(db, search_string)]
   
   @strawberry.field
   def flavoring_option(
