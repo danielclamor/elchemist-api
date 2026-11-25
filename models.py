@@ -80,8 +80,9 @@ class NicLevel(enum.Enum):
   MG_20 = (20, "20mg")
   HIT_35 = (20, "hit35")
   HIT_50 = (20, "hit50")
+  CUSTOM = (None, "custom")  # no fixed strength; the number comes from the formula
 
-  def __new__(cls, mg: int, label: str):
+  def __new__(cls, mg: int | None, label: str):
     obj = object.__new__(cls)
     obj._value_ = label
     obj.mg = mg

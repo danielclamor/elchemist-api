@@ -32,6 +32,7 @@ class NicLevelEnum(enum.Enum):
   MG_20 = "20mg"
   HIT_35 = "hit35"
   HIT_50 = "hit50"
+  CUSTOM = "custom"
 
 @strawberry.enum
 class NicTypeEnum(enum.Enum):
